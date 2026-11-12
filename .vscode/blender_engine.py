@@ -35,9 +35,21 @@ REGRAS_MATERIAIS = {
     "#3e4095": { 'tipo': 'BASE', 'nome_material': 'Base_6MM', 'extrusao': 0.009, 'roughness': 0.55, 'transmission': 0.02, 'ior': 1.2},
     "#f7adaf": { 'tipo': 'BASE', 'nome_material': 'Base_9MM', 'extrusao': 0.015, 'roughness': 0.55, 'transmission': 0.02, 'ior': 1.2},
     "#84716b": { 'tipo': 'BASE', 'nome_material': 'Base_12MM', 'extrusao': 0.025, 'roughness': 0.55, 'transmission': 0.02, 'ior': 1.2},    
+
+    # ... outros materiais ...
+    '#000000': { 
+        'tipo': 'ACRILICO_GRAVADO', 
+        'nome_material': 'Acrilico_Gravado', 
+        'extrusao': 0.0001, # Rebaixo imperceptível ou nulo
+        'roughness': 0.65,   # Alta rugosidade (efeito fosco/esbranquiçado)
+        'transmission': 0.15, # Perde a transparência
+        'ior': 1.49 
+    },
+
     
     # ADESIVOS
     '#ec268f': { 'tipo': 'ADESIVO', 'nome_material': 'Adesivo_Padrao', 'extrusao': 0.0001, 'roughness': 0.043, 'transmission': 0.02, 'ior': 1.08 }
+    
 }
 
 FATOR_ESCURECIMENTO_ADESIVO = 0.25
@@ -166,6 +178,53 @@ def aplicar_textura_mdf_procedural(mat, cor_preenchimento_rgba):
     bump_node.location = (-200, -200)
     bump_node.inputs['Strength'].default_value = 0.45 # Intensifica as micro-sombras táticas
     bump_node.inputs['Distance'].default_value = 0.002
+    links.new(noise_node.outputs['Fac'], bump_node.inputs['Height'])
+    links.new(bump_node.outputs['Normal'], bsdf.inputs['Normal'])
+
+def aplicar_material_acrilico_gravado(mat, cor_base_rgba=(0.95, 0.95, 0.95, 1.0)):
+    """
+    Cria um material difuso/esbranquiçado e fosco com relevo tátil 
+    que simula a fresta e o desgaste do laser no acrílico.
+    """
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+
+    output_node = nodes.new('ShaderNodeOutputMaterial')
+    output_node.location = (400, 0)
+
+    bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+    bsdf.location = (100, 0)
+    links.new(bsdf.outputs['BSDF'], output_node.inputs['Surface'])
+
+    # Propriedades físicas da gravação fosca
+    bsdf.inputs['Base Color'].default_value = cor_base_rgba # Tom claro/esbranquiçado
+    bsdf.inputs['Roughness'].default_value = 0.70          # Fosco
+    if 'Transmission Weight' in bsdf.inputs:
+        bsdf.inputs['Transmission Weight'].default_value = 0.10 # Leve translucidez
+    elif 'Transmission' in bsdf.inputs:
+        bsdf.inputs['Transmission'].default_value = 0.10
+
+    # Ruído de relevo (Simula o atrito do laser)
+    tex_coord = nodes.new('ShaderNodeTexCoord')
+    tex_coord.location = (-800, 0)
+
+    mapping = nodes.new('ShaderNodeMapping')
+    mapping.location = (-600, 0)
+    mapping.inputs['Scale'].default_value = (300.0, 300.0, 300.0) # Ruído bem micro
+    links.new(tex_coord.outputs['Object'], mapping.inputs['Vector'])
+
+    noise_node = nodes.new('ShaderNodeTexNoise')
+    noise_node.location = (-400, 0)
+    noise_node.inputs['Scale'].default_value = 100.0
+    noise_node.inputs['Detail'].default_value = 10.0
+    links.new(mapping.outputs['Vector'], noise_node.inputs['Vector'])
+
+    bump_node = nodes.new('ShaderNodeBump')
+    bump_node.location = (-150, -150)
+    bump_node.inputs['Strength'].default_value = 0.25 # Relevo raso
+    bump_node.inputs['Distance'].default_value = 0.0005
     links.new(noise_node.outputs['Fac'], bump_node.inputs['Height'])
     links.new(bump_node.outputs['Normal'], bsdf.inputs['Normal'])
 
