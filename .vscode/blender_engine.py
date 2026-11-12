@@ -226,7 +226,7 @@ def aplicar_material_acrilico_gravado(mat, cor_base_rgba=(0.95, 0.95, 0.95, 1.0)
     bump_node.inputs['Strength'].default_value = 0.25 # Relevo raso
     bump_node.inputs['Distance'].default_value = 0.0005
     links.new(noise_node.outputs['Fac'], bump_node.inputs['Height'])
-    links.new(bump_node.outputs['Normal'], bsdf.inputs['Normal'])
+    links.new(bump_node.outputs['Normal'], bsdf.inputs['Normal'])   
 
 # ==============================================================================
 # 3. MÓDULOS DE PROCESSAMENTO
@@ -522,6 +522,13 @@ def aplicar_materiais_e_empilhar(elementos_mapeados, imagens_disponiveis, usar_v
             if not mat:
                 mat = bpy.data.materials.new(name=nome_mat_unico)
             aplicar_textura_mdf_procedural(mat, cor_svg_rgba)
+
+        elif tipo_material == 'ACRILICO_GRAVADO':
+            if not mat:
+                mat = bpy.data.materials.new(name=nome_mat_unico)
+            # Chama a função passando a cor lida do preenchimento SVG (ou esbranquiçada)
+            aplicar_material_acrilico_gravado(mat, cor_svg_rgba)
+            
         else:
             if not mat:
                 mat = bpy.data.materials.new(name=nome_mat_unico)
