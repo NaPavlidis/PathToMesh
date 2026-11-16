@@ -34,7 +34,8 @@ MAPA_MATERIAIS = {
     '#3e4095': {'tipo': 'BASE', 'nome_material': 'Base_6MM'},
     '#f7adaf': {'tipo': 'BASE', 'nome_material': 'Base_9MM'},
     '#84716b': {'tipo': 'BASE', 'nome_material': 'Base_12MM'},
-    '#ec268f': {'tipo': 'ADESIVO', 'nome_material': 'Adesivo_Padrao'}
+    '#ec268f': {'tipo': 'ADESIVO', 'nome_material': 'Adesivo_Padrao'},
+    '#9d98ca': { 'tipo': 'Acrilico', 'nome_material': 'Acrilico_Gravado'}
 }
 
 # ==============================================================================
