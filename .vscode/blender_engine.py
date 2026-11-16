@@ -37,14 +37,7 @@ REGRAS_MATERIAIS = {
     "#84716b": { 'tipo': 'BASE', 'nome_material': 'Base_12MM', 'extrusao': 0.025, 'roughness': 0.55, 'transmission': 0.02, 'ior': 1.2},    
 
     # ... outros materiais ...
-    '#000000': { 
-        'tipo': 'ACRILICO_GRAVADO', 
-        'nome_material': 'Acrilico_Gravado', 
-        'extrusao': 0.0001, # Rebaixo imperceptível ou nulo
-        'roughness': 0.65,   # Alta rugosidade (efeito fosco/esbranquiçado)
-        'transmission': 0.15, # Perde a transparência
-        'ior': 1.49 
-    },
+    '#9d98ca': { 'tipo': 'ACRILICO_GRAVADO', 'nome_material': 'Acrilico_Gravado', 'extrusao': 0.0001, 'roughness': 0.65, 'transmission': 0.15,'ior': 1.49 },
 
     
     # ADESIVOS
