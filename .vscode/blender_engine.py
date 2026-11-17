@@ -15,7 +15,7 @@ import time
 
 REGRAS_MATERIAIS = {    
     # ACRÍLICOS
-    '#ed3237': { 'tipo': 'ACRILICO', 'nome_material': 'acrilico_padrão', 'extrusao': 0.001, 'roughness': 0.001, 'transmission': 1.0, 'ior': 1.9 },
+    '#ed3237': { 'tipo': 'ACRILICO', 'nome_material': 'acrilico_padrão', 'extrusao': 0.001, 'roughness': 0.003, 'transmission': 0.8, 'ior': 1.8 },
     '#fff212': { 'tipo': 'ACRILICO', 'nome_material': 'Acrilico_transparente', 'extrusao': 0.001, 'roughness': 0.001, 'transmission': 1.0, 'ior': 2 },
         
     # MDFs
@@ -41,7 +41,7 @@ REGRAS_MATERIAIS = {
 
     
     # ADESIVOS
-    '#ec268f': { 'tipo': 'ADESIVO', 'nome_material': 'Adesivo_Padrao', 'extrusao': 0.0001, 'roughness': 0.043, 'transmission': 0.02, 'ior': 1.08 }
+    '#ec268f': { 'tipo': 'ADESIVO', 'nome_material': 'Adesivo_Padrao', 'extrusao': 0.0005, 'roughness': 0.020, 'transmission': 0.02, 'ior': 1.08 }
     
 }
 
@@ -65,7 +65,7 @@ def hex_para_rgba(hex_color, alpha=1.0):
     g = int(hex_color[2:4], 16) / 255.0
     b = int(hex_color[4:6], 16) / 255.0
     
-    fator_cmyk = 0.70
+    fator_cmyk = 0.85
     r, g, b = r * fator_cmyk, g * fator_cmyk, b * fator_cmyk
     
     def srgb_para_linear(c): 
@@ -142,11 +142,11 @@ def aplicar_textura_mdf_procedural(mat, cor_preenchimento_rgba):
     color_ramp.location = (-500, 100)
     
     # Define o escurecimento das fibras sem estourar no branco
-    color_ramp.color_ramp.elements[0].position = 0.10
-    color_ramp.color_ramp.elements[0].color = (0.80, 0.80, 0.80, 1.0) # Variação mais escura (20% cinza)
+    color_ramp.color_ramp.elements[0].position = 0.20
+    color_ramp.color_ramp.elements[0].color = (0.40, 0.40, 0.40, 1.0) # Variação mais escura (20% cinza)
     
     color_ramp.color_ramp.elements[1].position = 0.80
-    color_ramp.color_ramp.elements[1].color = (0.20, 0.20, 0.20, 1.0) # Variação máxima controlada (75% cinza)
+    color_ramp.color_ramp.elements[1].color = (0.10, 0.10, 0.10, 1.0) # Variação máxima controlada (75% cinza)
     
     links.new(noise_node.outputs['Fac'], color_ramp.inputs['Fac'])
 
