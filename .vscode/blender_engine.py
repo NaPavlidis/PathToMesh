@@ -65,7 +65,7 @@ def hex_para_rgba(hex_color, alpha=1.0):
     g = int(hex_color[2:4], 16) / 255.0
     b = int(hex_color[4:6], 16) / 255.0
     
-    fator_cmyk = 0.85
+    fator_cmyk = 0.65
     r, g, b = r * fator_cmyk, g * fator_cmyk, b * fator_cmyk
     
     def srgb_para_linear(c): 
