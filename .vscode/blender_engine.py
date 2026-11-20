@@ -41,7 +41,7 @@ REGRAS_MATERIAIS = {
 
     
     # ADESIVOS
-    '#ec268f': { 'tipo': 'ADESIVO', 'nome_material': 'Adesivo_Padrao', 'extrusao': 0.0005, 'roughness': 0.020, 'transmission': 0.02, 'ior': 1.08 }
+    '#ec268f': { 'tipo': 'ADESIVO', 'nome_material': 'Adesivo_Padrao', 'extrusao': 0.0005, 'roughness': 0.035, 'transmission': 0.02, 'ior': 1.08 }
     
 }
 
@@ -143,10 +143,10 @@ def aplicar_textura_mdf_procedural(mat, cor_preenchimento_rgba):
     
     # Define o escurecimento das fibras sem estourar no branco
     color_ramp.color_ramp.elements[0].position = 0.20
-    color_ramp.color_ramp.elements[0].color = (0.40, 0.40, 0.40, 1.0) # Variação mais escura (20% cinza)
+    color_ramp.color_ramp.elements[0].color = (0.60, 0.60, 0.60, 1.0) # Variação mais escura (20% cinza)
     
     color_ramp.color_ramp.elements[1].position = 0.80
-    color_ramp.color_ramp.elements[1].color = (0.10, 0.10, 0.10, 1.0) # Variação máxima controlada (75% cinza)
+    color_ramp.color_ramp.elements[1].color = (0.90, 0.90, 0.90, 1.0) # Variação máxima controlada (75% cinza)
     
     links.new(noise_node.outputs['Fac'], color_ramp.inputs['Fac'])
 
@@ -170,7 +170,7 @@ def aplicar_textura_mdf_procedural(mat, cor_preenchimento_rgba):
     bump_node = nodes.new('ShaderNodeBump')
     bump_node.location = (-200, -200)
     bump_node.inputs['Strength'].default_value = 0.45 # Intensifica as micro-sombras táticas
-    bump_node.inputs['Distance'].default_value = 0.002
+    bump_node.inputs['Distance'].default_value = 0.0005
     links.new(noise_node.outputs['Fac'], bump_node.inputs['Height'])
     links.new(bump_node.outputs['Normal'], bsdf.inputs['Normal'])
 
