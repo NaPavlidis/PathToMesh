@@ -10,7 +10,7 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 
 | Arquivo | O que faz |
 | --- | --- |
-| `app_ui.py` | Janela do app (Tkinter): escolhe o catálogo, a cena `.blend` e os modelos, e chama o Blender |
+| `app_ui.py` | Janela do app (Tkinter): escolhe o catálogo, a cena `.blend` e os modelos, e chama o Blender. As cores, fontes e espaçamentos da janela ficam todos no dicionário `TEMA` (e em `FONTES`/`ESPACO`), aplicados por `aplicar_estilo` |
 | `blender_engine.py` | Roda dentro do Blender (`bpy`): importa o SVG, aplica materiais e extrusão, configura câmeras e renderiza |
 | `mapear_catalogo.py` | Mapeia o catálogo (`CATALOGO/<MODALIDADE>/<MODELO>/SVG/*.svg`) e mostra quais modelos estão prontos |
 | `infos_svg.py` | Analisa um SVG e lista as peças e os materiais encontrados |
