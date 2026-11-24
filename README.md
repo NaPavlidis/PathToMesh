@@ -16,14 +16,32 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 | `infos_svg.py` | Analisa um SVG e lista as peças e os materiais encontrados |
 | `launcher.py` | Launcher (Tkinter): procura atualização, instala as dependências, confere o Blender, envia os logs de erro e abre o app |
 | `launcher.bat` / `launcher.pyw` | Atalhos para abrir o launcher no Windows (com console / sem console) |
+| `instalar.bat` / `instalar.ps1` | Instalador para Windows (veja **Instalação**). O `.bat` é o que você baixa e roda; ele chama o `.ps1` |
 | `registro_erros.py` | Grava os logs de erro em `logs/` (sem dados do PC) e envia para a branch `logs` |
 | `config.json` | Configuração de partida (caminhos do Blender, das pastas e da cena, e o número de amostras do Cycles). Só serve para criar o `config.local.json` |
 | `config.local.json` | A **sua** configuração, a que o app e o launcher usam. Fica só no seu PC (está no `.gitignore` e nunca vai para o GitHub) |
 | `legado/` | Versão antiga do motor, guardada como referência |
 
-## Como rodar (Windows)
+## Instalação
 
-1. Instale o [Blender](https://www.blender.org/) (o `config.json` aponta para a versão 5.2) e o Python 3.
+1. Baixe o instalador: **[instalar.bat](https://github.com/NaPavlidis/Phy-2d-by-3d/raw/main/instalar.bat)**. Se o navegador mostrar o texto em vez de baixar, clique com o botão direito no link e escolha **Salvar link como...**, ou abra a [página do arquivo](https://github.com/NaPavlidis/Phy-2d-by-3d/blob/main/instalar.bat) e clique no botão de download (**Download raw file**).
+2. Dê dois cliques no `instalar.bat`. Se o Windows mostrar "O Windows protegeu o computador", clique em **Mais informações** e depois em **Executar assim mesmo**.
+3. Responda o que ele perguntar (a pasta de instalação; aperte Enter para usar a padrão) e espere o resumo no fim.
+
+O instalador (`instalar.bat`, que roda o `instalar.ps1`) faz sozinho:
+
+- confere se há o **Python 3** (comando `py` ou `python`) e o **Git**. Se faltar algum, instala com o `winget` (`Python.Python.3.14` e `Git.Git`), avisando antes;
+- pergunta a pasta de instalação (padrão: `%LOCALAPPDATA%\Phy-2d-by-3d`) e baixa o programa do GitHub (`git clone`). Se o programa já estiver nessa pasta, só atualiza, sem apagar o seu `config.local.json`;
+- instala as dependências (`py -m pip install -r requirements.txt`);
+- cria o `config.local.json` a partir do `config.exemplo.json`, se ele ainda não existir, e procura o Blender instalado (em `C:\Program Files\Blender Foundation\Blender *\blender.exe`, usando a versão mais nova). Um `blender_path` que já existe nunca é trocado;
+- cria o atalho **Phy-2d-by-3d** (abre o launcher) na Área de Trabalho e no Menu Iniciar;
+- mostra um resumo do que fez e dos avisos (por exemplo, se não achou o Blender).
+
+Depois é só abrir o atalho **Phy-2d-by-3d** na Área de Trabalho. Para atualizar, use o botão **Atualizar agora** do launcher (ou rode o instalador de novo).
+
+## Como rodar sem o instalador (Windows)
+
+1. Instale o [Blender](https://www.blender.org/) e o Python 3.
 2. Instale a dependência opcional, que melhora a leitura dos caminhos do SVG: `pip install -r requirements.txt`
 3. Ajuste os caminhos nas configurações do app (⚙) ou direto no `config.local.json` (veja abaixo).
 4. Abra o **launcher** (veja abaixo) e clique em **Abrir o app**. Também dá para abrir direto com `python app_ui.py`, na pasta do projeto.

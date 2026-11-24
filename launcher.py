@@ -10,10 +10,12 @@ fecha sozinho. Se o app não abrir, o launcher fica aberto, mostra o erro e grav
 
 A lógica fica em funções sem Tkinter, para poder ser testada sem janela.
 """
+import glob
 import io
 import json
 import os
 import queue
+import re
 import subprocess
 import sys
 import tempfile
@@ -375,6 +377,70 @@ def _ler_saida(caminho, limite=3000):
         return ""
 
 
+def _pastas_blender():
+    raizes = []
+    for raiz in (os.environ.get("ProgramFiles"), r"C:\Program Files"):
+        if raiz and os.path.normcase(raiz) not in [os.path.normcase(r) for r in raizes]:
+            raizes.append(raiz)
+    return [os.path.join(r, "Blender Foundation") for r in raizes]
+
+
+def _versao_da_pasta(nome):
+    m = re.search(r"(\d+(?:\.\d+)*)", nome)
+    return tuple(int(x) for x in m.group(1).split(".")) if m else (0,)
+
+
+def procurar_blender(pastas=None):
+    """Procura <Program Files>/Blender Foundation/Blender */blender.exe e devolve o da versão
+    mais nova (ou "" se não achar)."""
+    achados = []
+    for base in (pastas if pastas is not None else _pastas_blender()):
+        for exe in glob.glob(os.path.join(glob.escape(base), "Blender *", "blender.exe")):
+            if os.path.isfile(exe):
+                achados.append((_versao_da_pasta(os.path.basename(os.path.dirname(exe))), exe))
+    if not achados:
+        return ""
+    achados.sort()
+    return achados[-1][1].replace("\\", "/")
+
+
+def preparar_config(pasta=PASTA, pastas_blender=None):
+    """Usado pelo instalador: cria o config.local.json (se faltar) e, se o blender_path dele não
+    existir, procura o Blender instalado e grava o caminho. Nunca muda um blender_path que existe.
+    Devolve um dict com o resultado."""
+    resultado = {"config": reg.caminho_config_local(pasta), "criado": False, "blender": "",
+                 "blender_achado": False, "blender_ok": False, "erro": "",
+                 "pythonw": python_janela()}
+    try:
+        _, resultado["criado"] = reg.garantir_config_local(pasta)
+    except OSError as e:
+        resultado["erro"] = f"Não deu para criar o {CONFIG_LOCAL}: {e}"
+        return resultado
+    dados, erro = ler_config(pasta)
+    if erro:
+        resultado["erro"] = erro
+        return resultado
+    atual = dados.get("blender_path")
+    if isinstance(atual, str) and atual and os.path.isfile(atual):
+        resultado.update(blender=atual, blender_ok=True)
+        return resultado
+    achado = procurar_blender(pastas_blender)
+    if not achado:
+        resultado["blender"] = atual if isinstance(atual, str) else ""
+        return resultado
+    dados["blender_path"] = achado
+    try:
+        caminho = reg.caminho_config_local(pasta)
+        with open(caminho + ".novo", "w", encoding="utf-8") as f:
+            json.dump(dados, f, indent=4, ensure_ascii=False)
+        os.replace(caminho + ".novo", caminho)
+    except OSError as e:
+        resultado["erro"] = f"Não deu para gravar o {CONFIG_LOCAL}: {e}"
+        return resultado
+    resultado.update(blender=achado, blender_achado=True, blender_ok=True)
+    return resultado
+
+
 def abrir_app(pasta=PASTA, espera=ESPERA_ABRIR, comando=None, arquivo_saida=None):
     """Abre o app como um processo independente e confere se ele abriu.
 
@@ -653,6 +719,11 @@ class Launcher(tk.Tk if tk else object):
 
 
 def main():
+    if "--preparar-config" in sys.argv[1:]:
+        # Chamado pelo instalador (instalar.ps1): resposta em JSON só com ASCII, para o
+        # PowerShell ler sem problema de acentos
+        print(json.dumps(preparar_config(), ensure_ascii=True))
+        return
     reg.instalar_ganchos("launcher")
     if tk is None:
         print("O Tkinter não está instalado neste Python.")

@@ -1,2 +1,4 @@
 # O cmd do Windows precisa de CRLF nos .bat
 *.bat text eol=crlf
+# O instalar.bat é baixado direto do GitHub (sem checkout): fica guardado já com CRLF
+instalar.bat -text
