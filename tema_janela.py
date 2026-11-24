@@ -135,6 +135,18 @@ def pintar_barra_titulo(janela, fundo=None, texto=None, borda=None, escuro=True)
     """
     if not eh_windows():
         return []
+    try:
+        hwnd = _hwnd(janela)
+    except Exception:
+        return []
+    return pintar_barra_titulo_hwnd(hwnd, fundo, texto, borda, escuro)
+
+
+def pintar_barra_titulo_hwnd(hwnd, fundo=None, texto=None, borda=None, escuro=True):
+    """O mesmo que pintar_barra_titulo, a partir do HWND da janela (usado também pela janela do
+    pywebview, que não é do Tk). Fora do Windows, sem HWND ou com erro, não faz nada."""
+    if not eh_windows() or not hwnd:
+        return []
     fundo = TEMA['barra'] if fundo is None else fundo
     texto = TEMA['texto'] if texto is None else texto
     borda = TEMA['divisor'] if borda is None else borda
@@ -142,7 +154,6 @@ def pintar_barra_titulo(janela, fundo=None, texto=None, borda=None, escuro=True)
     try:
         import ctypes
         from ctypes import wintypes
-        hwnd = _hwnd(janela)
         dwm = ctypes.windll.dwmapi
 
         def definir(atributo, valor):
@@ -200,6 +211,50 @@ def aplicar_icone(janela, nome="app", padrao=False):
         except Exception:
             pass
     return ""
+
+
+WM_SETICON = 0x0080
+ICON_SMALL, ICON_BIG = 0, 1
+IMAGE_ICON = 1
+LR_LOADFROMFILE = 0x0010
+
+
+def aplicar_icone_hwnd(hwnd, nome="app"):
+    """Põe o .ico na janela pelo HWND (WM_SETICON, ícone pequeno e grande), para janelas que não
+    são do Tk (a do pywebview). Só no Windows; nunca levanta erro. Devolve True se aplicou."""
+    if not eh_windows() or not hwnd:
+        return False
+    ico, _ = caminhos_icone(nome)
+    if not os.path.isfile(ico):
+        return False
+    try:
+        import ctypes
+        user32 = ctypes.windll.user32
+        user32.LoadImageW.restype = ctypes.c_void_p
+        user32.SendMessageW.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_void_p]
+        aplicou = False
+        for tipo, tamanho in ((ICON_SMALL, 16), (ICON_BIG, 32)):
+            icone = user32.LoadImageW(None, ico, IMAGE_ICON, tamanho, tamanho, LR_LOADFROMFILE)
+            if icone:
+                user32.SendMessageW(ctypes.c_void_p(hwnd), WM_SETICON, ctypes.c_void_p(tipo), ctypes.c_void_p(icone))
+                aplicou = True
+        return aplicou
+    except Exception:
+        return False
+
+
+def preparar_hwnd(hwnd, icone="app"):
+    """Ícone + barra de título nas cores do TEMA, pelo HWND (janela do pywebview). Nunca levanta erro."""
+    resultado = {"icone": False, "barra": []}
+    try:
+        resultado["icone"] = aplicar_icone_hwnd(hwnd, icone)
+    except Exception:
+        pass
+    try:
+        resultado["barra"] = pintar_barra_titulo_hwnd(hwnd)
+    except Exception:
+        pass
+    return resultado
 
 
 # ------------------------------------------------------------------------------ logo do cabeçalho
