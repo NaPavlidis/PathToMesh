@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Sem nada da internet: CSS, JS e ícones (SVG abaixo) ficam nesta pasta; funciona offline -->
+  <title>PathToMesh</title>
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <!-- Ícones (desenhados em SVG, no lugar da fonte Material Symbols do modelo, que viria da internet) -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true">
+    <defs>
+      <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></symbol>
+      <symbol id="i-memory" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></symbol>
+      <symbol id="i-inventory" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="5" rx="1"/><path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></symbol>
+      <symbol id="i-polyline" viewBox="0 0 24 24"><rect x="2" y="15" width="5" height="5" rx="1"/><rect x="17" y="4" width="5" height="5" rx="1"/><rect x="10" y="9" width="4" height="4" rx="1"/><path d="M7 17.5 10.5 13M14 10.5l3-3"/></symbol>
+      <symbol id="i-videocam" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3z"/></symbol>
+      <symbol id="i-cubo" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></symbol>
+      <symbol id="i-seta" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+      <symbol id="i-analytics" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 17v-4M12 17V8M16 17v-6"/></symbol>
+      <symbol id="i-pasta" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H7.5a2 2 0 0 0-1.9 1.4L3 19z"/><path d="M3 19 5.6 11.4A2 2 0 0 1 7.5 10H22l-2.7 7.6a2 2 0 0 1-1.9 1.4z"/></symbol>
+      <symbol id="i-camadas" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/></symbol>
+      <symbol id="i-regua" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="1.5"/><path d="M6 7v4M10 7v3M14 7v4M18 7v3"/></symbol>
+      <symbol id="i-aviso" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+      <symbol id="i-erro" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></symbol>
+      <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-atualizar" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.4 6.4L3 16"/><path d="M3 21v-5h5"/><path d="M3 12a9 9 0 0 1 15.4-6.4L21 8"/><path d="M21 3v5h-5"/></symbol>
+      <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-pasta-aberta" viewBox="0 0 24 24"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13l3 3 3-3"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="app">
+
+    <!-- Barra superior (56 px) -->
+    <header class="barra-topo">
+      <div class="marca">
+        <img id="logo-cabecalho" class="logo" alt="PathToMesh" hidden>
+        <span id="nome-app" class="nome-app" hidden>PathToMesh</span>
+        <span class="selo">SVG → 3D</span>
+      </div>
+      <div class="acoes-topo">
+        <button id="btn-configuracoes" type="button" class="botao-icone" aria-label="Configurações" title="Configurações">
+          <svg class="ic"><use href="#i-settings"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="corpo">
+
+      <!-- Menu lateral (240 px) -->
+      <aside class="lateral">
+        <div class="lateral-topo">
+          <div class="lateral-titulo">
+            <p class="title-md">SVG Converter</p>
+            <p class="label-md maiusc apagado">HIGH PRECISION TOOL</p>
+          </div>
+          <nav class="navegacao" aria-label="Navegação principal">
+            <p class="label-md maiusc apagado nav-legenda">NAVEGAÇÃO</p>
+            <a href="#" class="nav-item" data-tela="upload"><svg class="ic"><use href="#i-upload"/></svg><span>Upload</span></a>
+            <a href="#" class="nav-item" data-tela="processing"><svg class="ic"><use href="#i-memory"/></svg><span>Processing</span></a>
+            <a href="#" class="nav-item" data-tela="download"><svg class="ic"><use href="#i-download"/></svg><span>Download</span></a>
+            <a href="#" class="nav-item" data-tela="catalogo"><svg class="ic"><use href="#i-inventory"/></svg><span>Catálogo</span></a>
+          </nav>
+        </div>
+        <footer class="lateral-rodape">
+          <p id="rodape-texto" class="body-sm apagado">© 2026 PathToMesh. All rights reserved.</p>
+        </footer>
+      </aside>
+
+      <main class="area">
+
+        <!-- ============================================================ UPLOAD -->
+        <section id="tela-upload" class="tela" data-etapa="1">
+          <nav class="etapas" aria-label="Etapas de conversão"></nav>
+          <div class="cabecalho-tela">
+            <h1 class="headline-lg">Novo troféu</h1>
+            <p class="body-md suave">Escolha o arquivo SVG, ajuste as opções e avance para o Blender.</p>
+          </div>
+
+          <div class="grade">
+            <!-- Coluna esquerda: arquivo e parâmetros -->
+            <article class="cartao cartao-acao">
+              <div class="pilha-lg">
+                <header class="cartao-cab">
+                  <h2 class="headline-md">Upload e Parâmetros do SVG</h2>
+                  <p class="body-sm suave">Selecione o vetor base e configure renderização e acabamento.</p>
+                </header>
+
+                <section class="secao">
+                  <span class="label-md maiusc suave">ARQUIVO</span>
+                  <div class="zona-arquivo">
+                    <div class="zona-arquivo-info">
+                      <div class="icone-arquivo"><svg class="ic"><use href="#i-polyline"/></svg></div>
+                      <div class="coluna">
+                        <span id="svg-nome" class="mono-md suave">Nenhum arquivo selecionado</span>
+                        <span id="svg-dica" class="body-sm suave" hidden>Vetor pronto para conversão</span>
+                      </div>
+                    </div>
+                    <button id="btn-selecionar-svg" type="button" class="botao botao-secundario">Selecionar Arquivo SVG</button>
+                  </div>
+                </section>
+
+                <section class="secao secao-linha">
+                  <span class="label-md maiusc suave">RENDERIZAÇÃO</span>
+                  <label class="marcador">
+                    <input id="chk-render-auto" type="checkbox" checked>
+                    <span class="body-md">Renderizar automaticamente no Blender</span>
+                  </label>
+                  <fieldset class="grupo-cameras">
+                    <legend class="label-md destaque"><svg class="ic ic-peq"><use href="#i-videocam"/></svg><span>Câmeras a Renderizar:</span></legend>
+                    <div class="linha-cameras">
+                      <label class="marcador"><input id="chk-cam-principal" type="checkbox" checked><span class="body-md">Principal</span></label>
+                      <label class="marcador"><input id="chk-cam-esquerda" type="checkbox" checked><span class="body-md">Esquerda</span></label>
+                      <label class="marcador"><input id="chk-cam-direita" type="checkbox" checked><span class="body-md">Direita</span></label>
+                    </div>
+                  </fieldset>
+                </section>
+
+                <section class="secao secao-linha">
+                  <span class="label-md maiusc suave">ACABAMENTO</span>
+                  <div class="pilha-sm">
+                    <label class="marcador"><input id="chk-textura" type="checkbox" checked><span class="body-md">Aplicar texturas (madeira no MDF)</span></label>
+                    <label class="marcador"><input id="chk-verniz" type="checkbox"><span class="body-md">Aplicar Verniz na madeira</span></label>
+                  </div>
+                </section>
+
+                <label class="secao secao-linha">
+                  <span class="label-md destaque com-icone"><svg class="ic ic-peq"><use href="#i-cubo"/></svg><span>Modelo 3D de Resina para Encaixe:</span></span>
+                  <select id="sel-resina" class="campo"></select>
+                </label>
+              </div>
+
+              <footer class="cartao-rodape">
+                <button id="btn-avancar" type="button" class="botao botao-principal botao-grande">
+                  <span>Avançar para Processing</span>
+                  <svg class="ic"><use href="#i-seta"/></svg>
+                </button>
+              </footer>
+            </article>
+
+            <!-- Coluna direita: análise do SVG -->
+            <article class="cartao">
+              <header class="cartao-cab">
+                <div class="com-icone">
+                  <svg class="ic ic-titulo destaque"><use href="#i-analytics"/></svg>
+                  <h2 class="headline-md destaque">Análise Estrutural do SVG</h2>
+                </div>
+                <p class="body-sm suave">Materiais, quantidades e medidas lidas do arquivo.</p>
+              </header>
+
+              <div id="painel-analise" class="painel">
+                <p id="analise-vazia" class="mono-md suave">Aguardando seleção de arquivo SVG...</p>
+                <p id="analise-erro" class="mono-md erro" hidden></p>
+                <div id="analise-dados" class="painel-dados" hidden>
+                  <div class="pilha-lg">
+                    <div class="resumo-arquivo">
+                      <div class="com-icone">
+                        <svg class="ic ic-peq sucesso"><use href="#i-pasta"/></svg>
+                        <span class="mono-sm suave">ARQUIVO:</span>
+                        <span id="analise-arquivo" class="mono-md sucesso"></span>
+                      </div>
+                      <span class="pilula">Lido</span>
+                    </div>
+
+                    <div class="pilha-sm">
+                      <div class="com-icone">
+                        <svg class="ic ic-peq sucesso"><use href="#i-camadas"/></svg>
+                        <h3 class="mono-sm sucesso maiusc">MATERIAIS &amp; QUANTIDADES</h3>
+                      </div>
+                      <ul id="analise-materiais" class="lista-materiais"></ul>
+                    </div>
+
+                    <div class="pilha-sm secao-linha-forte">
+                      <div class="com-icone">
+                        <svg class="ic ic-peq sucesso"><use href="#i-regua"/></svg>
+                        <h3 class="mono-sm sucesso maiusc">DIMENSÃO DO TROFÉU</h3>
+                      </div>
+                      <div class="medidas">
+                        <div class="medida"><span class="label-md suave">Fundo</span><span id="medida-fundo" class="mono-md"></span></div>
+                        <div class="medida"><span class="label-md suave">Largura</span><span id="medida-largura" class="mono-md sucesso"></span><span id="medida-largura-cm" class="mono-sm suave"></span></div>
+                        <div class="medida"><span class="label-md suave">Altura</span><span id="medida-altura" class="mono-md sucesso"></span><span id="medida-altura-cm" class="mono-sm suave"></span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="analise-descartadas" class="faixa-aviso" role="status" hidden>
+                    <div class="com-icone">
+                      <svg class="ic aviso"><use href="#i-aviso"/></svg>
+                      <span class="mono-sm maiusc sobre-aviso">PEÇAS QUE NÃO SERÃO CONVERTIDAS</span>
+                    </div>
+                    <span id="analise-descartadas-qtd" class="mono-md aviso"></span>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- ============================================================ PROCESSING -->
+        <section id="tela-processing" class="tela" data-etapa="2" hidden>
+          <nav class="etapas" aria-label="Etapas de conversão"></nav>
+          <article class="cartao cartao-cheio">
+            <div class="processando">
+              <h1 class="headline-lg">Processando Troféu no Blender...</h1>
+              <p id="proc-status" class="title-md destaque">🔄 Iniciando importação e montagem de malhas...</p>
+              <div class="progresso">
+                <div class="progresso-info">
+                  <span id="proc-samples" class="label-md suave">Aguardando início do Cycles...</span>
+                  <span id="proc-porcentagem" class="title-md destaque">0%</span>
+                </div>
+                <div class="trilho"><div id="proc-barra" class="barra"></div></div>
+              </div>
+              <div class="secao-linha">
+                <span class="label-md maiusc suave">ETAPAS CONCLUÍDAS</span>
+                <ul id="proc-historico" class="historico"></ul>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- ============================================================ DOWNLOAD -->
+        <section id="tela-download" class="tela" data-etapa="3" hidden>
+          <nav class="etapas" aria-label="Etapas de conversão"></nav>
+          <article class="cartao cartao-cheio">
+            <div class="concluido">
+              <div class="circulo-ok"><svg class="ic"><use href="#i-check"/></svg></div>
+              <h1 class="headline-lg sucesso">Processamento Concluído!</h1>
+              <p class="body-md suave">Abra a pasta para ver as imagens e os arquivos gerados.</p>
+              <button id="btn-abrir-pasta" type="button" class="botao botao-sucesso botao-grande">
+                <svg class="ic"><use href="#i-pasta-aberta"/></svg>
+                <span>Abrir Pasta de Imagens / Arquivos</span>
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <!-- ============================================================ CATÁLOGO -->
+        <section id="tela-catalogo" class="tela" hidden>
+          <article class="cartao cartao-cheio">
+            <header class="cartao-cab cab-com-acao">
+              <div class="pilha-xs">
+                <div class="com-icone">
+                  <svg class="ic ic-titulo destaque"><use href="#i-inventory"/></svg>
+                  <h2 class="headline-md destaque">Mapeamento do Catálogo de Troféus</h2>
+                </div>
+                <p class="body-sm suave">Modalidades e modelos do catálogo que já têm SVG pronto.</p>
+              </div>
+              <button id="btn-atualizar-catalogo" type="button" class="botao botao-secundario">
+                <svg class="ic"><use href="#i-atualizar"/></svg><span>Atualizar Catálogo</span>
+              </button>
+            </header>
+            <pre id="catalogo-texto" class="relatorio mono-md"></pre>
+          </article>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- ============================================================ CONFIGURAÇÕES -->
+  <div id="janela-config" class="fundo-modal" hidden>
+    <div class="modal modal-config" role="dialog" aria-modal="true" aria-labelledby="config-titulo">
+      <div class="modal-rolagem">
+        <header class="config-cab">
+          <div class="pilha-xs">
+            <h1 id="config-titulo" class="headline-lg com-icone"><svg class="ic ic-titulo"><use href="#i-settings"/></svg><span>Configurações e Diretórios</span></h1>
+            <p class="body-md suave">Caminhos e opções usados pelo app. Ficam salvos para as próximas vezes.</p>
+          </div>
+          <button id="btn-config-fechar" type="button" class="botao-icone" aria-label="Fechar"><svg class="ic"><use href="#i-fechar"/></svg></button>
+        </header>
+
+        <article class="cartao">
+          <header class="cartao-cab"><h2 class="headline-md">Programas e pastas</h2></header>
+          <div class="pilha-lg">
+            <div class="campo-busca">
+              <label for="cfg-blender" class="label-md">Executável do Blender (blender.exe):</label>
+              <span class="body-sm apagado">O programa que monta e renderiza o troféu em 3D.</span>
+              <div class="linha-campo"><input id="cfg-blender" class="campo" type="text" spellcheck="false"><button id="btn-buscar-blender" type="button" class="botao botao-secundario">Buscar...</button></div>
+            </div>
+            <div class="campo-busca">
+              <label for="cfg-catalogo" class="label-md">Pasta Raiz do Catálogo:</label>
+              <span class="body-sm apagado">Pasta com as modalidades: &lt;MODALIDADE&gt;\&lt;MODELO&gt;\SVG.</span>
+              <div class="linha-campo"><input id="cfg-catalogo" class="campo" type="text" spellcheck="false"><button id="btn-buscar-catalogo" type="button" class="botao botao-secundario">Buscar...</button></div>
+            </div>
+            <div class="campo-busca">
+              <label for="cfg-resina" class="label-md">Pasta dos Modelos 3D (Resina):</label>
+              <span class="body-sm apagado">Arquivos .obj, .fbx, .stl ou .blend para o encaixe de resina.</span>
+              <div class="linha-campo"><input id="cfg-resina" class="campo" type="text" spellcheck="false"><button id="btn-buscar-resina" type="button" class="botao botao-secundario">Buscar...</button></div>
+            </div>
+            <div class="campo-busca">
+              <label for="cfg-blend-dir" class="label-md">Pasta dos Estúdios Base (.blend):</label>
+              <span class="body-sm apagado">Pasta onde ficam as cenas de estúdio (.blend).</span>
+              <div class="linha-campo"><input id="cfg-blend-dir" class="campo" type="text" spellcheck="false"><button id="btn-buscar-blend-dir" type="button" class="botao botao-secundario">Buscar...</button></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="cartao">
+          <header class="cartao-cab"><h2 class="headline-md">Renderização</h2></header>
+          <div class="pilha-lg">
+            <div class="campo-busca">
+              <label for="cfg-blend" class="label-md destaque">Estúdio Base (.blend) Ativo:</label>
+              <select id="cfg-blend" class="campo"></select>
+            </div>
+            <div class="campo-busca">
+              <label for="cfg-samples" class="label-md">Qtd de Samples do Cycles:</label>
+              <span class="body-sm apagado">Mais samples deixam a imagem mais limpa, mas o render demora mais.</span>
+              <input id="cfg-samples" class="campo campo-curto" type="text" inputmode="numeric">
+            </div>
+          </div>
+        </article>
+      </div>
+      <footer class="modal-rodape">
+        <button id="btn-config-salvar" type="button" class="botao botao-principal">Salvar Configurações</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ============================================================ AVISOS (no lugar das caixas de mensagem) -->
+  <div id="janela-aviso" class="fundo-modal fundo-aviso" hidden>
+    <div class="modal modal-aviso" role="alertdialog" aria-modal="true" aria-labelledby="aviso-titulo" aria-describedby="aviso-mensagem">
+      <header class="aviso-cab">
+        <svg id="aviso-icone" class="ic ic-titulo aviso"><use href="#i-aviso"/></svg>
+        <h2 id="aviso-titulo" class="headline-md">Atenção</h2>
+      </header>
+      <p id="aviso-mensagem" class="body-md aviso-mensagem"></p>
+      <footer class="modal-rodape">
+        <button id="btn-aviso-ok" type="button" class="botao botao-principal">OK</button>
+      </footer>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
