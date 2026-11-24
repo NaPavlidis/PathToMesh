@@ -10,7 +10,11 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 
 | Arquivo | O que faz |
 | --- | --- |
-| `app_ui.py` | Janela do app (Tkinter): escolhe o catálogo, a cena `.blend` e os modelos, e chama o Blender. Usa o `TEMA`/`ESPACO` do `tema_janela.py` e as fontes de `FONTES`, aplicados por `aplicar_estilo` |
+| `app.py` | **Entrada do app** (é o que o launcher abre). Abre a janela web (`app_web.py`); se o pywebview ou o WebView2 não funcionarem, grava um log de erro e abre a interface Tkinter (`app_ui.py`). Com `python app.py --tk`, abre direto a Tkinter |
+| `app_web.py` | Janela do app com **pywebview** (WebView2 do Windows): mostra a tela de `ui_web/` e liga os botões à lógica pela classe `Api` (`js_api`). Diálogos de arquivo e pasta nativos; o Blender roda numa thread e as etapas e o progresso chegam à tela por `evaluate_js`; avisos e erros aparecem em janelas (modais) na própria tela |
+| `ui_web/` | A tela do app: `index.html`, `estilo.css` e `app.js`, feitos a partir do `docs/modelo-layout.html`. Funciona offline: sem CDN, ícones em SVG dentro da página e fontes do modelo em `ui_web/fontes/` (se faltarem, usa a Segoe UI) |
+| `nucleo.py` | A lógica do app, sem interface: análise do SVG e das cores (`MAPA_MATERIAIS`), configuração (`config.local.json`), mapa do catálogo e a chamada do Blender com o progresso. Usada pelas duas interfaces |
+| `app_ui.py` | Interface Tkinter do app (a de reserva): escolhe o catálogo, a cena `.blend` e os modelos, e chama o Blender (pelo `nucleo.py`). Usa o `TEMA`/`ESPACO` do `tema_janela.py` e as fontes de `FONTES`, aplicados por `aplicar_estilo` |
 | `tema_janela.py` | Visual compartilhado pelo app e pelo launcher: a paleta `TEMA` e os espaços `ESPACO` (tirados do `docs/modelo-layout.html`), a escolha das fontes, os ícones das janelas, o logo do cabeçalho (que muda com a largura da janela) e a barra de título do Windows pintada nas cores do tema (DWM; no Windows 10 fica só o modo escuro) |
 | `assets/icones/` | Ícones e logos: `3` é o ícone principal (janelas, atalhos e instalador); `1` é o logo do cabeçalho do app e do launcher, trocado pelo `2` quando a janela fica larga (veja o `README.md` da pasta) |
 | `docs/modelo-layout.html` | Modelo de layout (HTML) que serviu de referência para o visual |
@@ -35,7 +39,7 @@ O instalador (`instalar.bat`, que roda o `instalar.ps1`) faz sozinho:
 
 - confere se há o **Python 3** (comando `py` ou `python`) e o **Git**. Se faltar algum, instala com o `winget` (`Python.Python.3.14` e `Git.Git`), avisando antes;
 - pergunta a pasta de instalação (padrão: `%LOCALAPPDATA%\PathToMesh`) e baixa o programa do GitHub (`git clone`). Se o programa já estiver nessa pasta, só atualiza, sem apagar o seu `config.local.json`. Quem instalou antes da troca de nome tem o programa em `%LOCALAPPDATA%\Phy-2d-by-3d`: nesse caso, o padrão continua sendo essa pasta (só atualiza);
-- instala as dependências (`py -m pip install -r requirements.txt`);
+- instala as dependências (`py -m pip install -r requirements.txt`: o `svgpathtools` e o `pywebview`, a janela do app);
 - cria o `config.local.json` a partir do `config.exemplo.json`, se ele ainda não existir, e procura o Blender instalado (em `C:\Program Files\Blender Foundation\Blender *\blender.exe`, usando a versão mais nova). Um `blender_path` que já existe nunca é trocado;
 - cria o atalho **PathToMesh** (abre o launcher, com o ícone do programa) na Área de Trabalho e no Menu Iniciar. Os atalhos antigos **Phy-2d-by-3d** que abrem a mesma pasta são trocados pelo novo;
 - mostra um resumo do que fez e dos avisos (por exemplo, se não achou o Blender).
@@ -45,9 +49,9 @@ Depois é só abrir o atalho **PathToMesh** na Área de Trabalho. Para atualizar
 ## Como rodar sem o instalador (Windows)
 
 1. Instale o [Blender](https://www.blender.org/) e o Python 3.
-2. Instale a dependência opcional, que melhora a leitura dos caminhos do SVG: `pip install -r requirements.txt`
+2. Instale as dependências: `pip install -r requirements.txt` (o `pywebview`, para a janela do app, e o `svgpathtools`, que melhora a leitura dos caminhos do SVG). A janela usa o **WebView2**, que já vem no Windows 10 e 11; sem ele (ou sem o `pywebview`), o app abre na interface Tkinter de reserva.
 3. Ajuste os caminhos nas configurações do app (⚙) ou direto no `config.local.json` (veja abaixo).
-4. Abra o **launcher** (veja abaixo) e clique em **Abrir o app**. Também dá para abrir direto com `python app_ui.py`, na pasta do projeto.
+4. Abra o **launcher** (veja abaixo) e clique em **Abrir o app**. Também dá para abrir direto com `python app.py`, na pasta do projeto (ou `python app.py --tk` para a interface Tkinter).
 
 ## Launcher
 
@@ -61,7 +65,7 @@ Dê dois cliques em `launcher.pyw` (abre sem a janela preta) ou em `launcher.bat
 3. **Blender**: confere se o `blender_path` do `config.local.json` existe. Se não existir, ajuste nas configurações do app (⚙).
 4. **Logs de erro**: envia os logs novos para o GitHub (veja abaixo).
 
-Ao clicar em **Abrir o app**, o app abre como um programa independente e o launcher se fecha sozinho (se ainda estiver terminando uma tarefa, como o pip, ele espera ela acabar). Se o app não abrir, o launcher fica aberto, mostra o erro e grava o log de erro.
+Ao clicar em **Abrir o app**, o launcher roda o `app.py` (na falta dele, o `app_ui.py`) e o app abre como um programa independente e o launcher se fecha sozinho (se ainda estiver terminando uma tarefa, como o pip, ele espera ela acabar). Se o app não abrir, o launcher fica aberto, mostra o erro e grava o log de erro.
 
 ## Configuração
 
