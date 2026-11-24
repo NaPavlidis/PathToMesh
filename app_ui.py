@@ -4,9 +4,13 @@ import json
 import subprocess
 import threading
 import textwrap
+import collections
+import traceback
 import xml.etree.ElementTree as ET
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+
+import registro_erros
 
 try:
     from svgpathtools import parse_path
@@ -786,8 +790,13 @@ class VectorConvertProApp(tk.Tk):
 
         try:
             processo = subprocess.Popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='ignore')
+            ultimas_linhas = collections.deque(maxlen=200)   # para o log de erro
+            teve_traceback = False
             for linha in processo.stdout:
                 linha_limpa = linha.strip()
+                ultimas_linhas.append(linha.rstrip("\r\n"))
+                if linha_limpa.startswith("Traceback (most recent call last)") or linha_limpa.startswith("Error: Python:"):
+                    teve_traceback = True
                 if "Carregando estúdio base" in linha_limpa:
                     self.after(0, lambda: self.lbl_status_processamento.configure(text="📂 Abrindo arquivo de estúdio base..."))
                 elif "Analisando e importando" in linha_limpa:
@@ -814,8 +823,15 @@ class VectorConvertProApp(tk.Tk):
                     self.after(0, lambda: self.adicionar_passo_concluido("✔ Todas as imagens renderizadas!", "✅ Finalizando processo..."))
 
             processo.wait()
+            if processo.returncode != 0 or teve_traceback:
+                registro_erros.gravar_log(
+                    "app_ui (Blender)",
+                    f"Blender terminou com código {processo.returncode}" + (" e com erro de Python" if teve_traceback else ""),
+                    "Comando: " + " ".join(f'"{c}"' for c in comando) + "\n\nÚltimas linhas do Blender:\n" + "\n".join(ultimas_linhas))
             self.after(0, lambda: self.tag_concluido())
         except Exception as e:
+            registro_erros.gravar_log("app_ui (Blender)", f"Não foi possível rodar o Blender: {e}",
+                                      "Comando: " + " ".join(f'"{c}"' for c in comando) + "\n\n" + traceback.format_exc())
             messagebox.showerror("Erro Crítico", f"Não foi possível rodar o Blender:\n{e}")
 
     def atualizar_barra_progresso(self, porcentagem):
@@ -888,5 +904,7 @@ class VectorConvertProApp(tk.Tk):
 
 
 if __name__ == "__main__":
+    registro_erros.instalar_ganchos("app_ui")
     app = VectorConvertProApp()
+    app.report_callback_exception = registro_erros.gancho_tk("app_ui")
     app.mainloop()
