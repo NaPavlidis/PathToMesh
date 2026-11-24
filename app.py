@@ -6,6 +6,7 @@ Com --tk, abre direto a interface Tkinter.
 
 O launcher abre este arquivo.
 """
+import importlib
 import sys
 import traceback
 
@@ -61,7 +62,7 @@ def main(argv=None, abrir_web=abrir_web, abrir_reserva=abrir_reserva, webview2_i
 
     motivo, detalhes = None, ""
     try:
-        import webview  # noqa: F401
+        importlib.import_module("webview")
     except Exception as e:
         motivo, detalhes = f"o pywebview não está instalado ou não carregou ({type(e).__name__}: {e})", traceback.format_exc()
     if motivo is None and not webview2_instalado():

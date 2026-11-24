@@ -85,6 +85,7 @@ class Api:
 
     def __init__(self, dialogo=None, executar=None):
         self._janela = None
+        self._webview = None
         self._dialogo = dialogo            # testes: função (tipo, tipos_de_arquivo) -> caminho
         self._executar = executar or nucleo.executar_blender
         self._estado = nucleo.EstadoApp()
@@ -96,8 +97,9 @@ class Api:
         threading.Thread(target=self._enviar_fila, name="eventos-js", daemon=True).start()
 
     # ------------------------------------------------------------ janela e eventos
-    def _ligar_janela(self, janela):
+    def _ligar_janela(self, janela, webview=None):
         self._janela = janela
+        self._webview = webview            # o módulo pywebview usado pela janela (nos diálogos)
 
     def _enviar(self, dados):
         self._fila.put(dados)
@@ -135,7 +137,9 @@ class Api:
         if self._dialogo is not None:
             resposta = self._dialogo("pasta" if pasta else "arquivo", tipos)
         else:
-            import webview
+            webview = self._webview
+            if webview is None:
+                import webview
             dialogos = getattr(webview, "FileDialog", None)
             if pasta:
                 tipo = getattr(dialogos, "FOLDER", None) if dialogos else None
@@ -281,7 +285,7 @@ def iniciar(api=None, webview=None):
     api = api or Api()
     janela = webview.create_window(tema_janela.NOME_APP, url=INDEX, js_api=api, width=1150, height=820,
                                    min_size=(980, 700), background_color=tema_janela.TEMA["fundo"])
-    api._ligar_janela(janela)
+    api._ligar_janela(janela, webview)
     problema = []
 
     def ao_mostrar():

@@ -39,7 +39,8 @@
     try {
       var ponte = api();
       if (ponte && ponte.registrar_erro) {
-        ponte.registrar_erro(resumo + ': ' + textoErro(erro), (erro && erro.stack) || '');
+        var p = ponte.registrar_erro(resumo + ': ' + textoErro(erro), (erro && erro.stack) || '');
+        if (p && p.catch) p.catch(function () {});   // se nem o log funcionar, não insiste
       }
     } catch (e) { /* sem ponte: nada a fazer */ }
   }
