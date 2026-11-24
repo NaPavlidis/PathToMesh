@@ -17,6 +17,7 @@ REGRAS_MATERIAIS = {
     # ACRÍLICOS
     '#ed3237': { 'tipo': 'ACRILICO', 'nome_material': 'acrilico_padrão', 'extrusao': 0.001, 'roughness': 0.003, 'transmission': 0.8, 'ior': 1.8 },
     '#fff212': { 'tipo': 'ACRILICO', 'nome_material': 'Acrilico_transparente', 'extrusao': 0.001, 'roughness': 0.001, 'transmission': 1.0, 'ior': 2 },
+    '#d2ae6d': { 'tipo': 'ACRILICO', 'nome_material': 'Acrilico_Dourado', 'extrusao': 0.001, 'roughness': 0.003, 'transmission': 0.8, 'ior': 1.8 },
         
     # MDFs
     '#fefefe': { 'tipo': 'MDF', 'nome_material': 'MDF_3mm', 'extrusao': 0.003, 'roughness': 0.55, 'transmission': 0.03, 'ior': 1.2},

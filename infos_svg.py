@@ -18,7 +18,7 @@ CAMINHO_TROFÉUS = R"F:\\Backup Aroni 29-05-2021\\Publico\\2026\\CATALOGO\\KART\
 MAPA_MATERIAIS = {
     '#ed3237': {'tipo': 'ACRILICO', 'nome_material': 'acrilico_padrão'},
     '#fff212': {'tipo': 'ACRILICO', 'nome_material': 'Acrilico_transparente'},
-    '#d2ae6d': {'tipo': 'ACRILICO_ESPELHADO', 'nome_material': 'Acrilico_Espelhado_Dourado'},
+    '#d2ae6d': {'tipo': 'ACRILICO', 'nome_material': 'Acrilico_Dourado'},
     '#fefefe': {'tipo': 'MDF', 'nome_material': 'MDF_3mm'},
     '#e6e7e8': {'tipo': 'MDF', 'nome_material': 'MDF_6mm'},
     '#d2d3d5': {'tipo': 'MDF', 'nome_material': 'MDF_9mm'},
