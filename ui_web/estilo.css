@@ -2,6 +2,27 @@
    Os nomes das variáveis são os tokens do modelo (Tailwind), escritos em CSS simples, sem CDN.
    As cores são as mesmas do tema_janela.TEMA (o launcher e a interface Tkinter usam as mesmas). */
 
+/* Fontes do modelo, locais (licença SIL OFL 1.1): ficam em ui_web/fontes/. Se a fonte estiver
+   instalada no Windows, usa a instalada; se o arquivo faltar, cai na Segoe UI / Consolas. */
+@font-face {
+  font-family: "Instrument Sans";
+  src: local("Instrument Sans"), url("fontes/InstrumentSans.ttf") format("truetype");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Red Hat Text";
+  src: local("Red Hat Text"), url("fontes/RedHatText.ttf") format("truetype");
+  font-weight: 300 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Red Hat Mono";
+  src: local("Red Hat Mono"), url("fontes/RedHatMono.ttf") format("truetype");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
 :root {
   --success: #34D399;
   --on-success: #00291B;
