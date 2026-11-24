@@ -1,239 +1,16 @@
 import os
-import re
-import json
-import subprocess
 import threading
-import textwrap
-import collections
-import traceback
-import xml.etree.ElementTree as ET
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 import registro_erros
 import tema_janela
 
-try:
-    from svgpathtools import parse_path
-    HAS_SVGPATH = True
-except ImportError:
-    HAS_SVGPATH = False
-
-# A configuração do usuário fica no config.local.json (no .gitignore, nunca vai para o GitHub).
-# Se ele não existir, é criado copiando o config.json antigo (se ainda houver) ou o
-# config.exemplo.json; o app só grava no config.local.json.
-CONFIG_FILE = registro_erros.caminho_config_local()
-
-# ==============================================================================
-# DICIONÁRIO DE MATERIAIS PADRÃO
-# ==============================================================================
-MAPA_MATERIAIS = {
-    '#ed3237': {'tipo': 'ACRILICO', 'nome_material': 'acrilico_padrão'},
-    '#fff212': {'tipo': 'ACRILICO', 'nome_material': 'Acrilico_transparente'},
-    '#d2ae6d': {'tipo': 'ACRILICO', 'nome_material': 'Acrilico_Dourado'},
-    '#fefefe': {'tipo': 'MDF', 'nome_material': 'MDF_3mm'},
-    '#e6e7e8': {'tipo': 'MDF', 'nome_material': 'MDF_6mm'},
-    '#d2d3d5': {'tipo': 'MDF', 'nome_material': 'MDF_9mm'},
-    '#373435': {'tipo': 'PLOTTER', 'nome_material': 'PLOTTER'},
-    '#00afef': {'tipo': 'MDF_COSTAS', 'nome_material': 'MDF_Costas_3mm'},
-    '#00a859': {'tipo': 'RESINA', 'nome_material': 'RESINA 3D'},
-    '#f58634': {'tipo': 'BASE', 'nome_material': 'Base_3MM'},
-    '#3e4095': {'tipo': 'BASE', 'nome_material': 'Base_6MM'},
-    '#f7adaf': {'tipo': 'BASE', 'nome_material': 'Base_9MM'},
-    '#84716b': {'tipo': 'BASE', 'nome_material': 'Base_12MM'},
-    '#ec268f': {'tipo': 'ADESIVO', 'nome_material': 'Adesivo_Padrao'},
-    '#9d98ca': {'tipo': 'ACRILICO_GRAVADO', 'nome_material': 'Acrilico_Gravado'}
-}
-
-# ==============================================================================
-# FUNÇÕES DE EXTRAÇÃO SVG E MAPEAMENTO DO CATÁLOGO
-# ==============================================================================
-TAGS_PECAS = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
-TAGS_DESCARTADAS = ['clipPath', 'mask']
-
-def normalizar_cor(cor):
-    # Mesma normalização do blender_engine: minúsculas, sem aspas/espaços e #abc vira #aabbcc
-    if not cor or cor == 'none':
-        return ''
-    cor_limpa = cor.replace('"', '').replace("'", "").replace('\n', '').replace(' ', '').lower()
-    if len(cor_limpa) == 4 and cor_limpa.startswith('#'):
-        cor_limpa = f"#{cor_limpa[1]*2}{cor_limpa[2]*2}{cor_limpa[3]*2}"
-    return cor_limpa
-
-def obter_cor_contorno(elem):
-    # Lê o contorno do mesmo jeito que o blender_engine (atributo stroke e style; sem CSS de classe)
-    stroke = elem.attrib.get('stroke', None)
-    style = elem.attrib.get('style', '')
-    if style:
-        m = re.search(r'stroke:\s*([^;]+)', style)
-        if m and m.group(1) != 'none': stroke = m.group(1).strip()
-    return normalizar_cor(stroke)
-
-def identificar_material(cor_contorno):
-    # Só vale a cor de contorno EXATA da tabela; qualquer outra é descartada pelo motor
-    if not cor_contorno:
-        return None
-    return MAPA_MATERIAIS.get(cor_contorno)
-
-def listar_pecas_svg(root):
-    # Percorre as peças como o motor: o que está dentro de clipPath/mask é removido e não conta
-    pecas = []
-    def visitar(elem):
-        for filho in list(elem):
-            tag = filho.tag.split('}')[-1]
-            if tag in TAGS_DESCARTADAS:
-                continue
-            if tag in TAGS_PECAS:
-                pecas.append((tag, filho))
-            visitar(filho)
-    visitar(root)
-    return pecas
-
-def extrair_informacoes_svg(caminho_svg):
-    if not os.path.exists(caminho_svg):
-        return None
-
-    try:
-        tree = ET.parse(caminho_svg)
-        root = tree.getroot()
-    except Exception:
-        return None
-
-    materiais_qtd = {}
-    pecas_descartadas = []
-
-    vb = root.attrib.get('viewBox', '').split()
-    vb_w = float(vb[2]) if len(vb) == 4 else 0.0
-    vb_h = float(vb[3]) if len(vb) == 4 else 0.0
-
-    width_str = root.attrib.get('width', '')
-    if 'mm' in width_str and vb_w > 0:
-        val_w = float(re.sub(r'[^\d.]', '', width_str))
-        fator_mm = val_w / vb_w
-    else:
-        fator_mm = 0.1
-
-    re_coords = re.compile(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?')
-
-    TIPOS_CORPO_EXCLUSIVO = {'ACRILICO', 'ACRILICO_ESPELHADO', 'MDF'}
-    pecas_isoladas = []
-
-    for indice, (tag, elem) in enumerate(listar_pecas_svg(root), start=1):
-        cor = obter_cor_contorno(elem)
-        mat_info = identificar_material(cor)
-
-        if mat_info:
-            chave = (mat_info['tipo'], mat_info['nome_material'])
-            materiais_qtd[chave] = materiais_qtd.get(chave, 0) + 1
-        else:
-            id_peca = elem.attrib.get('id') or f"{tag} nº {indice}"
-            pecas_descartadas.append((id_peca, cor))
-
-        eh_pagina = False
-        if tag == 'rect' and vb_w > 0 and vb_h > 0:
-            w = float(elem.attrib.get('width', 0))
-            h = float(elem.attrib.get('height', 0))
-            if abs(w - vb_w) < 5.0 or abs(h - vb_h) < 5.0:
-                eh_pagina = True
-
-        if mat_info and mat_info['tipo'] in TIPOS_CORPO_EXCLUSIVO and not eh_pagina:
-            if tag == 'path':
-                d = elem.attrib.get('d', '')
-                if HAS_SVGPATH:
-                    try:
-                        path_obj = parse_path(d)
-                        for sp in path_obj.continuous_subpaths():
-                            xmin, xmax, ymin, ymax = sp.bbox()
-                            w_mm = (xmax - xmin) * fator_mm
-                            h_mm = (ymax - ymin) * fator_mm
-                            larg = min(w_mm, h_mm)
-                            alt = max(w_mm, h_mm)
-                            if larg > 30.0 and alt > 30.0:
-                                pecas_isoladas.append((larg, alt, mat_info['nome_material']))
-                    except Exception:
-                        pass
-                else:
-                    sub_str = re.split(r'(?=[Mm])', d)
-                    for sp in sub_str:
-                        if not sp.strip(): continue
-                        coords = [float(v) for v in re_coords.findall(sp)]
-                        if len(coords) >= 4:
-                            xs, ys = coords[0::2], coords[1::2]
-                            w_mm = (max(xs) - min(xs)) * fator_mm
-                            h_mm = (max(ys) - min(ys)) * fator_mm
-                            larg, alt = min(w_mm, h_mm), max(w_mm, h_mm)
-                            if larg > 30.0 and alt > 30.0:
-                                pecas_isoladas.append((larg, alt, mat_info['nome_material']))
-
-            elif tag == 'rect':
-                rw = float(elem.attrib.get('width', 0))
-                rh = float(elem.attrib.get('height', 0))
-                if rw > 0 and rh > 0:
-                    w_mm, h_mm = rw * fator_mm, rh * fator_mm
-                    larg, alt = min(w_mm, h_mm), max(w_mm, h_mm)
-                    if larg > 30.0 and alt > 30.0:
-                        pecas_isoladas.append((larg, alt, mat_info['nome_material']))
-
-    if pecas_isoladas:
-        pecas_isoladas.sort(key=lambda p: p[1], reverse=True)
-        larg_mm, alt_mm, nome_fundo = pecas_isoladas[0]
-    else:
-        larg_mm, alt_mm, nome_fundo = 0.0, 0.0, "N/A"
-
-    return {
-        'nome_arquivo': os.path.basename(caminho_svg),
-        'materiais_qtd': materiais_qtd,
-        'largura_mm': larg_mm,
-        'altura_mm': alt_mm,
-        'largura_cm': larg_mm / 10.0,
-        'altura_cm': alt_mm / 10.0,
-        'nome_fundo': nome_fundo,
-        'pecas_descartadas': pecas_descartadas
-    }
-
-
-def mapear_catalogo(caminho_catalogo):
-    if not os.path.exists(caminho_catalogo):
-        return None, "❌ Diretório do catálogo não foi encontrado."
-
-    modalidades = {}
-    try:
-        itens_raiz = sorted(os.listdir(caminho_catalogo))
-    except Exception as e:
-        return None, f"❌ Erro ao acessar diretório: {e}"
-
-    for item in itens_raiz:
-        caminho_modalidade = os.path.join(caminho_catalogo, item)
-        if os.path.isdir(caminho_modalidade):
-            nome_modalidade = item.upper()
-            pastas_prontas = []
-            svg_count_total = 0
-
-            try:
-                modelos = sorted(os.listdir(caminho_modalidade))
-                for modelo_cod in modelos:
-                    caminho_modelo = os.path.join(caminho_modalidade, modelo_cod)
-                    if os.path.isdir(caminho_modelo):
-                        caminho_svg_dir = None
-                        for sub in os.listdir(caminho_modelo):
-                            if sub.upper() == "SVG" and os.path.isdir(os.path.join(caminho_modelo, sub)):
-                                caminho_svg_dir = os.path.join(caminho_modelo, sub)
-                                break
-                        if caminho_svg_dir:
-                            svgs = [f for f in os.listdir(caminho_svg_dir) if f.lower().endswith('.svg')]
-                            qtd_svgs = len(svgs)
-                            if qtd_svgs > 0:
-                                svg_count_total += qtd_svgs
-                                pastas_prontas.append(modelo_cod)
-            except Exception:
-                pass
-
-            modalidades[nome_modalidade] = {
-                'svg_count': svg_count_total,
-                'pastas_prontas': pastas_prontas
-            }
-
-    return modalidades, "OK"
+# A lógica (tabela de materiais, leitura do SVG, catálogo, configuração e Blender) fica no
+# nucleo.py, que a interface web (app_web.py) também usa. Esta interface Tkinter é a reserva:
+# o app.py abre ela quando o pywebview (ou o WebView2) não funciona.
+import nucleo
+from nucleo import extrair_informacoes_svg, mapear_catalogo, EstadoApp
 
 
 # ==============================================================================
@@ -644,7 +421,7 @@ class SettingsWindow(tk.Toplevel):
         pasta = self.blend_dir_var.get()
         menu = self.blend_dropdown_menu["menu"]
         menu.delete(0, "end")
-        arquivos_blend = [arq for arq in os.listdir(pasta) if arq.lower().endswith(".blend")] if pasta and os.path.exists(pasta) else []
+        arquivos_blend = nucleo.listar_blends(pasta)
         if arquivos_blend:
             for arq in arquivos_blend:
                 menu.add_command(label=arq, command=lambda value=arq: self.selected_blend_var.set(value))
@@ -660,10 +437,7 @@ class SettingsWindow(tk.Toplevel):
         self.parent_app.blend_dir = self.blend_dir_var.get()
         self.parent_app.catalogo_dir = self.catalogo_dir_var.get()
         self.parent_app.selected_blend = self.selected_blend_var.get()
-        try:
-            self.parent_app.cycles_samples = int(self.cycles_samples_var.get())
-        except ValueError:
-            self.parent_app.cycles_samples = 128
+        self.parent_app.cycles_samples = nucleo.ler_samples(self.cycles_samples_var.get())
         self.parent_app.salvar_configuracoes_disco()
         if hasattr(self.parent_app, "_atualizar_hud_resina"):
             self.parent_app._atualizar_hud_resina()
@@ -671,7 +445,9 @@ class SettingsWindow(tk.Toplevel):
         self.destroy()
 
 
-class VectorConvertProApp(tk.Tk):
+class VectorConvertProApp(EstadoApp, tk.Tk):
+    # A configuração (valores padrão, carregar_configuracoes_disco e salvar_configuracoes_disco)
+    # vem do nucleo.EstadoApp
     def __init__(self):
         super().__init__()
         self.title(tema_janela.NOME_APP)
@@ -682,20 +458,8 @@ class VectorConvertProApp(tk.Tk):
         # Ícone (vale também para as janelas que abrem depois) e barra de título nas cores do tema
         tema_janela.preparar_janela(self, "app", padrao=True)
 
-        # Configurações Padrão
-        self.blender_path = r"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe"
-        self.output_path = os.path.join(os.getcwd(), "imagens")
-        self.resina_dir = os.path.join(os.getcwd(), "resina_models")
-        self.blend_dir = os.getcwd()
-        self.catalogo_dir = r"F:\Backup Aroni 29-05-2021\Publico\2026\CATALOGO"
-        self.selected_blend = ""
-        self.svg_selecionado = ""
-        self.cycles_samples = 128
-
-        self.carregar_configuracoes_disco()
-
-        if not os.path.exists(self.resina_dir):
-            os.makedirs(self.resina_dir)
+        # Configurações Padrão e as do config.local.json
+        self.definir_padroes()
 
         self.render_auto_var = tk.BooleanVar(value=True)
         self.usar_textura_var = tk.BooleanVar(value=True)
@@ -729,45 +493,9 @@ class VectorConvertProApp(tk.Tk):
         self._build_footer()
         self._show_screen("upload")
 
-    def carregar_configuracoes_disco(self):
-        try:
-            registro_erros.garantir_config_local(os.path.dirname(CONFIG_FILE))
-        except OSError as e:
-            print(f"Erro ao criar o {registro_erros.ARQUIVO_CONFIG_LOCAL}: {e}")
-        if os.path.exists(CONFIG_FILE):
-            try:
-                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                    dados = json.load(f)
-                    self.blender_path = dados.get("blender_path", self.blender_path)
-                    self.resina_dir = dados.get("resina_dir", self.resina_dir)
-                    self.blend_dir = dados.get("blend_dir", self.blend_dir)
-                    self.catalogo_dir = dados.get("catalogo_dir", self.catalogo_dir)
-                    self.selected_blend = dados.get("selected_blend", self.selected_blend)
-                    self.cycles_samples = int(dados.get("cycles_samples", self.cycles_samples))
-            except Exception as e:
-                print(f"Erro ao carregar configurações: {e}")
-
-    def salvar_configuracoes_disco(self):
-        dados = {
-            "blender_path": self.blender_path,
-            "resina_dir": self.resina_dir,
-            "blend_dir": self.blend_dir,
-            "catalogo_dir": self.catalogo_dir,
-            "selected_blend": self.selected_blend,
-            "cycles_samples": self.cycles_samples
-        }
-        try:
-            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(dados, f, indent=4)
-        except Exception as e:
-            print(f"Erro ao salvar configurações no disco: {e}")
-
     def _obter_cameras_selecionadas_str(self):
-        cams = []
-        if self.cam_principal_var.get(): cams.append("Camera_Principal")
-        if self.cam_esquerda_var.get(): cams.append("Camera_Esquerda")
-        if self.cam_direita_var.get(): cams.append("Camera_Direita")
-        return ",".join(cams)
+        return nucleo.cameras_selecionadas_str(self.cam_principal_var.get(), self.cam_esquerda_var.get(),
+                                               self.cam_direita_var.get())
 
     def _build_navbar(self):
         # Barra de 56 px (surface-container-low) com linha embaixo (outline)
@@ -866,7 +594,7 @@ class VectorConvertProApp(tk.Tk):
     def _atualizar_hud_resina(self):
         menu = self.menu_resina["menu"]
         menu.delete(0, "end")
-        arquivos = [f for f in os.listdir(self.resina_dir) if f.lower().endswith(('.obj', '.fbx', '.stl', '.blend'))] if os.path.exists(self.resina_dir) else []
+        arquivos = nucleo.listar_modelos_resina(self.resina_dir)
         if arquivos:
             menu.add_command(label="Nenhum (Ignorar Encaixe)", command=lambda: self.modelo_resina_selecionado.set("Nenhum"))
             for arq in arquivos:
@@ -977,24 +705,19 @@ class VectorConvertProApp(tk.Tk):
         if file_path:
             self.svg_selecionado = file_path
             self.lbl_arquivo_selecionado.configure(text=os.path.basename(file_path), fg="#34D399")
-            
-            diretorio_svg = os.path.dirname(file_path)
-            self.output_path = os.path.join(diretorio_svg, "imagens 3d")
-            if not os.path.exists(self.output_path):
-                os.makedirs(self.output_path)
+
+            self.output_path = nucleo.preparar_pasta_saida(file_path)
 
             self._analisar_e_exibir_svg(file_path)
 
     def _avancar_para_processamento(self):
-        if not self.svg_selecionado or not os.path.exists(self.svg_selecionado):
-            messagebox.showwarning("Atenção", "Por favor, selecione um arquivo SVG antes de prosseguir.")
+        aviso = nucleo.validar_avanco(self.svg_selecionado, self.render_auto_var.get(), self.cam_principal_var.get(),
+                                      self.cam_esquerda_var.get(), self.cam_direita_var.get())
+        if aviso:
+            messagebox.showwarning("Atenção", aviso)
             return
 
-        if self.render_auto_var.get() and not (self.cam_principal_var.get() or self.cam_esquerda_var.get() or self.cam_direita_var.get()):
-            messagebox.showwarning("Atenção", "Por favor, selecione pelo menos uma câmera para renderizar.")
-            return
-
-        self.lbl_status_processamento.configure(text="🔄 Iniciando importação e montagem de malhas...")
+        self.lbl_status_processamento.configure(text=nucleo.STATUS_INICIAL)
         for widget in self.frame_historico.winfo_children():
             widget.destroy()
             
@@ -1006,23 +729,7 @@ class VectorConvertProApp(tk.Tk):
         self.txt_analise_svg.configure(state="normal")
         self.txt_analise_svg.delete("1.0", "end")
 
-        if info:
-            resumo = f"📁 ARQUIVO: {info['nome_arquivo']}\n"
-            resumo += "─" * 40 + "\n"
-            resumo += "📦 MATERIAIS & QUANTIDADES:\n"
-            for (tipo, nome), qtd in info['materiais_qtd'].items():
-                resumo += f" • [{tipo:<12}] {nome:<22} : {qtd}\n"
-            resumo += "─" * 40 + "\n"
-            resumo += f"📐 DIMENSÃO DO TROFÉU:\n"
-            resumo += f" • Fundo    : {info['nome_fundo']}\n"
-            resumo += f" • Largura  : {info['largura_mm']:.2f} mm ({info['largura_cm']:.2f} cm)\n"
-            resumo += f" • Altura   : {info['altura_mm']:.2f} mm ({info['altura_cm']:.2f} cm)\n"
-            if info['pecas_descartadas']:
-                resumo += "─" * 40 + "\n"
-                resumo += f"⚠️ PEÇAS QUE NÃO SERÃO CONVERTIDAS: {len(info['pecas_descartadas'])}\n"
-            self.txt_analise_svg.insert("1.0", resumo)
-        else:
-            self.txt_analise_svg.insert("1.0", "❌ Não foi possível extrair dados estruturais do SVG.")
+        self.txt_analise_svg.insert("1.0", nucleo.montar_resumo_svg(info))
 
         self.txt_analise_svg.configure(state="disabled")
 
@@ -1030,23 +737,7 @@ class VectorConvertProApp(tk.Tk):
             self._avisar_pecas_descartadas(info['pecas_descartadas'])
 
     def _avisar_pecas_descartadas(self, pecas_descartadas):
-        por_cor = {}
-        for id_peca, cor in pecas_descartadas:
-            chave = cor if cor else "sem contorno"
-            por_cor.setdefault(chave, []).append(id_peca)
-
-        linhas = []
-        for cor, ids in por_cor.items():
-            ids_txt = ", ".join(ids[:8])
-            if len(ids) > 8:
-                ids_txt += f" (+{len(ids) - 8})"
-            linhas.append(f" • {cor}: {len(ids)} peça(s) — {ids_txt}")
-
-        mensagem = (f"{len(pecas_descartadas)} peça(s) deste SVG têm cor de contorno fora da tabela de materiais "
-                    "(ou não têm contorno) e NÃO serão convertidas: vão sumir do 3D.\n\n")
-        mensagem += "\n".join(linhas)
-        mensagem += "\n\nSó a cor de contorno exata da tabela de materiais é aceita."
-        messagebox.showwarning("Atenção: cores fora da tabela", mensagem)
+        messagebox.showwarning(nucleo.TITULO_AVISO_DESCARTADAS, nucleo.montar_aviso_descartadas(pecas_descartadas))
 
     def _build_catalogo_screen(self):
         sup = TEMA['superficie']
@@ -1074,139 +765,38 @@ class VectorConvertProApp(tk.Tk):
         modalidades, status = mapear_catalogo(self.catalogo_dir)
         self.txt_catalogo.configure(state="normal")
         self.txt_catalogo.delete("1.0", "end")
-
-        if not modalidades:
-            self.txt_catalogo.insert("1.0", f"{status}\nCaminho configurado: {self.catalogo_dir}")
-            self.txt_catalogo.configure(state="disabled")
-            return
-
-        relatorio = ""
-        totais_por_modalidade = {}
-        total_geral_trofeus = 0
-
-        for mod, dados in modalidades.items():
-            svg_count = dados['svg_count']
-            pastas = dados['pastas_prontas']
-            pronto = svg_count > 0
-
-            status_str = "✓ Pronto" if pronto else "✗ Não pronto"
-            if pronto:
-                pastas_str = ", ".join(pastas)
-                totais_por_modalidade[mod] = len(pastas)
-                total_geral_trofeus += len(pastas)
-            else:
-                pastas_str = "—"
-
-            pastas_formatadas = textwrap.fill(f"Pastas Prontas: {pastas_str}", width=80, subsequent_indent="     ")
-
-            relatorio += f"Modalidade: {mod}\n"
-            relatorio += f"Status: {status_str}\n"
-            relatorio += f"SVG Count: {svg_count}\n"
-            relatorio += f"{pastas_formatadas}\n"
-            relatorio += "────────────────────────────────────────\n"
-
-        relatorio += "📈 Totais\n"
-        relatorio += f"- Total pronto para catalogar: {total_geral_trofeus} troféus\n"
-        for mod, qtd in totais_por_modalidade.items():
-            relatorio += f"- {mod}: {qtd}\n"
-
-        relatorio += "\n📝 Observações\n"
-        relatorio += "- O critério de \"pronto\" é a presença de pelo menos um arquivo .svg em alguma subpasta\n"
-        relatorio += "- Todos os relatórios padronizam em Português Brasileiro (PT-BR)\n"
-
-        relatorio += "\n📁 Diretório do Catálogo\n"
-        relatorio += f"{self.catalogo_dir}\n"
-
-        self.txt_catalogo.insert("1.0", relatorio)
+        self.txt_catalogo.insert("1.0", nucleo.montar_relatorio_catalogo(modalidades, status, self.catalogo_dir))
         self.txt_catalogo.configure(state="disabled")
 
     def _iniciar_processamento_background(self):
         threading.Thread(target=self._executar_blender_subprocess, daemon=True).start()
 
     def atualizar_amostras_camera_ui(self, atual, total, faltam, porcentagem, nome_cam):
-        self.lbl_status_processamento.configure(text=f"📷 Renderizando: {nome_cam}")
-        self.lbl_samples_info.configure(text=f"[{nome_cam}] Samples: {atual} / {total}  |  Faltam: {faltam}")
+        status, linha_samples = nucleo.textos_amostras(atual, total, faltam, nome_cam)
+        self.lbl_status_processamento.configure(text=status)
+        self.lbl_samples_info.configure(text=linha_samples)
         self.atualizar_barra_progresso(porcentagem)
 
     def _executar_blender_subprocess(self):
-        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
-        caminho_engine = os.path.join(diretorio_atual, "blender_engine.py")
+        # Comando, leitura da saída e log de erro ficam no nucleo; aqui só se mostra na tela
+        comando = nucleo.montar_comando_blender(self, self.modelo_resina_selecionado.get(), self.render_auto_var.get(),
+                                                self.usar_textura_var.get(), self.usar_verniz_var.get(),
+                                                self._obter_cameras_selecionadas_str())
+        nucleo.executar_blender(comando, self._ao_evento_blender, origem="app_ui (Blender)")
 
-        caminho_blend_escolhido = ""
-        if self.blend_dir and self.selected_blend and not self.selected_blend.startswith("Nenhum"):
-            caminho_blend_escolhido = os.path.join(self.blend_dir, self.selected_blend)
-
-        resina_escolhida = self.modelo_resina_selecionado.get()
-        caminho_resina_completo = ""
-        if resina_escolhida and not resina_escolhida.startswith("Nenhum"):
-            caminho_resina_completo = os.path.join(self.resina_dir, resina_escolhida)
-
-        cams_str = self._obter_cameras_selecionadas_str()
-
-        comando = [self.blender_path]
-
-        if self.render_auto_var.get():
-            comando.append("--background")
-
-        comando.extend([
-            "--python", caminho_engine,
-            "--",
-            self.svg_selecionado,
-            self.output_path,
-            caminho_blend_escolhido,
-            str(self.render_auto_var.get()),
-            str(self.usar_textura_var.get()),
-            str(self.cycles_samples),
-            str(self.usar_verniz_var.get()),
-            caminho_resina_completo,
-            cams_str
-        ])
-
-        try:
-            processo = subprocess.Popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='ignore')
-            ultimas_linhas = collections.deque(maxlen=200)   # para o log de erro
-            teve_traceback = False
-            for linha in processo.stdout:
-                linha_limpa = linha.strip()
-                ultimas_linhas.append(linha.rstrip("\r\n"))
-                if linha_limpa.startswith("Traceback (most recent call last)") or linha_limpa.startswith("Error: Python:"):
-                    teve_traceback = True
-                if "Carregando estúdio base" in linha_limpa:
-                    self.after(0, lambda: self.lbl_status_processamento.configure(text="📂 Abrindo arquivo de estúdio base..."))
-                elif "Analisando e importando" in linha_limpa:
-                    self.after(0, lambda: self.adicionar_passo_concluido("✔ Estúdio carregado com sucesso!", "📐 Lendo dados do arquivo SVG..."))
-                elif "Convertendo curvas" in linha_limpa:
-                    self.after(0, lambda: self.adicionar_passo_concluido("✔ SVG importado com sucesso!", "⚙ Convertendo curvas e montando camadas..."))
-                elif "Aplicando materiais" in linha_limpa:
-                    self.after(0, lambda: self.adicionar_passo_concluido("✔ Malhas 3D montadas!", "🎨 Aplicando MDF, Acrílico e Texturas..."))
-                elif "Renderizando câmera:" in linha_limpa:
-                    cam_nome = linha_limpa.split("Renderizando câmera:")[-1].split("via")[0].strip()
-                    self.after(0, lambda c=cam_nome: self.adicionar_passo_concluido("✔ Materiais aplicados com sucesso!", f"📷 Renderizando Câmera {c}..."))
-                elif "[SAMPLE_PROGRESS]" in linha_limpa:
-                    try:
-                        parte_dados, parte_cam = linha_limpa.split("|CAM:")
-                        amostras_str = parte_dados.split(" ")[1]
-                        atual, total = map(int, amostras_str.split("/"))
-                        porcentagem = (atual / total) * 100
-                        faltam = total - atual
-                        nome_cam_atual = parte_cam.strip()
-                        self.after(0, lambda a=atual, t=total, f=faltam, p=porcentagem, c=nome_cam_atual: self.atualizar_amostras_camera_ui(a, t, f, p, c))
-                    except Exception:
-                        pass
-                elif "Renders salvos em:" in linha_limpa or "Modo interativo ativo" in linha_limpa:
-                    self.after(0, lambda: self.adicionar_passo_concluido("✔ Todas as imagens renderizadas!", "✅ Finalizando processo..."))
-
-            processo.wait()
-            if processo.returncode != 0 or teve_traceback:
-                registro_erros.gravar_log(
-                    "app_ui (Blender)",
-                    f"Blender terminou com código {processo.returncode}" + (" e com erro de Python" if teve_traceback else ""),
-                    "Comando: " + " ".join(f'"{c}"' for c in comando) + "\n\nÚltimas linhas do Blender:\n" + "\n".join(ultimas_linhas))
+    def _ao_evento_blender(self, evento):
+        # Chamado na thread do Blender: a tela só muda pelo after (na thread do Tk)
+        tipo = evento[0]
+        if tipo == "status":
+            self.after(0, lambda t=evento[1]: self.lbl_status_processamento.configure(text=t))
+        elif tipo == "passo":
+            self.after(0, lambda c=evento[1], n=evento[2]: self.adicionar_passo_concluido(c, n))
+        elif tipo == "amostras":
+            self.after(0, lambda e=evento: self.atualizar_amostras_camera_ui(*e[1:]))
+        elif tipo == "concluido":
             self.after(0, lambda: self.tag_concluido())
-        except Exception as e:
-            registro_erros.gravar_log("app_ui (Blender)", f"Não foi possível rodar o Blender: {e}",
-                                      "Comando: " + " ".join(f'"{c}"' for c in comando) + "\n\n" + traceback.format_exc())
-            messagebox.showerror("Erro Crítico", f"Não foi possível rodar o Blender:\n{e}")
+        elif tipo == "erro":
+            messagebox.showerror("Erro Crítico", evento[1])
 
     def atualizar_barra_progresso(self, porcentagem):
         largura_atual = self.canvas_barra.winfo_width()
@@ -1222,9 +812,9 @@ class VectorConvertProApp(tk.Tk):
         self.lbl_status_processamento.configure(text=novo_status)
 
     def tag_concluido(self):
-        self.lbl_status_processamento.configure(text="✅ Processamento Concluído!")
+        self.lbl_status_processamento.configure(text=nucleo.STATUS_CONCLUIDO)
         self.atualizar_barra_progresso(100)
-        self.lbl_samples_info.configure(text="Renderização Finalizada (100% Concluído)")
+        self.lbl_samples_info.configure(text=nucleo.SAMPLES_CONCLUIDO)
         self._show_screen("download")
 
     def _build_processing_screen(self):
@@ -1287,7 +877,7 @@ class VectorConvertProApp(tk.Tk):
         criar_circulo(centro, "✓", 'sucesso', 'sobre_sucesso', tamanho=88, bg='superficie', fonte='grande').pack(pady=(0, ESPACO['g']))
         tk.Label(centro, text="Processamento Concluído!", fg=TEMA['sucesso'], bg=sup, font=FONTES['titulo']).pack()
         tk.Label(centro, text="Abra a pasta para ver as imagens e os arquivos gerados.", fg=TEMA['texto_suave'], bg=sup, font=FONTES['subtitulo']).pack(pady=(ESPACO['xs'], 0))
-        criar_botao(centro, "Abrir Pasta de Imagens / Arquivos", lambda: os.startfile(self.output_path) if os.path.exists(self.output_path) else None, "sucesso",
+        criar_botao(centro, "Abrir Pasta de Imagens / Arquivos", lambda: nucleo.abrir_pasta_saida(self.output_path), "sucesso",
                     padx=ESPACO['g'], pady=ESPACO['p'] + 2).pack(pady=(ESPACO['g'], 0))
 
     def _build_footer(self):
@@ -1299,8 +889,13 @@ class VectorConvertProApp(tk.Tk):
                  font=FONTES['dica'], anchor="w", justify="left", wraplength=190).pack(fill="x", padx=ESPACO['p'], pady=(ESPACO['m'], 0))
 
 
-if __name__ == "__main__":
-    registro_erros.instalar_ganchos("app_ui")
+def executar():
+    """Abre a interface Tkinter (chamado aqui embaixo e pelo app.py, como reserva)."""
     app = VectorConvertProApp()
     app.report_callback_exception = registro_erros.gancho_tk("app_ui")
     app.mainloop()
+
+
+if __name__ == "__main__":
+    registro_erros.instalar_ganchos("app_ui")
+    executar()
