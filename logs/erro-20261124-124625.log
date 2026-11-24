@@ -1,0 +1,12 @@
+Phy-2d-by-3d - registro de erro
+Data: 2026-11-24 12:46:25
+Origem: teste C.O
+Versão: 017b7c9 (2026-11-24)
+Sistema: Windows 11 (10.0.26300), Python 3.14.10
+Resumo: RuntimeError: TESTE do C.O - pode ignorar: <CAMINHO>/arquivo.svg (usuario <USUARIO>)
+
+Traceback (most recent call last):
+  File "<CAMINHO>/teste_launcher.py", line 22, in <module>
+    raise RuntimeError("TESTE do C.O - pode ignorar: <CAMINHO>/arquivo.svg (usuario " + usuario + ")")
+RuntimeError: TESTE do C.O - pode ignorar: <CAMINHO>/arquivo.svg (usuario <USUARIO>)
+
