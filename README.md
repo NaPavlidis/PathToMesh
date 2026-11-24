@@ -4,8 +4,6 @@ Conversão de SVG para 3D.
 
 O app lê os arquivos SVG do catálogo de troféus e identifica o material de cada peça pela cor (acrílico, MDF, base, resina, plotter, adesivo...). Depois o Blender monta e renderiza o modelo 3D.
 
-Para o fluxo completo (entrada, cores e materiais, o que o Blender faz, saída e configuração), veja [docs/RESUMO.md](docs/RESUMO.md).
-
 ## Arquivos
 
 | Arquivo | O que faz |
