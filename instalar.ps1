@@ -7,7 +7,8 @@
 #   2. pergunta a pasta (padrão %LOCALAPPDATA%\PathToMesh; se o programa já estiver instalado na
 #      pasta do nome antigo, %LOCALAPPDATA%\Phy-2d-by-3d, o padrão é ela) e clona o repositório
 #      público, ou só atualiza se a pasta já existir (o config.local.json nunca é apagado);
-#   3. instala as dependências (pip install -r requirements.txt);
+#   3. instala as dependências (pip install -r requirements.txt: svgpathtools e pywebview, a
+#      janela do app; sem o pywebview ou o WebView2, o app abre na interface Tkinter de reserva);
 #   4. cria o config.local.json a partir do config.exemplo.json, se faltar, e procura o Blender;
 #   5. cria os atalhos do launcher na Área de Trabalho e no Menu Iniciar (com o ícone do
 #      PathToMesh; os atalhos com o nome antigo que apontam para a mesma pasta são trocados)

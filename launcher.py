@@ -469,9 +469,12 @@ def abrir_app(pasta=PASTA, espera=ESPERA_ABRIR, comando=None, arquivo_saida=None
     """
     arquivo_saida = arquivo_saida or ARQUIVO_SAIDA_APP
     if comando is None:
-        script = os.path.join(pasta, "app_ui.py")
+        # app.py abre a interface web (pywebview) e cai sozinho na Tkinter (app_ui.py) se ela falhar
+        script = os.path.join(pasta, "app.py")
         if not os.path.isfile(script):
-            return False, "Não achei o app_ui.py na pasta do programa. Rode o instalador de novo."
+            script = os.path.join(pasta, "app_ui.py")
+        if not os.path.isfile(script):
+            return False, "Não achei o app.py na pasta do programa. Rode o instalador de novo."
         comando = [python_janela(), script]
     try:
         saida = open(arquivo_saida, "wb")
