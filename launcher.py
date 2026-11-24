@@ -1,4 +1,4 @@
-"""Launcher do Phy-2d-by-3d (Windows).
+"""Launcher do PathToMesh (Windows).
 
 Ao abrir:
   1. procura atualização no GitHub (git, se a pasta for um clone; senão a API pública e o zip da main);
@@ -27,6 +27,8 @@ import urllib.request
 import zipfile
 
 import registro_erros as reg
+import tema_janela
+from tema_janela import TEMA
 
 try:
     import tkinter as tk
@@ -36,7 +38,9 @@ except ImportError:     # permite importar a lógica sem Tkinter (testes)
     messagebox = None
 
 PASTA = reg.PASTA_PROJETO
-REPO = "NaPavlidis/Phy-2d-by-3d"
+# Repositório renomeado de Phy-2d-by-3d para PathToMesh: o GitHub redireciona o nome antigo
+# (clones antigos, com o origin no endereço antigo, continuam atualizando)
+REPO = "NaPavlidis/PathToMesh"
 RAMO = "main"
 URL_REPO = f"https://github.com/{REPO}.git"
 URL_API_COMMIT = f"https://api.github.com/repos/{REPO}/commits/{RAMO}"
@@ -53,19 +57,24 @@ PRESERVAR = {CONFIG_BASE}
 IGNORAR_NO_ZIP = {".git", "logs", ".venv", "venv", "__pycache__", reg.ARQUIVO_VERSAO,
                   CONFIG_LOCAL, CONFIG_BACKUP}
 
-# Paleta do app_ui.py
-COR_FUNDO = "#0B0F17"
-COR_BARRA = "#0F141C"
-COR_CARTAO = "#121824"
-COR_CAMPO = "#080C14"
-COR_BOTAO = "#1E2638"
-COR_DESTAQUE = "#38BDF8"
-COR_TITULO = "#4C9EEB"
-COR_OK = "#34D399"
-COR_TEXTO = "#FFFFFF"
-COR_SUAVE = "#A0AEC0"
-COR_APAGADO = "#4A5568"
-COR_LINHA = "#1A202C"
+# Mesma paleta do app_ui.py (tema_janela.TEMA, tirada do docs/modelo-layout.html)
+COR_FUNDO = TEMA['fundo']
+COR_BARRA = TEMA['barra']
+COR_CARTAO = TEMA['superficie']
+COR_CAMPO = TEMA['campo']
+COR_BOTAO = TEMA['elevado']
+COR_BOTAO_HOVER = TEMA['elevado_hover']
+COR_DESTAQUE = TEMA['destaque']
+COR_SOBRE_DESTAQUE = TEMA['sobre_destaque']
+COR_TITULO = TEMA['marca']
+COR_SOBRE_TITULO = TEMA['sobre_marca']
+COR_OK = TEMA['sucesso']
+COR_AVISO = TEMA['aviso']
+COR_TEXTO = TEMA['texto']
+COR_SUAVE = TEMA['texto_suave']
+COR_APAGADO = TEMA['texto_apagado']
+COR_BORDA = TEMA['borda']
+COR_LINHA = TEMA['divisor']
 
 
 # ---------------------------------------------------------------- versões
@@ -96,7 +105,7 @@ def _remoto_git(pasta):
 def consultar_api(timeout=15):
     """Último commit da main pela API pública: {'sha', 'data', 'mensagem'}."""
     pedido = urllib.request.Request(URL_API_COMMIT, headers={
-        "User-Agent": "Phy-2d-by-3d-launcher", "Accept": "application/vnd.github+json"})
+        "User-Agent": "PathToMesh-launcher", "Accept": "application/vnd.github+json"})
     with urllib.request.urlopen(pedido, timeout=timeout) as r:
         dados = json.loads(r.read().decode("utf-8"))
     commit = dados.get("commit", {})
@@ -275,7 +284,7 @@ def gravar_versao_zip(sha, data, pasta=PASTA):
 
 def atualizar_zip(info, pasta=PASTA, timeout=60):
     pedido = urllib.request.Request(URL_ZIP.format(sha=info["remoto_sha"]),
-                                    headers={"User-Agent": "Phy-2d-by-3d-launcher"})
+                                    headers={"User-Agent": "PathToMesh-launcher"})
     try:
         with urllib.request.urlopen(pedido, timeout=timeout) as r:
             dados = r.read()
@@ -359,7 +368,7 @@ def verificar_blender(pasta=PASTA):
 # Segundos esperando o app: se ele ainda estiver aberto depois disso, abriu bem
 ESPERA_ABRIR = 4.0
 # Saída do app (prints e erros do Python antes de a janela abrir), para mostrar se ele falhar
-ARQUIVO_SAIDA_APP = os.path.join(tempfile.gettempdir(), "phy-2d-by-3d-app-saida.txt")
+ARQUIVO_SAIDA_APP = os.path.join(tempfile.gettempdir(), "pathtomesh-app-saida.txt")
 
 
 def python_janela():
@@ -503,11 +512,19 @@ class Launcher(tk.Tk if tk else object):
 
     def __init__(self):
         super().__init__()
-        self.title("Phy-2d-by-3d - Launcher")
-        self.geometry("620x640")
-        self.minsize(560, 560)
+        self.title(f"{tema_janela.NOME_APP} - Launcher")
+        self.geometry("620x680")
+        self.minsize(560, 600)
         self.configure(bg=COR_FUNDO)
         self.report_callback_exception = reg.gancho_tk("launcher")
+        titulo, corpo, mono = tema_janela.familias_fontes(self)
+        # Mesmas fontes do app (tamanhos em pixels, como no modelo)
+        self.fontes = {"marca": (titulo, -16, "bold"), "cartao": (corpo, -12, "bold"),
+                       "texto": (corpo, -14), "suave": (corpo, -13), "botao": (corpo, -14, "bold"),
+                       "abrir": (titulo, -16, "bold"), "mono": (mono, -12), "selo": (mono, -12),
+                       "icone": (corpo, -16)}
+        # Ícone (vale também para as mensagens) e barra de título nas cores do tema
+        tema_janela.preparar_janela(self, "launcher", padrao=True)
         self.fila = queue.Queue()
         self.info_atualizacao = None
         self.ocupado = False
@@ -518,12 +535,22 @@ class Launcher(tk.Tk if tk else object):
 
     # ---- montagem
     def _montar(self):
-        barra = tk.Frame(self, bg=COR_BARRA, padx=20, pady=10)
+        f = self.fontes
+        # Barra de 56 px igual à do app: logo, nome em azul, selo e linha embaixo
+        barra = tk.Frame(self, bg=COR_BARRA, height=56, padx=24)
         barra.pack(fill="x")
-        tk.Label(barra, text="Phy-2d-by-3d", fg=COR_TITULO, bg=COR_BARRA, font=("Helvetica", 14, "bold")).pack(side="left")
-        tk.Label(barra, text="LAUNCHER", fg=COR_APAGADO, bg=COR_BARRA, font=("Helvetica", 8, "bold")).pack(side="left", padx=10, pady=(4, 0))
+        barra.pack_propagate(False)
+        logo = tk.Frame(barra, bg=COR_TITULO, width=32, height=32)
+        logo.pack(side="left")
+        logo.pack_propagate(False)
+        tk.Label(logo, text="⬢", fg=COR_SOBRE_TITULO, bg=COR_TITULO, font=f["icone"]).pack(expand=True)
+        tk.Label(barra, text=tema_janela.NOME_APP, fg=COR_DESTAQUE, bg=COR_BARRA, font=f["marca"]).pack(side="left", padx=(12, 0))
+        selo = tk.Frame(barra, bg=COR_LINHA, padx=1, pady=1)
+        selo.pack(side="left", padx=(8, 0))
+        tk.Label(selo, text="LAUNCHER", fg=COR_SUAVE, bg=COR_BOTAO, font=f["selo"], padx=8, pady=2).pack()
+        tk.Frame(self, bg=COR_BORDA, height=1).pack(fill="x")
 
-        corpo = tk.Frame(self, bg=COR_FUNDO, padx=20, pady=12)
+        corpo = tk.Frame(self, bg=COR_FUNDO, padx=24, pady=16)
         corpo.pack(fill="both", expand=True)
 
         self.lbl_versao, self.lbl_atualizacao, linha = self._cartao(corpo, "⬆ Versão")
@@ -541,38 +568,65 @@ class Launcher(tk.Tk if tk else object):
         self._botao(linha, "Abrir pasta de logs", lambda: abrir_pasta(reg.PASTA_LOGS))
         self._botao(linha, "Enviar agora", lambda: self._em_segundo_plano(self._enviar_logs))
 
-        self.btn_abrir = tk.Button(corpo, text=self.TEXTO_ABRIR, bg=COR_DESTAQUE, fg=COR_TEXTO, activebackground=COR_TITULO,
-                                   activeforeground=COR_TEXTO, disabledforeground=COR_APAGADO, bd=0,
-                                   font=("Helvetica", 12, "bold"), pady=10, command=self._clicar_abrir)
-        self.btn_abrir.pack(fill="x", pady=(10, 8))
+        # Ação principal: botão azul (primary) que escurece no hover, como o "Próximo" do app
+        self.btn_abrir = tk.Button(corpo, text=self.TEXTO_ABRIR, bg=COR_DESTAQUE, fg=COR_SOBRE_DESTAQUE,
+                                   activebackground=COR_TITULO, activeforeground=COR_SOBRE_TITULO,
+                                   disabledforeground=COR_APAGADO, bd=0, relief="flat", cursor="hand2",
+                                   highlightthickness=1, highlightbackground=COR_DESTAQUE, highlightcolor=COR_TEXTO,
+                                   font=f["abrir"], pady=12, command=self._clicar_abrir)
+        self.btn_abrir.pack(fill="x", pady=(12, 12))
+        self._hover(self.btn_abrir, (COR_DESTAQUE, COR_SOBRE_DESTAQUE), (COR_TITULO, COR_SOBRE_TITULO))
 
-        self.txt = tk.Text(corpo, height=6, bg=COR_CAMPO, fg=COR_SUAVE, font=("Consolas", 9), bd=0,
-                           padx=8, pady=6, wrap="word")
+        moldura = tk.Frame(corpo, bg=COR_CAMPO, highlightthickness=1, highlightbackground=COR_BORDA)
+        moldura.pack(fill="both", expand=True)
+        self.txt = tk.Text(moldura, height=6, bg=COR_CAMPO, fg=COR_SUAVE, font=f["mono"], bd=0,
+                           padx=12, pady=8, wrap="word", highlightthickness=0,
+                           selectbackground=COR_TITULO, selectforeground=COR_SOBRE_TITULO)
         self.txt.pack(fill="both", expand=True)
         self.txt.configure(state="disabled")
 
     def _cartao(self, pai, titulo, sem_primeira=False):
-        cartao = tk.Frame(pai, bg=COR_CARTAO, padx=14, pady=10, highlightbackground=COR_LINHA, highlightthickness=1)
-        cartao.pack(fill="x", pady=5)
-        tk.Label(cartao, text=titulo, fg=COR_DESTAQUE, bg=COR_CARTAO, font=("Helvetica", 10, "bold")).pack(anchor="w")
+        # Cartão igual aos do app: fundo surface-container-low, borda de 1 px, título em azul
+        f = self.fontes
+        cartao = tk.Frame(pai, bg=COR_CARTAO, padx=16, pady=12, highlightbackground=COR_BORDA, highlightthickness=1)
+        cartao.pack(fill="x", pady=(0, 12))
+        tk.Label(cartao, text=titulo, fg=COR_DESTAQUE, bg=COR_CARTAO, font=f["cartao"]).pack(anchor="w")
         primeira = None
         if not sem_primeira:
-            primeira = tk.Label(cartao, text="", fg=COR_TEXTO, bg=COR_CARTAO, font=("Helvetica", 9), anchor="w", justify="left")
-            primeira.pack(fill="x")
-        segunda = tk.Label(cartao, text="Aguarde...", fg=COR_SUAVE, bg=COR_CARTAO, font=("Helvetica", 9),
+            primeira = tk.Label(cartao, text="", fg=COR_TEXTO, bg=COR_CARTAO, font=f["texto"], anchor="w", justify="left")
+            primeira.pack(fill="x", pady=(4, 0))
+        segunda = tk.Label(cartao, text="Aguarde...", fg=COR_SUAVE, bg=COR_CARTAO, font=f["suave"],
                            anchor="w", justify="left", wraplength=540)
-        segunda.pack(fill="x", pady=(2, 6))
+        segunda.pack(fill="x", pady=(2, 8))
         linha = tk.Frame(cartao, bg=COR_CARTAO)
         linha.pack(fill="x")
         return primeira, segunda, linha
 
     def _botao(self, pai, texto, comando, destaque=False):
-        b = tk.Button(pai, text=texto, bg=COR_DESTAQUE if destaque else COR_BOTAO, fg=COR_TEXTO,
-                      activebackground=COR_TITULO if destaque else COR_CAMPO, activeforeground=COR_TEXTO,
-                      disabledforeground=COR_APAGADO, bd=0, padx=12, pady=4, font=("Helvetica", 9, "bold"),
-                      command=comando)
+        # destaque: botão principal (primary); senão, secundário (surface-container-high com borda)
+        normal = (COR_DESTAQUE, COR_SOBRE_DESTAQUE) if destaque else (COR_BOTAO, COR_TEXTO)
+        hover = (COR_TITULO, COR_SOBRE_TITULO) if destaque else (COR_BOTAO_HOVER, COR_TEXTO)
+        b = tk.Button(pai, text=texto, bg=normal[0], fg=normal[1],
+                      activebackground=hover[0], activeforeground=hover[1],
+                      disabledforeground=COR_APAGADO, bd=0, relief="flat", cursor="hand2", padx=16, pady=6,
+                      highlightthickness=1, highlightbackground=COR_DESTAQUE if destaque else COR_BORDA,
+                      highlightcolor=COR_DESTAQUE, font=self.fontes["botao"], command=comando)
         b.pack(side="left", padx=(0, 8))
+        self._hover(b, normal, hover)
         return b
+
+    @staticmethod
+    def _hover(botao, normal, hover):
+        """Troca as cores com o mouse em cima (como os botões do app); desativado, não muda."""
+        def entrar(_evento):
+            if str(botao.cget("state")) != "disabled":
+                botao.configure(bg=hover[0], fg=hover[1])
+
+        def sair(_evento):
+            botao.configure(bg=normal[0], fg=normal[1])
+
+        botao.bind("<Enter>", entrar)
+        botao.bind("<Leave>", sair)
 
     # ---- comunicação com as threads (Tkinter só na thread principal)
     def _ui(self, funcao, *args):
@@ -611,7 +665,7 @@ class Launcher(tk.Tk if tk else object):
         self.txt.configure(state="disabled")
 
     def _status(self, rotulo, texto, ok=None):
-        cor = COR_SUAVE if ok is None else (COR_OK if ok else COR_TEXTO)
+        cor = COR_SUAVE if ok is None else (COR_OK if ok else COR_AVISO)
         icone = "" if ok is None else ("✅ " if ok else "⚠ ")
         rotulo.configure(text=icone + texto, fg=cor)
 

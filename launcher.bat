@@ -1,5 +1,5 @@
 @echo off
-rem Abre o launcher do Phy-2d-by-3d (com console, para ver mensagens de erro).
+rem Abre o launcher do PathToMesh (com console, para ver mensagens de erro).
 cd /d "%~dp0"
 where py >nul 2>nul
 if %errorlevel%==0 (

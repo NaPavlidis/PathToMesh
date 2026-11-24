@@ -1,18 +1,24 @@
-﻿# Instalador do Phy-2d-by-3d para Windows (PowerShell 5.1 ou mais novo).
+﻿# Instalador do PathToMesh para Windows (PowerShell 5.1 ou mais novo).
 # Normalmente é aberto pelo instalar.bat (dois cliques). Este arquivo fica em UTF-8 com BOM,
 # para o PowerShell 5.1 ler os acentos certo.
 #
 # O que faz:
 #   1. confere o Python 3 (py ou python) e o Git; se faltar, instala com o winget;
-#   2. pergunta a pasta (padrão %LOCALAPPDATA%\Phy-2d-by-3d) e clona o repositório público,
-#      ou só atualiza se a pasta já existir (o config.local.json nunca é apagado);
+#   2. pergunta a pasta (padrão %LOCALAPPDATA%\PathToMesh; se o programa já estiver instalado na
+#      pasta do nome antigo, %LOCALAPPDATA%\Phy-2d-by-3d, o padrão é ela) e clona o repositório
+#      público, ou só atualiza se a pasta já existir (o config.local.json nunca é apagado);
 #   3. instala as dependências (pip install -r requirements.txt);
 #   4. cria o config.local.json a partir do config.exemplo.json, se faltar, e procura o Blender;
-#   5. cria os atalhos do launcher na Área de Trabalho e no Menu Iniciar e mostra um resumo.
+#   5. cria os atalhos do launcher na Área de Trabalho e no Menu Iniciar (com o ícone do
+#      PathToMesh; os atalhos com o nome antigo que apontam para a mesma pasta são trocados)
+#      e mostra um resumo.
 
 $ErrorActionPreference = 'Continue'     # os erros dos programas (git, pip) são vistos pelo código de saída
-$RepoUrl = 'https://github.com/NaPavlidis/Phy-2d-by-3d.git'
-$NomeApp = 'Phy-2d-by-3d'
+# O repositório se chamava Phy-2d-by-3d: o GitHub redireciona o endereço antigo para o novo
+$RepoUrl = 'https://github.com/NaPavlidis/PathToMesh.git'
+$NomeApp = 'PathToMesh'
+$NomeAntigo = 'Phy-2d-by-3d'
+$IconeAtalho = 'assets\icones\1.ico'
 
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 $env:PYTHONIOENCODING = 'utf-8'
@@ -201,8 +207,26 @@ function Criar-Atalho($arquivo, $alvo, $argumentos, $pasta) {
     $atalho.TargetPath = $alvo
     $atalho.Arguments = $argumentos
     $atalho.WorkingDirectory = $pasta
-    $atalho.Description = 'Abre o launcher do Phy-2d-by-3d'
+    $atalho.Description = 'Abre o launcher do PathToMesh'
+    $icone = Join-Path $pasta $IconeAtalho
+    if (Test-Path -LiteralPath $icone) { $atalho.IconLocation = "$icone,0" }
     $atalho.Save()
+}
+
+function Remover-AtalhoAntigo($arquivo, $pasta) {
+    # Atalho com o nome antigo (Phy-2d-by-3d.lnk): só é apagado se abrir esta mesma pasta,
+    # para não ficarem dois atalhos do mesmo programa. Devolve $true se apagou.
+    if (-not (Test-Path -LiteralPath $arquivo)) { return $false }
+    try {
+        $shell = New-Object -ComObject WScript.Shell
+        $antigo = $shell.CreateShortcut($arquivo)
+        $pastaAtalho = ("" + $antigo.WorkingDirectory).TrimEnd('\')
+        if ($pastaAtalho -and ($pastaAtalho -ieq $pasta.TrimEnd('\'))) {
+            Remove-Item -LiteralPath $arquivo -Force
+            return $true
+        }
+    } catch { }
+    return $false
 }
 
 # ================================================================ início
@@ -210,7 +234,7 @@ function Criar-Atalho($arquivo, $alvo, $argumentos, $pasta) {
 try {
     Clear-Host
     Write-Host '=============================================' -ForegroundColor Cyan
-    Write-Host '   Instalador do Phy-2d-by-3d' -ForegroundColor Cyan
+    Write-Host '   Instalador do PathToMesh' -ForegroundColor Cyan
     Write-Host '=============================================' -ForegroundColor Cyan
 
     # 1. Python
@@ -241,6 +265,12 @@ try {
     # 3. Pasta e programa
     Titulo '3/6  Pasta de instalação'
     $padrao = Join-Path $env:LOCALAPPDATA $NomeApp
+    $padraoAntigo = Join-Path $env:LOCALAPPDATA $NomeAntigo
+    if (-not (Test-Path -LiteralPath $padrao) -and (Parece-OPrograma $padraoAntigo)) {
+        # Instalado antes da troca de nome: continua na mesma pasta (só atualiza)
+        $padrao = $padraoAntigo
+        Write-Host "   O programa já está instalado na pasta do nome antigo ($NomeAntigo). Ela continua sendo usada."
+    }
     Write-Host '   Onde instalar o programa?'
     Write-Host "   Aperte Enter para usar a pasta padrão: $padrao"
     $resposta = Read-Host '   Pasta'
@@ -316,18 +346,21 @@ try {
         $argumentos = ''
     }
     $atalhos = @()
+    $antigosTrocados = 0
     foreach ($destino in @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs'))) {
         if (-not $destino) { continue }
         $arquivo = Join-Path $destino "$NomeApp.lnk"
         try {
             Criar-Atalho $arquivo $alvo $argumentos $pasta
             $atalhos += $arquivo
+            if (Remover-AtalhoAntigo (Join-Path $destino "$NomeAntigo.lnk") $pasta) { $antigosTrocados++ }
         } catch {
             Avisar "Não deu para criar o atalho em $destino."
         }
     }
     if ($atalhos.Count -gt 0) {
         Certo 'Atalhos criados na Área de Trabalho e no Menu Iniciar.'
+        if ($antigosTrocados -gt 0) { Certo "Os atalhos com o nome antigo ($NomeAntigo) foram trocados pelos novos." }
         $Resumo.Add('Atalhos: Área de Trabalho e Menu Iniciar (' + $NomeApp + ')')
     }
 
@@ -335,7 +368,7 @@ try {
     Write-Host ''
     Write-Host '=============================================' -ForegroundColor Cyan
     if ($Avisos.Count -eq 0) {
-        Write-Host '   Pronto! O Phy-2d-by-3d foi instalado.' -ForegroundColor Green
+        Write-Host '   Pronto! O PathToMesh foi instalado.' -ForegroundColor Green
     } else {
         Write-Host '   Instalação terminada, com avisos.' -ForegroundColor Yellow
     }

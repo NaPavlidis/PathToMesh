@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 import json
 import subprocess
 import threading
@@ -12,6 +11,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 import registro_erros
+import tema_janela
 
 try:
     from svgpathtools import parse_path
@@ -239,87 +239,85 @@ def mapear_catalogo(caminho_catalogo):
 # ==============================================================================
 # TEMA VISUAL (único lugar com cores, fontes e espaçamentos da interface)
 # ==============================================================================
-# Paleta original do app; só a forma de usar mudou.
-TEMA = {
-    'fundo':         '#0B0F17',  # fundo da janela e das telas
-    'barra':         '#0F141C',  # barra superior
-    'superficie':    '#121824',  # cartões, menu lateral, janela de configurações
-    'campo':         '#080C14',  # campos, áreas de texto, trilho da barra, rodapé
-    'elevado':       '#1E2638',  # botões secundários, item ativo, hover
-    'divisor':       '#1A202C',  # bordas sutis e linhas divisórias
-    'destaque':      '#38BDF8',  # ação principal, item ativo, progresso
-    'marca':         '#4C9EEB',  # nome do app e hover da ação principal
-    'sucesso':       '#34D399',  # concluído, saída dos relatórios
-    'texto':         '#FFFFFF',  # texto principal
-    'texto_suave':   '#A0AEC0',  # rótulos e texto secundário
-    'texto_apagado': '#4A5568',  # dicas, legendas e itens inativos
-}
+# Cores e espaços do modelo de layout (docs/modelo-layout.html), em tema_janela.py, que o
+# launcher também usa: assim os dois ficam iguais.
+TEMA = dict(tema_janela.TEMA)
+ESPACO = dict(tema_janela.ESPACO)
 
-# Grade de 8 px
-ESPACO = {'xs': 4, 'p': 8, 'm': 16, 'g': 24, 'gg': 32, 'ggg': 40}
+_FAMILIA_TITULO, _FAMILIA_UI, _FAMILIA_MONO = tema_janela.familias_fontes()
 
-_FAMILIA_UI = "Segoe UI" if sys.platform.startswith("win") else "Helvetica"
-_FAMILIA_MONO = "Consolas" if sys.platform.startswith("win") else "Courier"
-FONTES = {
-    'marca':      (_FAMILIA_UI, 14, "bold"),
-    'titulo':     (_FAMILIA_UI, 16, "bold"),
-    'secao':      (_FAMILIA_UI, 12, "bold"),
-    'subtitulo':  (_FAMILIA_UI, 10),
-    'corpo':      (_FAMILIA_UI, 10),
-    'corpo_negrito': (_FAMILIA_UI, 10, "bold"),
-    'rotulo':     (_FAMILIA_UI, 9, "bold"),
-    'dica':       (_FAMILIA_UI, 8),
-    'legenda':    (_FAMILIA_UI, 8, "bold"),
-    'botao':      (_FAMILIA_UI, 10, "bold"),
-    'icone':      (_FAMILIA_UI, 13),
-    'passo':      (_FAMILIA_UI, 10, "bold"),
-    'status':     (_FAMILIA_UI, 11, "bold"),
-    'grande':     (_FAMILIA_UI, 32, "bold"),
-    'nav':        (_FAMILIA_UI, 10, "normal"),
-    'nav_ativo':  (_FAMILIA_UI, 10, "bold"),
-    'mono':       (_FAMILIA_MONO, 9),
-}
 
-# Botões: cor normal e cor com o mouse em cima (fundo, texto)
+def montar_fontes(titulo, corpo, mono):
+    """Fontes do modelo, em pixels (tamanho negativo no Tk), para bater com os px do HTML.
+    O Tk não tem peso 600 (semibold): vira bold."""
+    return {
+        'marca':      (titulo, -16, "bold"),   # title-md
+        'titulo':     (titulo, -28, "bold"),   # headline-lg (título da tela)
+        'secao':      (titulo, -20, "bold"),   # headline-md (título do cartão)
+        'subtitulo':  (corpo, -14),            # body-md
+        'corpo':      (corpo, -14),            # body-md
+        'corpo_negrito': (corpo, -14, "bold"),
+        'rotulo':     (corpo, -12, "bold"),    # label-md
+        'dica':       (corpo, -13),            # body-sm
+        'legenda':    (corpo, -12, "bold"),    # label-md, caixa alta
+        'botao':      (corpo, -14, "bold"),    # label-lg
+        'icone':      (corpo, -16),            # ícones em title-md
+        'passo':      (mono, -12, "bold"),     # mono-sm dos círculos das etapas
+        'status':     (titulo, -16, "bold"),   # title-md
+        'grande':     (titulo, -36, "bold"),   # display-sm
+        'nav':        (corpo, -14, "normal"),  # body-md
+        'nav_ativo':  (corpo, -14, "bold"),    # label-lg
+        'mono':       (mono, -13),             # mono-md (análise e catálogo)
+        'mono_peq':   (mono, -12),             # mono-sm (selo "SVG → 3D")
+    }
+
+
+FONTES = montar_fontes(_FAMILIA_TITULO, _FAMILIA_UI, _FAMILIA_MONO)
+
+# Botões: cor normal e com o mouse em cima (fundo, texto) e a borda de 1 px
 BOTOES = {
-    'principal':  {'bg': 'destaque', 'fg': 'fundo', 'bg_hover': 'marca', 'fg_hover': 'fundo'},
-    'secundario': {'bg': 'elevado', 'fg': 'texto', 'bg_hover': 'elevado', 'fg_hover': 'destaque'},
-    'sucesso':    {'bg': 'sucesso', 'fg': 'fundo', 'bg_hover': 'elevado', 'fg_hover': 'sucesso'},
-    'icone':      {'bg': 'barra', 'fg': 'texto_suave', 'bg_hover': 'elevado', 'fg_hover': 'destaque'},
+    'principal':  {'bg': 'destaque', 'fg': 'sobre_destaque', 'bg_hover': 'marca', 'fg_hover': 'sobre_marca', 'borda': 'destaque'},
+    'secundario': {'bg': 'elevado', 'fg': 'texto', 'bg_hover': 'elevado_hover', 'fg_hover': 'texto', 'borda': 'borda'},
+    'sucesso':    {'bg': 'sucesso', 'fg': 'sobre_sucesso', 'bg_hover': 'sucesso_fundo', 'fg_hover': 'sucesso_claro', 'borda': 'sucesso'},
+    'icone':      {'bg': 'container', 'fg': 'texto_suave', 'bg_hover': 'elevado', 'fg_hover': 'texto', 'borda': 'divisor'},
 }
 
 
 def aplicar_estilo(janela):
-    """Tema ttk 'clam' na paleta do app e cores padrão dos menus suspensos."""
+    """Fontes do modelo (se instaladas), tema ttk 'clam' na paleta do app e cores padrão dos
+    menus suspensos."""
+    FONTES.update(montar_fontes(*tema_janela.familias_fontes(janela)))
     estilo = ttk.Style(janela)
     try:
         estilo.theme_use("clam")
     except tk.TclError:
         pass
 
-    estilo.configure("Cartao.TCheckbutton",
-                     background=TEMA['superficie'], foreground=TEMA['texto_suave'],
-                     font=FONTES['corpo'], focuscolor=TEMA['superficie'],
-                     indicatorbackground=TEMA['campo'], indicatorforeground=TEMA['destaque'],
-                     upperbordercolor=TEMA['texto_apagado'], lowerbordercolor=TEMA['texto_apagado'],
-                     indicatormargin=(0, 0, ESPACO['p'], 0), padding=(0, ESPACO['xs']))
-    estilo.map("Cartao.TCheckbutton",
-               background=[("active", TEMA['superficie'])],
-               foreground=[("disabled", TEMA['texto_apagado']), ("active", TEMA['texto']), ("selected", TEMA['texto'])],
-               indicatorbackground=[("pressed", TEMA['elevado']), ("active", TEMA['elevado'])],
-               upperbordercolor=[("selected", TEMA['destaque']), ("active", TEMA['destaque'])],
-               lowerbordercolor=[("selected", TEMA['destaque']), ("active", TEMA['destaque'])])
+    # Caixas de seleção: quadrado escuro com borda cinza; marcada, fica azul (primary-container)
+    for nome_estilo, fundo in (("Cartao.TCheckbutton", TEMA['superficie']), ("Grupo.TCheckbutton", TEMA['container'])):
+        estilo.configure(nome_estilo,
+                         background=fundo, foreground=TEMA['texto'],
+                         font=FONTES['corpo'], focuscolor=fundo,
+                         indicatorbackground=TEMA['campo'], indicatorforeground=TEMA['texto'],
+                         upperbordercolor=TEMA['borda'], lowerbordercolor=TEMA['borda'],
+                         indicatormargin=(0, 0, ESPACO['pm'], 0), indicatorsize=16, padding=(0, 2))
+        estilo.map(nome_estilo,
+                   background=[("active", fundo)],
+                   foreground=[("disabled", TEMA['texto_apagado']), ("active", TEMA['texto'])],
+                   indicatorbackground=[("selected", TEMA['marca']), ("pressed", TEMA['elevado']), ("active", TEMA['elevado'])],
+                   upperbordercolor=[("selected", TEMA['marca']), ("active", TEMA['destaque'])],
+                   lowerbordercolor=[("selected", TEMA['marca']), ("active", TEMA['destaque'])])
 
     estilo.configure("Vertical.TScrollbar",
-                     background=TEMA['elevado'], troughcolor=TEMA['campo'],
-                     bordercolor=TEMA['campo'], lightcolor=TEMA['elevado'], darkcolor=TEMA['elevado'],
+                     background=TEMA['elevado_hover'], troughcolor=TEMA['campo'],
+                     bordercolor=TEMA['campo'], lightcolor=TEMA['elevado_hover'], darkcolor=TEMA['elevado_hover'],
                      arrowcolor=TEMA['texto_suave'], gripcount=0, arrowsize=12)
     estilo.map("Vertical.TScrollbar",
-               background=[("pressed", TEMA['destaque']), ("active", TEMA['elevado'])],
+               background=[("pressed", TEMA['destaque']), ("active", TEMA['borda'])],
                arrowcolor=[("active", TEMA['destaque'])])
 
     # Menus dos campos de escolha (OptionMenu)
-    janela.option_add("*Menu.background", TEMA['campo'])
+    janela.option_add("*Menu.background", TEMA['container'])
     janela.option_add("*Menu.foreground", TEMA['texto'])
     janela.option_add("*Menu.activeBackground", TEMA['elevado'])
     janela.option_add("*Menu.activeForeground", TEMA['destaque'])
@@ -329,12 +327,14 @@ def aplicar_estilo(janela):
 
 
 def criar_botao(pai, texto, comando, tipo="secundario", **extra):
-    """Botão plano com estado de hover; 'principal' destaca a ação do passo."""
+    """Botão plano com borda de 1 px e estado de hover; 'principal' destaca a ação do passo.
+    A borda acende no foco do teclado (o anel azul do modelo)."""
     cores = BOTOES[tipo]
     opcoes = dict(text=texto, command=comando, bd=0, relief="flat", cursor="hand2",
                   bg=TEMA[cores['bg']], fg=TEMA[cores['fg']],
                   activebackground=TEMA[cores['bg_hover']], activeforeground=TEMA[cores['fg_hover']],
-                  disabledforeground=TEMA['texto_apagado'], highlightthickness=0,
+                  disabledforeground=TEMA['texto_apagado'], highlightthickness=1,
+                  highlightbackground=TEMA[cores['borda']], highlightcolor=TEMA['destaque'],
                   font=FONTES['botao'], padx=ESPACO['m'], pady=ESPACO['p'])
     opcoes.update(extra)
     botao = tk.Button(pai, **opcoes)
@@ -352,60 +352,114 @@ def criar_botao(pai, texto, comando, tipo="secundario", **extra):
 
 
 def criar_cartao(pai, titulo=None, subtitulo=None, cor_titulo='texto'):
-    """Cartão com borda sutil; devolve (cartão, corpo). O corpo já tem o recuo interno."""
+    """Cartão (card do modelo): fundo surface-container-low, borda de 1 px, recuo de 24 px e
+    cabeçalho com linha embaixo. Devolve (cartão, corpo). O corpo já tem o recuo interno."""
     cartao = tk.Frame(pai, bg=TEMA['superficie'], highlightthickness=1,
-                      highlightbackground=TEMA['divisor'], highlightcolor=TEMA['divisor'])
+                      highlightbackground=TEMA['borda'], highlightcolor=TEMA['borda'])
     if titulo:
         cab = tk.Frame(cartao, bg=TEMA['superficie'])
-        cab.pack(fill="x", padx=ESPACO['g'], pady=(ESPACO['g'], 0))
+        cab.pack(fill="x", padx=ESPACO['g'], pady=(ESPACO['m'] + ESPACO['xs'], 0))
         tk.Label(cab, text=titulo, fg=TEMA[cor_titulo], bg=TEMA['superficie'],
                  font=FONTES['secao'], anchor="w").pack(fill="x")
         if subtitulo:
-            tk.Label(cab, text=subtitulo, fg=TEMA['texto_apagado'], bg=TEMA['superficie'],
-                     font=FONTES['dica'], anchor="w", justify="left").pack(fill="x", pady=(2, 0))
+            tk.Label(cab, text=subtitulo, fg=TEMA['texto_suave'], bg=TEMA['superficie'],
+                     font=FONTES['dica'], anchor="w", justify="left").pack(fill="x", pady=(ESPACO['xs'], 0))
         criar_divisor(cartao).pack(fill="x", padx=ESPACO['g'], pady=(ESPACO['m'], 0))
     corpo = tk.Frame(cartao, bg=TEMA['superficie'])
-    corpo.pack(fill="both", expand=True, padx=ESPACO['g'], pady=ESPACO['m'])
+    corpo.pack(fill="both", expand=True, padx=ESPACO['g'], pady=(ESPACO['m'], ESPACO['m'] + ESPACO['xs']))
     return cartao, corpo
 
 
-def criar_divisor(pai):
-    return tk.Frame(pai, bg=TEMA['divisor'], height=1)
+def criar_divisor(pai, cor='divisor'):
+    return tk.Frame(pai, bg=TEMA[cor], height=1)
 
 
 def criar_legenda(pai, texto, bg='superficie'):
     """Legenda de seção em caixa alta (ex.: ARQUIVO, ACABAMENTO)."""
-    return tk.Label(pai, text=texto.upper(), fg=TEMA['texto_apagado'], bg=TEMA[bg],
+    return tk.Label(pai, text=texto.upper(), fg=TEMA['texto_suave'], bg=TEMA[bg],
                     font=FONTES['legenda'], anchor="w")
 
 
+def criar_secao(pai, texto):
+    """Começo de seção do cartão: linha de cima (outline-variant), 16 px e a legenda."""
+    criar_divisor(pai).pack(fill="x", pady=(ESPACO['pm'], ESPACO['pm']))
+    legenda = criar_legenda(pai, texto)
+    legenda.pack(fill="x", pady=(0, ESPACO['p']))
+    return legenda
+
+
 def criar_entrada(pai, variavel, **extra):
-    """Campo de texto plano com borda que acende no foco."""
+    """Campo de texto plano (surface-container-lowest) com borda que acende no foco."""
     opcoes = dict(textvariable=variavel, bg=TEMA['campo'], fg=TEMA['texto'],
                   insertbackground=TEMA['texto'], relief="flat", bd=0, font=FONTES['corpo'],
-                  highlightthickness=1, highlightbackground=TEMA['divisor'], highlightcolor=TEMA['destaque'],
-                  selectbackground=TEMA['elevado'], selectforeground=TEMA['texto'])
+                  highlightthickness=1, highlightbackground=TEMA['borda'], highlightcolor=TEMA['destaque'],
+                  selectbackground=TEMA['marca'], selectforeground=TEMA['sobre_marca'])
     opcoes.update(extra)
     return tk.Entry(pai, **opcoes)
 
 
 def estilizar_optionmenu(menu_opcoes):
-    menu_opcoes.config(bg=TEMA['campo'], fg=TEMA['texto'], activebackground=TEMA['elevado'],
+    menu_opcoes.config(bg=TEMA['campo'], fg=TEMA['texto'], activebackground=TEMA['container'],
                        activeforeground=TEMA['texto'], bd=0, relief="flat", highlightthickness=1,
-                       highlightbackground=TEMA['divisor'], font=FONTES['corpo'], anchor="w",
-                       padx=ESPACO['p'], pady=ESPACO['xs'], cursor="hand2")
-    menu_opcoes["menu"].config(bg=TEMA['campo'], fg=TEMA['texto'], activebackground=TEMA['elevado'],
+                       highlightbackground=TEMA['borda'], highlightcolor=TEMA['destaque'],
+                       font=FONTES['corpo'], anchor="w",
+                       padx=ESPACO['pm'], pady=ESPACO['p'], cursor="hand2")
+    menu_opcoes["menu"].config(bg=TEMA['container'], fg=TEMA['texto'], activebackground=TEMA['elevado'],
                                activeforeground=TEMA['destaque'], bd=0, font=FONTES['corpo'])
 
 
+# Cores dos relatórios (análise do SVG e catálogo), pelo começo de cada linha. Só muda a cor
+# do texto que o app já escreve; o texto em si é o mesmo.
+REALCES_TEXTO = (
+    ("─", 'divisor'),
+    ("📁", 'titulo'), ("📦", 'titulo'), ("📐", 'titulo'), ("📈", 'titulo'), ("📝", 'titulo'),
+    ("⚠", 'aviso'), ("❌", 'erro'),
+    ("Modalidade:", 'destaque'), ("Status: ✓", 'ok'), ("Status: ✗", 'apagado'),
+)
+
+
+def realcar_texto(texto):
+    """Pinta as linhas do relatório: títulos em verde, avisos em amarelo, erros em vermelho,
+    divisórias apagadas (como no modelo). Chamado depois de cada insert."""
+    for marca in ('divisor', 'titulo', 'aviso', 'erro', 'destaque', 'ok', 'apagado'):
+        texto.tag_remove(marca, "1.0", "end")
+    total = int(texto.index("end-1c").split(".")[0])
+    for linha in range(1, total + 1):
+        conteudo = texto.get(f"{linha}.0", f"{linha}.end").lstrip()
+        for comeco, marca in REALCES_TEXTO:
+            if conteudo.startswith(comeco):
+                texto.tag_add(marca, f"{linha}.0", f"{linha}.end")
+                break
+
+
+class AreaTexto(tk.Text):
+    """tk.Text que pinta o relatório a cada insert (só visual)."""
+
+    def insert(self, indice, conteudo, *extra):
+        resultado = super().insert(indice, conteudo, *extra)
+        try:
+            realcar_texto(self)
+        except tk.TclError:
+            pass
+        return resultado
+
+
 def criar_area_texto(pai):
-    """Área de saída/log: fonte mono, com barra de rolagem. Devolve (moldura, texto)."""
+    """Área de saída/log: fonte mono, painel surface-container-lowest com borda, com barra de
+    rolagem. Devolve (moldura, texto)."""
     moldura = tk.Frame(pai, bg=TEMA['campo'], highlightthickness=1,
-                       highlightbackground=TEMA['divisor'], highlightcolor=TEMA['divisor'])
-    texto = tk.Text(moldura, bg=TEMA['campo'], fg=TEMA['sucesso'], font=FONTES['mono'], bd=0,
-                    relief="flat", padx=ESPACO['m'], pady=ESPACO['m'], highlightthickness=0,
-                    insertbackground=TEMA['texto'], selectbackground=TEMA['elevado'],
-                    selectforeground=TEMA['texto'], spacing1=1, spacing3=1)
+                       highlightbackground=TEMA['borda'], highlightcolor=TEMA['borda'])
+    texto = AreaTexto(moldura, bg=TEMA['campo'], fg=TEMA['texto'], font=FONTES['mono'], bd=0,
+                      relief="flat", padx=ESPACO['m'], pady=ESPACO['m'], highlightthickness=0,
+                      insertbackground=TEMA['texto'], selectbackground=TEMA['marca'],
+                      selectforeground=TEMA['sobre_marca'], spacing1=2, spacing3=2)
+    texto.tag_configure('divisor', foreground=TEMA['divisor'])
+    texto.tag_configure('titulo', foreground=TEMA['sucesso'], font=(FONTES['mono'][0], FONTES['mono'][1], "bold"))
+    texto.tag_configure('aviso', foreground=TEMA['aviso'], background=TEMA['aviso_fundo'])
+    texto.tag_configure('erro', foreground=TEMA['erro'])
+    texto.tag_configure('destaque', foreground=TEMA['destaque'])
+    texto.tag_configure('ok', foreground=TEMA['sucesso'])
+    texto.tag_configure('apagado', foreground=TEMA['texto_apagado'])
     rolagem = ttk.Scrollbar(moldura, orient="vertical", command=texto.yview)
     texto.configure(yscrollcommand=rolagem.set)
     rolagem.pack(side="right", fill="y")
@@ -414,11 +468,28 @@ def criar_area_texto(pai):
 
 
 def criar_cabecalho_tela(pai, titulo, subtitulo):
-    """Título e subtítulo no topo de cada tela."""
+    """Título (headline-lg) e subtítulo (body-md) no topo de cada tela."""
     cab = tk.Frame(pai, bg=TEMA['fundo'])
     tk.Label(cab, text=titulo, fg=TEMA['texto'], bg=TEMA['fundo'], font=FONTES['titulo'], anchor="w").pack(fill="x")
-    tk.Label(cab, text=subtitulo, fg=TEMA['texto_suave'], bg=TEMA['fundo'], font=FONTES['subtitulo'], anchor="w").pack(fill="x", pady=(2, 0))
+    tk.Label(cab, text=subtitulo, fg=TEMA['texto_suave'], bg=TEMA['fundo'], font=FONTES['subtitulo'], anchor="w").pack(fill="x", pady=(ESPACO['xs'], 0))
     return cab
+
+
+def criar_circulo(pai, texto, fundo, cor_texto, borda=None, tamanho=28, bg='fundo', fonte='passo'):
+    """Círculo de verdade (Canvas) com o texto no meio: as etapas 1-2-3 do modelo."""
+    canvas = tk.Canvas(pai, width=tamanho, height=tamanho, bg=TEMA[bg], highlightthickness=0, bd=0)
+    canvas.create_oval(1, 1, tamanho - 1, tamanho - 1, fill=TEMA[fundo],
+                       outline=TEMA[borda] if borda else TEMA[fundo], width=1)
+    canvas.create_text(tamanho / 2, tamanho / 2, text=texto, fill=TEMA[cor_texto], font=FONTES[fonte])
+    return canvas
+
+
+def criar_selo(pai, texto, cor_texto='texto_suave', fundo='elevado', borda='divisor', fonte='mono_peq'):
+    """Selo pequeno com borda (ex.: "SVG → 3D" ao lado do nome)."""
+    moldura = tk.Frame(pai, bg=TEMA[borda], padx=1, pady=1)
+    tk.Label(moldura, text=texto, fg=TEMA[cor_texto], bg=TEMA[fundo], font=FONTES[fonte],
+             padx=ESPACO['p'], pady=ESPACO['xs'] - 2).pack()
+    return moldura
 
 
 # ==============================================================================
@@ -427,7 +498,7 @@ def criar_cabecalho_tela(pai, titulo, subtitulo):
 class SettingsWindow(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
-        self.title("Configurações do Sistema")
+        self.title(f"Configurações do Sistema - {tema_janela.NOME_APP}")
         # O tamanho da janela é calculado pelo conteúdo no fim do _build_ui (_ajustar_tamanho)
         self.configure(bg=TEMA['fundo'])
         self.resizable(True, True)
@@ -442,6 +513,8 @@ class SettingsWindow(tk.Toplevel):
         self.selected_blend_var = tk.StringVar(value=parent.selected_blend)
         self.cycles_samples_var = tk.StringVar(value=str(parent.cycles_samples))
         self._build_ui()
+        # Ícone e barra de título nas cores do tema (no Windows; fora dele, só o ícone)
+        tema_janela.preparar_janela(self, "app")
 
     def _build_ui(self):
         sup = TEMA['superficie']
@@ -601,11 +674,13 @@ class SettingsWindow(tk.Toplevel):
 class VectorConvertProApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("VectorConvert Pro")
+        self.title(tema_janela.NOME_APP)
         self.geometry("1150x820")
         self.minsize(980, 700)
         self.configure(bg=TEMA['fundo'])
         aplicar_estilo(self)
+        # Ícone (vale também para as janelas que abrem depois) e barra de título nas cores do tema
+        tema_janela.preparar_janela(self, "app", padrao=True)
 
         # Configurações Padrão
         self.blender_path = r"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe"
@@ -642,7 +717,7 @@ class VectorConvertProApp(tk.Tk):
         self._build_sidebar()
         
         self.main_container = tk.Frame(self, bg=TEMA['fundo'])
-        self.main_container.grid(row=1, column=1, sticky="nsew", padx=ESPACO['gg'], pady=ESPACO['g'])
+        self.main_container.grid(row=1, column=1, sticky="nsew", padx=ESPACO['gg'], pady=ESPACO['m'])
         self.main_container.grid_rowconfigure(0, weight=1)
         self.main_container.grid_columnconfigure(0, weight=1)
 
@@ -695,31 +770,41 @@ class VectorConvertProApp(tk.Tk):
         return ",".join(cams)
 
     def _build_navbar(self):
-        navbar = tk.Frame(self, bg=TEMA['barra'], height=56, padx=ESPACO['g'], pady=ESPACO['p'])
+        # Barra de 56 px (surface-container-low) com linha embaixo (outline)
+        navbar = tk.Frame(self, bg=TEMA['barra'], height=56, padx=ESPACO['g'])
         navbar.grid(row=0, column=0, columnspan=2, sticky="ew")
-        tk.Label(navbar, text="VectorConvert Pro", fg=TEMA['marca'], bg=TEMA['barra'], font=FONTES['marca']).pack(side="left")
-        tk.Label(navbar, text="SVG → 3D", fg=TEMA['texto_apagado'], bg=TEMA['barra'], font=FONTES['rotulo']).pack(side="left", padx=(ESPACO['p'], 0), pady=(ESPACO['xs'], 0))
+        navbar.pack_propagate(False)
+        # Logo: quadrado de 32 px em primary-container
+        logo = tk.Frame(navbar, bg=TEMA['marca'], width=32, height=32)
+        logo.pack(side="left")
+        logo.pack_propagate(False)
+        tk.Label(logo, text="⬢", fg=TEMA['sobre_marca'], bg=TEMA['marca'], font=FONTES['icone']).pack(expand=True)
+        tk.Label(navbar, text=tema_janela.NOME_APP, fg=TEMA['destaque'], bg=TEMA['barra'], font=FONTES['marca']).pack(side="left", padx=(ESPACO['pm'], 0))
+        criar_selo(navbar, "SVG → 3D").pack(side="left", padx=(ESPACO['p'], 0))
 
         right_icons_frame = tk.Frame(navbar, bg=TEMA['barra'])
         right_icons_frame.pack(side="right")
         criar_botao(right_icons_frame, "⚙", lambda: SettingsWindow(self), "icone",
-                    font=FONTES['icone'], padx=ESPACO['p'], pady=0).pack(side="left")
-        # Linha sutil separando a barra do conteúdo
-        tk.Frame(self, bg=TEMA['divisor'], height=1).grid(row=0, column=0, columnspan=2, sticky="sew")
+                    font=FONTES['icone'], padx=ESPACO['p'], pady=ESPACO['xs']).pack(side="left")
+        # Linha separando a barra do conteúdo
+        tk.Frame(self, bg=TEMA['borda'], height=1).grid(row=0, column=0, columnspan=2, sticky="sew")
 
     def _build_sidebar(self):
-        sidebar = tk.Frame(self, bg=TEMA['superficie'], width=220)
+        # Menu lateral de 240 px (surface-container-low), recuo de 16 px e borda direita (outline)
+        sidebar = tk.Frame(self, bg=TEMA['superficie'], width=240)
         sidebar.grid(row=1, column=0, sticky="nsew")
         sidebar.pack_propagate(False)
-        # Borda direita sutil
-        tk.Frame(sidebar, bg=TEMA['divisor'], width=1).pack(side="right", fill="y")
+        self._sidebar = sidebar
+        tk.Frame(sidebar, bg=TEMA['borda'], width=1).pack(side="right", fill="y")
 
-        header_frame = tk.Frame(sidebar, bg=TEMA['superficie'], pady=ESPACO['g'], padx=ESPACO['g'])
-        header_frame.pack(fill="x")
-        tk.Label(header_frame, text="SVG Converter", fg=TEMA['texto'], bg=TEMA['superficie'], font=FONTES['secao'], anchor="w").pack(fill="x")
-        tk.Label(header_frame, text="HIGH PRECISION TOOL", fg=TEMA['texto_apagado'], bg=TEMA['superficie'], font=FONTES['legenda'], anchor="w").pack(fill="x", pady=(2, 0))
-        criar_divisor(sidebar).pack(fill="x", padx=ESPACO['m'])
-        criar_legenda(sidebar, "Navegação").pack(fill="x", padx=ESPACO['g'], pady=(ESPACO['m'], ESPACO['p']))
+        header_frame = tk.Frame(sidebar, bg=TEMA['superficie'], padx=ESPACO['p'])
+        header_frame.pack(fill="x", padx=ESPACO['m'], pady=(ESPACO['m'] + ESPACO['xs'], 0))
+        tk.Label(header_frame, text="SVG Converter", fg=TEMA['texto'], bg=TEMA['superficie'], font=FONTES['marca'], anchor="w").pack(fill="x")
+        tk.Label(header_frame, text="HIGH PRECISION TOOL", fg=TEMA['texto_apagado'], bg=TEMA['superficie'], font=FONTES['legenda'], anchor="w").pack(fill="x")
+        criar_divisor(sidebar).pack(fill="x", padx=ESPACO['m'], pady=(ESPACO['m'], 0))
+        legenda_nav = criar_legenda(sidebar, "Navegação")
+        legenda_nav.configure(fg=TEMA['texto_apagado'])
+        legenda_nav.pack(fill="x", padx=ESPACO['m'] + ESPACO['pm'], pady=(ESPACO['g'], ESPACO['xs']))
 
         menu_items = {
             "upload": " Upload",
@@ -728,22 +813,26 @@ class VectorConvertProApp(tk.Tk):
             "catalogo": " 📊 Catálogo"
         }
         for key, text in menu_items.items():
+            # Item: 12 px de recuo, 8 px em cima e embaixo; o ativo ganha fundo, borda e texto azul
             btn = tk.Button(sidebar, text=text, fg=TEMA['texto_suave'], bg=TEMA['superficie'], bd=0, relief="flat",
-                            anchor="w", padx=ESPACO['m'], pady=ESPACO['p'] + 2, font=FONTES['nav'], cursor="hand2",
-                            activebackground=TEMA['elevado'], activeforeground=TEMA['destaque'], highlightthickness=0,
+                            anchor="w", padx=ESPACO['pm'], pady=ESPACO['p'], font=FONTES['nav'], cursor="hand2",
+                            activebackground=TEMA['container'], activeforeground=TEMA['texto'],
+                            highlightthickness=1, highlightbackground=TEMA['superficie'], highlightcolor=TEMA['destaque'],
                             command=lambda k=key: self._show_screen(k))
-            btn.pack(fill="x", padx=ESPACO['p'], pady=2)
+            btn.pack(fill="x", padx=ESPACO['m'], pady=(0, ESPACO['xs']))
             # Hover só nos itens inativos (o ativo fica com o texto em destaque)
-            btn.bind("<Enter>", lambda _e, b=btn: b.cget("fg") != TEMA['destaque'] and b.configure(bg=TEMA['elevado'], fg=TEMA['texto']))
+            btn.bind("<Enter>", lambda _e, b=btn: b.cget("fg") != TEMA['destaque'] and b.configure(bg=TEMA['container'], fg=TEMA['texto']))
             btn.bind("<Leave>", lambda _e, b=btn: b.cget("fg") != TEMA['destaque'] and b.configure(bg=TEMA['superficie'], fg=TEMA['texto_suave']))
             self.sidebar_buttons[key] = btn
 
     def _show_screen(self, screen_key):
         for key, btn in self.sidebar_buttons.items():
             if key == screen_key:
-                btn.configure(bg=TEMA['elevado'], fg=TEMA['destaque'], font=FONTES['nav_ativo'])
+                btn.configure(bg=TEMA['elevado'], fg=TEMA['destaque'], font=FONTES['nav_ativo'],
+                              highlightbackground=TEMA['borda'])
             else:
-                btn.configure(bg=TEMA['superficie'], fg=TEMA['texto_suave'], font=FONTES['nav'])
+                btn.configure(bg=TEMA['superficie'], fg=TEMA['texto_suave'], font=FONTES['nav'],
+                              highlightbackground=TEMA['superficie'])
 
         if screen_key == "catalogo":
             self._atualizar_relatorio_catalogo()
@@ -751,29 +840,32 @@ class VectorConvertProApp(tk.Tk):
         self.screens[screen_key].tkraise()
 
     def _create_stepper(self, parent, active_step):
+        # Etapas lado a lado (círculo de 28 px + nome), linha de 80 px entre elas e linha embaixo
         stepper_frame = tk.Frame(parent, bg=TEMA['fundo'])
-        stepper_frame.pack(fill="x", pady=(0, ESPACO['g']))
+        stepper_frame.pack(fill="x", pady=(0, ESPACO['m']))
 
         steps = [("1", "UPLOAD"), ("2", "PROCESSING"), ("3", "DOWNLOAD")]
         stepper_inner = tk.Frame(stepper_frame, bg=TEMA['fundo'])
-        stepper_inner.pack(anchor="center")
+        stepper_inner.pack(anchor="center", pady=(0, ESPACO['pm']))
+        criar_divisor(stepper_frame).pack(fill="x")
 
         for idx, (num, label) in enumerate(steps, start=1):
             if idx > 1:
                 # Linha ligando os passos: acesa até o passo atual
-                cor_linha = TEMA['destaque'] if idx <= active_step else TEMA['elevado']
-                tk.Frame(stepper_inner, bg=cor_linha, width=72, height=2).pack(side="left", anchor="n", pady=(13, 0))
+                cor_linha = TEMA['destaque'] if idx <= active_step else TEMA['borda']
+                tk.Frame(stepper_inner, bg=cor_linha, width=80, height=1).pack(side="left", padx=ESPACO['g'])
             step_item = tk.Frame(stepper_inner, bg=TEMA['fundo'])
-            step_item.pack(side="left", padx=ESPACO['m'])
+            step_item.pack(side="left")
             completed = idx <= active_step
             atual = idx == active_step
-            circle_color = TEMA['destaque'] if completed else TEMA['elevado']
-            symbol_color = TEMA['fundo'] if completed else TEMA['texto_apagado']
-            text_color = TEMA['texto'] if atual else (TEMA['texto_suave'] if completed else TEMA['texto_apagado'])
+            text_color = TEMA['texto'] if atual else TEMA['texto_suave']
             symbol = "✓" if idx < active_step else num
 
-            tk.Label(step_item, text=symbol, fg=symbol_color, bg=circle_color, width=3, height=1, font=FONTES['passo']).pack()
-            tk.Label(step_item, text=label, fg=text_color, bg=TEMA['fundo'], font=FONTES['legenda']).pack(pady=(ESPACO['xs'], 0))
+            if completed:
+                criar_circulo(step_item, symbol, 'destaque', 'sobre_destaque').pack(side="left")
+            else:
+                criar_circulo(step_item, symbol, 'elevado', 'texto_suave', borda='borda').pack(side="left")
+            tk.Label(step_item, text=label, fg=text_color, bg=TEMA['fundo'], font=FONTES['legenda']).pack(side="left", padx=(ESPACO['p'], 0))
 
     def _atualizar_hud_resina(self):
         menu = self.menu_resina["menu"]
@@ -801,75 +893,83 @@ class VectorConvertProApp(tk.Tk):
 
         main_frame = tk.Frame(screen, bg=TEMA['fundo'])
         main_frame.pack(fill="both", expand=True)
-        # Duas colunas de mesma largura que acompanham o redimensionamento
+        # Duas colunas de mesma largura que acompanham o redimensionamento (24 px entre elas)
         main_frame.grid_columnconfigure(0, weight=1, uniform="colunas")
         main_frame.grid_columnconfigure(1, weight=1, uniform="colunas")
         main_frame.grid_rowconfigure(0, weight=1)
 
         # Lado Esquerdo: Formulário de Upload e Opções
         card_left, corpo_left = criar_cartao(main_frame, "Upload e Parâmetros do SVG")
-        card_left.grid(row=0, column=0, sticky="nsew", padx=(0, ESPACO['p']))
+        card_left.grid(row=0, column=0, sticky="nsew", padx=(0, ESPACO['pm']))
 
-        # Seção: arquivo
+        # Botão Próximo (ação principal do passo, no rodapé do cartão, com linha em cima). O
+        # rodapé é empacotado primeiro, preso embaixo: se faltar altura, ele nunca é cortado.
+        rodape_left = tk.Frame(corpo_left, bg=sup)
+        rodape_left.pack(side="bottom", fill="x")
+        criar_divisor(rodape_left, 'borda').pack(fill="x", pady=(ESPACO['pm'], ESPACO['pm']))
+        btn_proximo = criar_botao(rodape_left, "Próximo ➔", self._avancar_para_processamento, "principal",
+                                  padx=ESPACO['g'], pady=ESPACO['pm'] - 2)
+        btn_proximo.pack(side="right")
+
+        # Seção: arquivo (painel surface-container-lowest com borda e 12 px de recuo)
         criar_legenda(corpo_left, "Arquivo").pack(fill="x", pady=(0, ESPACO['p']))
-        zona_arquivo = tk.Frame(corpo_left, bg=TEMA['campo'], highlightthickness=1, highlightbackground=TEMA['divisor'])
+        zona_arquivo = tk.Frame(corpo_left, bg=TEMA['campo'], highlightthickness=1, highlightbackground=TEMA['borda'])
         zona_arquivo.pack(fill="x")
-        self.lbl_arquivo_selecionado = tk.Label(zona_arquivo, text="Nenhum arquivo selecionado", fg=TEMA['texto_suave'], bg=TEMA['campo'], font=FONTES['corpo'], anchor="w")
-        self.lbl_arquivo_selecionado.pack(side="left", fill="x", expand=True, padx=ESPACO['m'], pady=ESPACO['m'])
+        icone_arquivo = tk.Frame(zona_arquivo, bg=TEMA['secundario'], width=32, height=32)
+        icone_arquivo.pack(side="left", padx=(ESPACO['pm'], 0), pady=ESPACO['p'])
+        icone_arquivo.pack_propagate(False)
+        tk.Label(icone_arquivo, text="⌁", fg=TEMA['sobre_secundario'], bg=TEMA['secundario'], font=FONTES['icone']).pack(expand=True)
+        self.lbl_arquivo_selecionado = tk.Label(zona_arquivo, text="Nenhum arquivo selecionado", fg=TEMA['texto_suave'], bg=TEMA['campo'], font=FONTES['mono'], anchor="w")
+        self.lbl_arquivo_selecionado.pack(side="left", fill="x", expand=True, padx=ESPACO['pm'], pady=ESPACO['p'])
 
-        btn_select = criar_botao(zona_arquivo, "Selecionar Arquivo SVG", self._selecionar_svg, "secundario")
-        btn_select.pack(side="right", padx=ESPACO['p'], pady=ESPACO['p'])
+        btn_select = criar_botao(zona_arquivo, "Selecionar Arquivo SVG", self._selecionar_svg, "secundario", pady=ESPACO['xs'] + 2)
+        btn_select.pack(side="right", padx=ESPACO['pm'], pady=ESPACO['p'])
 
         # Seção: renderização
-        criar_legenda(corpo_left, "Renderização").pack(fill="x", pady=(ESPACO['g'], ESPACO['xs']))
+        criar_secao(corpo_left, "Renderização")
         chk_render = ttk.Checkbutton(corpo_left, text="Renderizar automaticamente no Blender", variable=self.render_auto_var, style="Cartao.TCheckbutton", cursor="hand2")
         chk_render.pack(anchor="w")
 
-        # SELEÇÃO DAS CÂMERAS
-        frame_cams = tk.Frame(corpo_left, bg=sup)
-        frame_cams.pack(fill="x", pady=(ESPACO['p'], 0))
-        tk.Label(frame_cams, text="📷 Câmeras a Renderizar:", fg=TEMA['destaque'], bg=sup, font=FONTES['rotulo']).pack(anchor="w", pady=(0, 2))
+        # SELEÇÃO DAS CÂMERAS (grupo em surface-container, com borda e 12 px de recuo)
+        grupo = TEMA['container']
+        frame_cams = tk.Frame(corpo_left, bg=grupo, highlightthickness=1, highlightbackground=TEMA['borda'],
+                              padx=ESPACO['pm'], pady=ESPACO['xs'] + 2)
+        frame_cams.pack(fill="x", pady=(ESPACO['xs'], 0))
+        tk.Label(frame_cams, text="📷 Câmeras a Renderizar:", fg=TEMA['destaque'], bg=grupo, font=FONTES['rotulo']).pack(anchor="w", pady=(0, ESPACO['xs']))
 
-        sub_cams = tk.Frame(frame_cams, bg=sup)
+        sub_cams = tk.Frame(frame_cams, bg=grupo)
         sub_cams.pack(anchor="w")
 
-        chk_cam_p = ttk.Checkbutton(sub_cams, text="Principal", variable=self.cam_principal_var, style="Cartao.TCheckbutton", cursor="hand2")
-        chk_cam_p.pack(side="left", padx=(0, ESPACO['m']))
+        chk_cam_p = ttk.Checkbutton(sub_cams, text="Principal", variable=self.cam_principal_var, style="Grupo.TCheckbutton", cursor="hand2")
+        chk_cam_p.pack(side="left", padx=(0, ESPACO['g']))
 
-        chk_cam_e = ttk.Checkbutton(sub_cams, text="Esquerda", variable=self.cam_esquerda_var, style="Cartao.TCheckbutton", cursor="hand2")
-        chk_cam_e.pack(side="left", padx=(0, ESPACO['m']))
+        chk_cam_e = ttk.Checkbutton(sub_cams, text="Esquerda", variable=self.cam_esquerda_var, style="Grupo.TCheckbutton", cursor="hand2")
+        chk_cam_e.pack(side="left", padx=(0, ESPACO['g']))
 
-        chk_cam_d = ttk.Checkbutton(sub_cams, text="Direita", variable=self.cam_direita_var, style="Cartao.TCheckbutton", cursor="hand2")
+        chk_cam_d = ttk.Checkbutton(sub_cams, text="Direita", variable=self.cam_direita_var, style="Grupo.TCheckbutton", cursor="hand2")
         chk_cam_d.pack(side="left")
 
         # Seção: acabamento
-        criar_legenda(corpo_left, "Acabamento").pack(fill="x", pady=(ESPACO['g'], ESPACO['xs']))
+        criar_secao(corpo_left, "Acabamento")
         chk_textura = ttk.Checkbutton(corpo_left, text="Aplicar texturas (madeira no MDF)", variable=self.usar_textura_var, style="Cartao.TCheckbutton", cursor="hand2")
         chk_textura.pack(anchor="w")
 
         chk_verniz = ttk.Checkbutton(corpo_left, text="Aplicar Verniz na madeira", variable=self.usar_verniz_var, style="Cartao.TCheckbutton", cursor="hand2")
         chk_verniz.pack(anchor="w")
 
+        criar_divisor(corpo_left).pack(fill="x", pady=(ESPACO['pm'], ESPACO['pm']))
         frame_resina = tk.Frame(corpo_left, bg=sup)
-        frame_resina.pack(fill="x", pady=(ESPACO['m'], 0))
-        tk.Label(frame_resina, text="💎 Modelo 3D de Resina para Encaixe:", fg=TEMA['destaque'], bg=sup, font=FONTES['rotulo']).pack(anchor="w", pady=(0, ESPACO['xs']))
+        frame_resina.pack(fill="x")
+        tk.Label(frame_resina, text="💎 Modelo 3D de Resina para Encaixe:", fg=TEMA['destaque'], bg=sup, font=FONTES['rotulo']).pack(anchor="w", pady=(0, ESPACO['p']))
         self.menu_resina = tk.OptionMenu(frame_resina, self.modelo_resina_selecionado, "")
         estilizar_optionmenu(self.menu_resina)
         self.menu_resina.pack(fill="x")
         self._atualizar_hud_resina()
 
-        # Botão Próximo (ação principal do passo, no rodapé do cartão)
-        rodape_left = tk.Frame(corpo_left, bg=sup)
-        rodape_left.pack(side="bottom", fill="x")
-        criar_divisor(rodape_left).pack(fill="x", pady=(ESPACO['m'], ESPACO['m']))
-        btn_proximo = criar_botao(rodape_left, "Próximo ➔", self._avancar_para_processamento, "principal",
-                                  padx=ESPACO['g'], pady=ESPACO['p'] + 2)
-        btn_proximo.pack(side="right")
-
         # Lado Direito: Card de Análise Rápida do SVG
         card_right, corpo_right = criar_cartao(main_frame, "📊 Análise Estrutural do SVG",
                                                "Materiais, quantidades e medidas lidas do arquivo.", cor_titulo='destaque')
-        card_right.grid(row=0, column=1, sticky="nsew", padx=(ESPACO['p'], 0))
+        card_right.grid(row=0, column=1, sticky="nsew", padx=(ESPACO['pm'], 0))
 
         moldura_analise, self.txt_analise_svg = criar_area_texto(corpo_right)
         moldura_analise.pack(fill="both", expand=True)
@@ -958,7 +1058,7 @@ class VectorConvertProApp(tk.Tk):
         screen.grid(row=0, column=0, sticky="nsew")
         self.screens["catalogo"] = screen
 
-        card = tk.Frame(screen, bg=sup, highlightthickness=1, highlightbackground=TEMA['divisor'])
+        card = tk.Frame(screen, bg=sup, highlightthickness=1, highlightbackground=TEMA['borda'])
         card.pack(fill="both", expand=True)
 
         header = tk.Frame(card, bg=sup)
@@ -966,8 +1066,8 @@ class VectorConvertProApp(tk.Tk):
 
         titulos = tk.Frame(header, bg=sup)
         titulos.pack(side="left", fill="x", expand=True)
-        tk.Label(titulos, text="📊 Mapeamento do Catálogo de Troféus", fg=TEMA['destaque'], bg=sup, font=FONTES['titulo'], anchor="w").pack(fill="x")
-        tk.Label(titulos, text="Modalidades e modelos do catálogo que já têm SVG pronto.", fg=TEMA['texto_suave'], bg=sup, font=FONTES['subtitulo'], anchor="w").pack(fill="x", pady=(2, 0))
+        tk.Label(titulos, text="📊 Mapeamento do Catálogo de Troféus", fg=TEMA['destaque'], bg=sup, font=FONTES['secao'], anchor="w").pack(fill="x")
+        tk.Label(titulos, text="Modalidades e modelos do catálogo que já têm SVG pronto.", fg=TEMA['texto_suave'], bg=sup, font=FONTES['dica'], anchor="w").pack(fill="x", pady=(ESPACO['xs'], 0))
         criar_botao(header, "🔄 Atualizar Catálogo", self._atualizar_relatorio_catalogo, "secundario").pack(side="right", anchor="n")
 
         criar_divisor(card).pack(fill="x", padx=ESPACO['g'])
@@ -1121,7 +1221,7 @@ class VectorConvertProApp(tk.Tk):
         self.lbl_porcentagem.configure(text=f"{int(porcentagem)}%")
 
     def adicionar_passo_concluido(self, texto_concluido, novo_status):
-        lbl_hist = tk.Label(self.frame_historico, text=texto_concluido, fg="#34D399", bg="#121824", font=("Helvetica", 9, "bold"), anchor="w")
+        lbl_hist = tk.Label(self.frame_historico, text=texto_concluido, fg=TEMA['sucesso'], bg=TEMA['superficie'], font=FONTES['corpo_negrito'], anchor="w")
         lbl_hist.pack(fill="x", pady=2)
         self.lbl_status_processamento.configure(text=novo_status)
 
@@ -1160,8 +1260,8 @@ class VectorConvertProApp(tk.Tk):
         self.lbl_porcentagem = tk.Label(linha_info, text="0%", fg=TEMA['destaque'], bg=sup, font=FONTES['status'])
         self.lbl_porcentagem.pack(side="right")
 
-        # Trilho da barra com borda sutil de 1 px
-        f_bar_bg = tk.Frame(frame_progresso_container, bg=TEMA['divisor'], padx=1, pady=1)
+        # Trilho da barra com borda de 1 px (outline)
+        f_bar_bg = tk.Frame(frame_progresso_container, bg=TEMA['borda'], padx=1, pady=1)
         f_bar_bg.pack(fill="x")
 
         self.canvas_barra = tk.Canvas(f_bar_bg, bg=TEMA['campo'], height=16, highlightthickness=0, bd=0)
@@ -1188,17 +1288,19 @@ class VectorConvertProApp(tk.Tk):
         centro = tk.Frame(corpo, bg=sup)
         centro.place(relx=0.5, rely=0.45, anchor="center")
 
-        tk.Label(centro, text="✓", fg=TEMA['fundo'], bg=TEMA['sucesso'], font=FONTES['grande'], width=2).pack(pady=(0, ESPACO['g']))
+        criar_circulo(centro, "✓", 'sucesso', 'sobre_sucesso', tamanho=88, bg='superficie', fonte='grande').pack(pady=(0, ESPACO['g']))
         tk.Label(centro, text="Processamento Concluído!", fg=TEMA['sucesso'], bg=sup, font=FONTES['titulo']).pack()
         tk.Label(centro, text="Abra a pasta para ver as imagens e os arquivos gerados.", fg=TEMA['texto_suave'], bg=sup, font=FONTES['subtitulo']).pack(pady=(ESPACO['xs'], 0))
         criar_botao(centro, "Abrir Pasta de Imagens / Arquivos", lambda: os.startfile(self.output_path) if os.path.exists(self.output_path) else None, "sucesso",
                     padx=ESPACO['g'], pady=ESPACO['p'] + 2).pack(pady=(ESPACO['g'], 0))
 
     def _build_footer(self):
-        footer = tk.Frame(self, bg=TEMA['campo'], height=32, padx=ESPACO['g'])
-        footer.grid(row=2, column=0, columnspan=2, sticky="ew")
-        tk.Frame(self, bg=TEMA['divisor'], height=1).grid(row=2, column=0, columnspan=2, sticky="new")
-        tk.Label(footer, text="© 2026 VectorConvert Pro. All rights reserved.", fg=TEMA['texto_apagado'], bg=TEMA['campo'], font=FONTES['dica']).pack(side="left", pady=ESPACO['p'])
+        # Como no modelo: o rodapé fica no pé do menu lateral, com linha em cima (outline)
+        footer = tk.Frame(self._sidebar, bg=TEMA['superficie'])
+        footer.pack(side="bottom", fill="x", padx=ESPACO['m'], pady=(0, ESPACO['m']))
+        tk.Frame(footer, bg=TEMA['borda'], height=1).pack(fill="x")
+        tk.Label(footer, text=f"© 2026 {tema_janela.NOME_APP}. All rights reserved.", fg=TEMA['texto_apagado'], bg=TEMA['superficie'],
+                 font=FONTES['dica'], anchor="w", justify="left", wraplength=190).pack(fill="x", padx=ESPACO['p'], pady=(ESPACO['m'], 0))
 
 
 if __name__ == "__main__":

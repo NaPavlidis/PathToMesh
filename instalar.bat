@@ -1,15 +1,15 @@
 @echo off
-rem Instalador do Phy-2d-by-3d: de dois cliques neste arquivo.
+rem Instalador do PathToMesh: de dois cliques neste arquivo.
 rem Ele roda o instalar.ps1 (da mesma pasta ou, se nao tiver, baixado do GitHub).
 setlocal
-title Instalador do Phy-2d-by-3d
+title Instalador do PathToMesh
 set "PS1=%~dp0instalar.ps1"
-set "PS1_TEMP=%TEMP%\phy-2d-by-3d-instalar.ps1"
+set "PS1_TEMP=%TEMP%\pathtomesh-instalar.ps1"
 if not exist "%PS1%" set "PS1=%PS1_TEMP%"
 if "%PS1%"=="%PS1_TEMP%" (
     echo Baixando o instalador do GitHub...
     if exist "%PS1_TEMP%" del /q "%PS1_TEMP%"
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/NaPavlidis/Phy-2d-by-3d/main/instalar.ps1' -OutFile $env:PS1_TEMP"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/NaPavlidis/PathToMesh/main/instalar.ps1' -OutFile $env:PS1_TEMP"
 )
 if not exist "%PS1%" (
     echo.

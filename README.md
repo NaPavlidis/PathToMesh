@@ -1,6 +1,6 @@
-# Phy-2d-by-3d
+# PathToMesh
 
-Conversão de SVG para 3D.
+Conversão de SVG para 3D. (Antes, o programa e o repositório se chamavam **Phy-2d-by-3d**; o GitHub redireciona os endereços antigos e as instalações antigas continuam funcionando.)
 
 O app lê os arquivos SVG do catálogo de troféus e identifica o material de cada peça pela cor de contorno (acrílico, MDF, base, resina, plotter, adesivo...). Depois o Blender monta e renderiza o modelo 3D.
 
@@ -10,7 +10,10 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 
 | Arquivo | O que faz |
 | --- | --- |
-| `app_ui.py` | Janela do app (Tkinter): escolhe o catálogo, a cena `.blend` e os modelos, e chama o Blender. As cores, fontes e espaçamentos da janela ficam todos no dicionário `TEMA` (e em `FONTES`/`ESPACO`), aplicados por `aplicar_estilo` |
+| `app_ui.py` | Janela do app (Tkinter): escolhe o catálogo, a cena `.blend` e os modelos, e chama o Blender. Usa o `TEMA`/`ESPACO` do `tema_janela.py` e as fontes de `FONTES`, aplicados por `aplicar_estilo` |
+| `tema_janela.py` | Visual compartilhado pelo app e pelo launcher: a paleta `TEMA` e os espaços `ESPACO` (tirados do `docs/modelo-layout.html`), a escolha das fontes, os ícones das janelas e a barra de título do Windows pintada nas cores do tema (DWM; no Windows 10 fica só o modo escuro) |
+| `assets/icones/` | Ícones (`.ico` e `.png`): `3` no app, `2` no launcher e `1` no instalador e nos atalhos (veja o `README.md` da pasta) |
+| `docs/modelo-layout.html` | Modelo de layout (HTML) que serviu de referência para o visual |
 | `blender_engine.py` | Roda dentro do Blender (`bpy`): importa o SVG, aplica materiais e extrusão, configura câmeras e renderiza |
 | `mapear_catalogo.py` | Mapeia o catálogo (`CATALOGO/<MODALIDADE>/<MODELO>/SVG/*.svg`) e mostra quais modelos estão prontos |
 | `infos_svg.py` | Analisa um SVG e lista as peças e os materiais encontrados |
@@ -24,20 +27,20 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 
 ## Instalação
 
-1. Baixe o instalador: **[instalar.bat](https://github.com/NaPavlidis/Phy-2d-by-3d/raw/main/instalar.bat)**. Se o navegador mostrar o texto em vez de baixar, clique com o botão direito no link e escolha **Salvar link como...**, ou abra a [página do arquivo](https://github.com/NaPavlidis/Phy-2d-by-3d/blob/main/instalar.bat) e clique no botão de download (**Download raw file**).
+1. Baixe o instalador: **[instalar.bat](https://github.com/NaPavlidis/PathToMesh/raw/main/instalar.bat)**. Se o navegador mostrar o texto em vez de baixar, clique com o botão direito no link e escolha **Salvar link como...**, ou abra a [página do arquivo](https://github.com/NaPavlidis/PathToMesh/blob/main/instalar.bat) e clique no botão de download (**Download raw file**).
 2. Dê dois cliques no `instalar.bat`. Se o Windows mostrar "O Windows protegeu o computador", clique em **Mais informações** e depois em **Executar assim mesmo**.
 3. Responda o que ele perguntar (a pasta de instalação; aperte Enter para usar a padrão) e espere o resumo no fim.
 
 O instalador (`instalar.bat`, que roda o `instalar.ps1`) faz sozinho:
 
 - confere se há o **Python 3** (comando `py` ou `python`) e o **Git**. Se faltar algum, instala com o `winget` (`Python.Python.3.14` e `Git.Git`), avisando antes;
-- pergunta a pasta de instalação (padrão: `%LOCALAPPDATA%\Phy-2d-by-3d`) e baixa o programa do GitHub (`git clone`). Se o programa já estiver nessa pasta, só atualiza, sem apagar o seu `config.local.json`;
+- pergunta a pasta de instalação (padrão: `%LOCALAPPDATA%\PathToMesh`) e baixa o programa do GitHub (`git clone`). Se o programa já estiver nessa pasta, só atualiza, sem apagar o seu `config.local.json`. Quem instalou antes da troca de nome tem o programa em `%LOCALAPPDATA%\Phy-2d-by-3d`: nesse caso, o padrão continua sendo essa pasta (só atualiza);
 - instala as dependências (`py -m pip install -r requirements.txt`);
 - cria o `config.local.json` a partir do `config.exemplo.json`, se ele ainda não existir, e procura o Blender instalado (em `C:\Program Files\Blender Foundation\Blender *\blender.exe`, usando a versão mais nova). Um `blender_path` que já existe nunca é trocado;
-- cria o atalho **Phy-2d-by-3d** (abre o launcher) na Área de Trabalho e no Menu Iniciar;
+- cria o atalho **PathToMesh** (abre o launcher, com o ícone do programa) na Área de Trabalho e no Menu Iniciar. Os atalhos antigos **Phy-2d-by-3d** que abrem a mesma pasta são trocados pelo novo;
 - mostra um resumo do que fez e dos avisos (por exemplo, se não achou o Blender).
 
-Depois é só abrir o atalho **Phy-2d-by-3d** na Área de Trabalho. Para atualizar, use o botão **Atualizar agora** do launcher (ou rode o instalador de novo).
+Depois é só abrir o atalho **PathToMesh** na Área de Trabalho. Para atualizar, use o botão **Atualizar agora** do launcher (ou rode o instalador de novo).
 
 ## Como rodar sem o instalador (Windows)
 

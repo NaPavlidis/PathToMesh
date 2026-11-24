@@ -1,4 +1,4 @@
-"""Registro de erros do Phy-2d-by-3d (usado pelo app_ui.py e pelo launcher.py).
+"""Registro de erros do PathToMesh (usado pelo app_ui.py e pelo launcher.py).
 
 - Grava cada erro em logs/erro-AAAAMMDD-HHMMSS.log, com a versão (commit), o sistema e o traceback.
 - Higieniza o texto antes de gravar: o repositório é público, então caminhos do PC viram
@@ -39,10 +39,10 @@ ARQUIVO_CONFIG_EXEMPLO = "config.exemplo.json"
 
 # Identidade neutra para os commits de log (não expõe o nome nem o e-mail do usuário)
 _AUTOR_LOGS = {
-    "GIT_AUTHOR_NAME": "Launcher Phy-2d-by-3d",
-    "GIT_AUTHOR_EMAIL": "launcher@phy-2d-by-3d.invalid",
-    "GIT_COMMITTER_NAME": "Launcher Phy-2d-by-3d",
-    "GIT_COMMITTER_EMAIL": "launcher@phy-2d-by-3d.invalid",
+    "GIT_AUTHOR_NAME": "Launcher PathToMesh",
+    "GIT_AUTHOR_EMAIL": "launcher@pathtomesh.invalid",
+    "GIT_COMMITTER_NAME": "Launcher PathToMesh",
+    "GIT_COMMITTER_EMAIL": "launcher@pathtomesh.invalid",
 }
 # Sem janelas de senha: se não houver credencial salva, o push só falha
 _SEM_PERGUNTA = {"GIT_TERMINAL_PROMPT": "0", "GCM_INTERACTIVE": "never"}
@@ -253,7 +253,7 @@ def gravar_log(origem, resumo, detalhes="", pasta=PASTA_PROJETO, pasta_logs=None
     except Exception:
         versao = "desconhecida"
     texto = (
-        "Phy-2d-by-3d - registro de erro\n"
+        "PathToMesh - registro de erro\n"
         f"Data: {agora.strftime('%Y-%m-%d %H:%M:%S')}\n"
         f"Origem: {origem}\n"
         f"Versão: {versao}\n"
@@ -368,7 +368,7 @@ def _criar_blob(pasta, conteudo_bytes):
 
 _LEIAME_LOGS = (
     "# Logs de erro\n\n"
-    "Branch só com os logs de erro enviados pelo launcher do Phy-2d-by-3d (pasta `logs/`).\n"
+    "Branch só com os logs de erro enviados pelo launcher do PathToMesh (pasta `logs/`).\n"
     "Os logs são higienizados (sem caminhos do PC, nomes de usuário nem a configuração).\n"
     "Não faça merge desta branch na main.\n"
 )
