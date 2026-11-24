@@ -2,7 +2,9 @@
 
 - Grava cada erro em logs/erro-AAAAMMDD-HHMMSS.log, com a versão (commit), o sistema e o traceback.
 - Higieniza o texto antes de gravar: o repositório é público, então caminhos do PC viram
-  <CAMINHO>/<nome-do-arquivo>, nomes de usuário viram <USUARIO> e valores do config.json viram <CONFIG>.
+  <CAMINHO>/<nome-do-arquivo>, nomes de usuário viram <USUARIO> e valores do config.local.json
+  (e do config.json) viram <CONFIG>.
+- Cria o config.local.json (a configuração do usuário) a partir do config.json, se faltar.
 - Envia os logs novos para a branch 'logs' do GitHub (nunca a main), sem mexer na branch
   de trabalho, no índice nem nos arquivos do usuário: monta o commit com os comandos
   internos do git (hash-object, mktree, commit-tree) e faz push direto para refs/heads/logs.
@@ -26,6 +28,11 @@ PASTA_LOGS = os.path.join(PASTA_PROJETO, "logs")
 ARQUIVO_VERSAO = ".versao"          # gravado pelo launcher quando atualiza sem git (zip)
 ARQUIVO_ENVIADOS = ".enviados"      # dentro de logs/: nomes dos logs já enviados
 RAMO_LOGS = "logs"
+
+# Configuração: o app e o launcher leem e gravam só o config.local.json (no .gitignore, nunca
+# vai para o GitHub). O config.json versionado só serve de ponto de partida para criá-lo.
+ARQUIVO_CONFIG_LOCAL = "config.local.json"
+ARQUIVO_CONFIG_BASE = "config.json"
 
 # Identidade neutra para os commits de log (não expõe o nome nem o e-mail do usuário)
 _AUTOR_LOGS = {
@@ -98,6 +105,33 @@ def texto_versao(v):
     return f"{v['curto']} ({v['data']})" if v.get("data") else v["curto"]
 
 
+# ---------------------------------------------------------------- configuração
+
+def caminho_config_local(pasta=PASTA_PROJETO):
+    return os.path.join(pasta, ARQUIVO_CONFIG_LOCAL)
+
+
+def garantir_config_local(pasta=PASTA_PROJETO):
+    """Cria o config.local.json copiando o config.json, se ainda não existir. Nunca sobrescreve.
+
+    Devolve (caminho do config.local.json, True se acabou de ser criado).
+    """
+    local = caminho_config_local(pasta)
+    if os.path.exists(local):
+        return local, False
+    base = os.path.join(pasta, ARQUIVO_CONFIG_BASE)
+    if not os.path.isfile(base):
+        return local, False
+    with open(base, "rb") as f:
+        conteudo = f.read()
+    try:
+        with open(local, "xb") as f:      # "x": se outro processo criou antes, não sobrescreve
+            f.write(conteudo)
+    except FileExistsError:
+        return local, False
+    return local, True
+
+
 # ---------------------------------------------------------------- higienização
 
 # Caminho com letra de unidade (C:\..., F:/..., e C:\\... dentro de repr). Vai até aspas, fim de
@@ -121,14 +155,16 @@ def _nome_final(caminho):
 
 
 def _valores_config(pasta):
-    try:
-        with open(os.path.join(pasta, "config.json"), "r", encoding="utf-8") as f:
-            dados = json.load(f)
-    except (OSError, ValueError):
-        return []
-    if not isinstance(dados, dict):
-        return []
-    return [v for v in dados.values() if isinstance(v, str) and len(v.strip()) >= 3]
+    valores = []
+    for nome in (ARQUIVO_CONFIG_LOCAL, ARQUIVO_CONFIG_BASE):
+        try:
+            with open(os.path.join(pasta, nome), "r", encoding="utf-8") as f:
+                dados = json.load(f)
+        except (OSError, ValueError):
+            continue
+        if isinstance(dados, dict):
+            valores += [v for v in dados.values() if isinstance(v, str) and len(v.strip()) >= 3]
+    return sorted(set(valores))
 
 
 def _nomes_usuario():
@@ -148,7 +184,7 @@ def _nomes_usuario():
 
 
 def higienizar(texto, pasta=PASTA_PROJETO, valores_config=None, nomes_usuario=None):
-    """Tira do texto tudo o que identifica o PC: caminhos, usuário, conteúdo do config.json."""
+    """Tira do texto tudo o que identifica o PC: caminhos, usuário, conteúdo da configuração."""
     if texto is None:
         return ""
     texto = str(texto)

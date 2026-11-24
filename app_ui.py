@@ -19,7 +19,9 @@ try:
 except ImportError:
     HAS_SVGPATH = False
 
-CONFIG_FILE = "config.json"
+# A configuração do usuário fica no config.local.json (no .gitignore, nunca vai para o GitHub).
+# Se ele não existir, é criado copiando o config.json; o app só grava no config.local.json.
+CONFIG_FILE = registro_erros.caminho_config_local()
 
 # ==============================================================================
 # DICIONÁRIO DE MATERIAIS PADRÃO
@@ -617,6 +619,10 @@ class VectorConvertProApp(tk.Tk):
         self._show_screen("upload")
 
     def carregar_configuracoes_disco(self):
+        try:
+            registro_erros.garantir_config_local(os.path.dirname(CONFIG_FILE))
+        except OSError as e:
+            print(f"Erro ao criar o {registro_erros.ARQUIVO_CONFIG_LOCAL}: {e}")
         if os.path.exists(CONFIG_FILE):
             try:
                 with open(CONFIG_FILE, "r", encoding="utf-8") as f:

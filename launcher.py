@@ -3,7 +3,7 @@
 Ao abrir:
   1. procura atualização no GitHub (git, se a pasta for um clone; senão a API pública e o zip da main);
   2. instala as dependências (pip install -r requirements.txt);
-  3. confere se o blender_path do config.json existe;
+  3. confere se o blender_path do config.local.json existe (criado a partir do config.json, se faltar);
   4. envia os logs de erro novos para a branch 'logs' (se houver git com credencial).
 Depois é só clicar em "Abrir o app".
 
@@ -36,9 +36,14 @@ URL_REPO = f"https://github.com/{REPO}.git"
 URL_API_COMMIT = f"https://api.github.com/repos/{REPO}/commits/{RAMO}"
 URL_ZIP = "https://codeload.github.com/" + REPO + "/zip/{sha}"
 
+# Configuração do usuário (no .gitignore) e cópia de segurança do config.json antigo
+CONFIG_LOCAL = reg.ARQUIVO_CONFIG_LOCAL
+CONFIG_BASE = reg.ARQUIVO_CONFIG_BASE
+CONFIG_BACKUP = "config.json.bak"
 # Na atualização pelo zip estes nunca são sobrescritos (o config.json só é criado se faltar)
-PRESERVAR = {"config.json"}
-IGNORAR_NO_ZIP = {".git", "logs", ".venv", "venv", "__pycache__", reg.ARQUIVO_VERSAO}
+PRESERVAR = {CONFIG_BASE}
+IGNORAR_NO_ZIP = {".git", "logs", ".venv", "venv", "__pycache__", reg.ARQUIVO_VERSAO,
+                  CONFIG_LOCAL, CONFIG_BACKUP}
 
 # Paleta do app_ui.py
 COR_FUNDO = "#0B0F17"
@@ -147,24 +152,66 @@ def verificar_atualizacao(pasta=PASTA):
 
 # ---------------------------------------------------------------- atualizar
 
-def atualizar_git(pasta=PASTA):
-    """git pull --ff-only, guardando o config.json do usuário. Devolve (ok, mensagem)."""
-    caminho_config = os.path.join(pasta, "config.json")
-    copia = None
-    if os.path.exists(caminho_config):
-        with open(caminho_config, "rb") as f:
-            copia = f.read()
-        # Se o usuário mudou o config.json, ele sai do caminho do pull e volta depois
-        reg.git(pasta, "checkout", "--", "config.json")
+def _ler_bytes(caminho):
     try:
-        codigo, saida, erro = reg.git(pasta, "pull", "--ff-only", "--no-rebase", _remoto_git(pasta), RAMO, timeout=180)
-    finally:
-        if copia is not None:
-            with open(caminho_config, "wb") as f:
-                f.write(copia)
+        with open(caminho, "rb") as f:
+            return f.read()
+    except OSError:
+        return None
+
+
+def proteger_config(pasta=PASTA):
+    """Antes do git pull: tira do caminho as mudanças locais do config.json sem perder nada.
+
+    - config.json sem mudanças locais: não faz nada.
+    - config.local.json ainda não existe: copia o config.json (os valores do usuário) para ele.
+    - config.local.json já existe e o config.json tem outro conteúdo: guarda o config.json em
+      config.json.bak, para nada se perder.
+    Depois descarta a mudança local do config.json (volta à versão do commit).
+    Devolve (ok, lista de avisos).
+    """
+    codigo, _, _ = reg.git(pasta, "ls-files", "--error-unmatch", "--", CONFIG_BASE)
     if codigo != 0:
-        return False, "O git não conseguiu atualizar:\n" + (erro or saida)
-    return True, "Atualizado pelo git."
+        return True, []                      # config.json não é versionado: nada a proteger
+    codigo, _, _ = reg.git(pasta, "diff", "--quiet", "HEAD", "--", CONFIG_BASE)
+    if codigo == 0:
+        return True, []                      # sem mudanças locais
+    avisos = []
+    caminho_base = os.path.join(pasta, CONFIG_BASE)
+    try:
+        local, criado = reg.garantir_config_local(pasta)
+        if criado:
+            avisos.append(f"Os seus valores do {CONFIG_BASE} foram copiados para o {CONFIG_LOCAL}.")
+        else:
+            atual = _ler_bytes(caminho_base)
+            if atual is not None and atual != _ler_bytes(local):
+                with open(os.path.join(pasta, CONFIG_BACKUP), "wb") as f:
+                    f.write(atual)
+                avisos.append(f"O {CONFIG_BASE} alterado foi guardado em {CONFIG_BACKUP} "
+                              f"(a configuração usada é a do {CONFIG_LOCAL}).")
+    except OSError as e:
+        return False, [f"Não deu para guardar o {CONFIG_BASE} antes de atualizar: {e}"]
+    codigo, saida, erro = reg.git(pasta, "checkout", "HEAD", "--", CONFIG_BASE)
+    if codigo != 0:
+        return False, [f"Não deu para descartar a mudança local do {CONFIG_BASE}:\n" + (erro or saida)]
+    return True, avisos
+
+
+def atualizar_git(pasta=PASTA):
+    """git pull --ff-only, protegendo antes o config do usuário. Devolve (ok, mensagem)."""
+    ok, avisos = proteger_config(pasta)
+    if not ok:
+        return False, "\n".join(avisos)
+    try:
+        # config.json sem mudanças locais: o config.local.json nasce dele antes do pull
+        if reg.garantir_config_local(pasta)[1]:
+            avisos.append(f"O {CONFIG_LOCAL} foi criado a partir do {CONFIG_BASE}.")
+    except OSError as e:
+        return False, f"Não deu para criar o {CONFIG_LOCAL} antes de atualizar: {e}"
+    codigo, saida, erro = reg.git(pasta, "pull", "--ff-only", "--no-rebase", _remoto_git(pasta), RAMO, timeout=180)
+    if codigo != 0:
+        return False, "\n".join(avisos + ["O git não conseguiu atualizar:\n" + (erro or saida)])
+    return True, "\n".join(avisos + ["Atualizado pelo git."])
 
 
 def _caminho_seguro(nome_no_zip):
@@ -220,6 +267,10 @@ def atualizar_zip(info, pasta=PASTA, timeout=60):
             dados = r.read()
     except (urllib.error.URLError, OSError) as e:
         return False, f"Não deu para baixar a atualização: {e}"
+    try:
+        reg.garantir_config_local(pasta)     # os valores do usuário saem do config.json antes
+    except OSError as e:
+        return False, f"Não deu para criar o {CONFIG_LOCAL} antes de atualizar: {e}"
     alterados = aplicar_zip(dados, pasta)
     gravar_versao_zip(info["remoto_sha"], info["remoto_data"], pasta)
     return True, f"Atualizado pelo zip ({len(alterados)} arquivo(s) novo(s) ou alterado(s))."
@@ -258,19 +309,22 @@ def instalar_dependencias(pasta=PASTA):
 
 
 def ler_config(pasta=PASTA):
-    """Devolve (dados, erro)."""
-    caminho = os.path.join(pasta, "config.json")
+    """Lê o config.local.json (criado a partir do config.json, se faltar). Devolve (dados, erro)."""
+    try:
+        caminho, _ = reg.garantir_config_local(pasta)
+    except OSError as e:
+        return None, f"Não deu para criar o {CONFIG_LOCAL}: {e}"
     if not os.path.isfile(caminho):
-        return None, "Não achei o config.json na pasta do projeto."
+        return None, f"Não achei o {CONFIG_LOCAL} nem o {CONFIG_BASE} na pasta do projeto."
     try:
         with open(caminho, "r", encoding="utf-8") as f:
             dados = json.load(f)
     except ValueError as e:
-        return None, f"O config.json tem um erro de formato: {e}"
+        return None, f"O {CONFIG_LOCAL} tem um erro de formato: {e}"
     except OSError as e:
-        return None, f"Não deu para ler o config.json: {e}"
+        return None, f"Não deu para ler o {CONFIG_LOCAL}: {e}"
     if not isinstance(dados, dict):
-        return None, "O config.json não está no formato esperado."
+        return None, f"O {CONFIG_LOCAL} não está no formato esperado."
     return dados, None
 
 
@@ -281,7 +335,7 @@ def verificar_blender(pasta=PASTA):
         return False, erro
     caminho = dados.get("blender_path")
     if not caminho or not isinstance(caminho, str):
-        return False, "O config.json não tem o blender_path. Ajuste nas configurações do app (⚙)."
+        return False, f"O {CONFIG_LOCAL} não tem o blender_path. Ajuste nas configurações do app (⚙)."
     if not os.path.isfile(caminho):
         return False, f"O Blender não foi encontrado em:\n{caminho}\nAjuste nas configurações do app (⚙)."
     return True, f"Blender encontrado: {caminho}"
@@ -467,7 +521,7 @@ class Launcher(tk.Tk if tk else object):
         info = self.info_atualizacao
         if not info or info.get("status") != "disponivel":
             return
-        if not messagebox.askyesno("Atualizar", "Baixar a versão nova do GitHub agora?\nO seu config.json não será mudado."):
+        if not messagebox.askyesno("Atualizar", "Baixar a versão nova do GitHub agora?\nA sua configuração (config.local.json) não será mudada."):
             return
 
         def tarefa():
