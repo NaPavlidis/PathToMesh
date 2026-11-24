@@ -427,8 +427,7 @@ class SettingsWindow(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.title("Configurações do Sistema")
-        self.geometry("640x680")
-        self.minsize(560, 620)
+        # O tamanho da janela é calculado pelo conteúdo no fim do _build_ui (_ajustar_tamanho)
         self.configure(bg=TEMA['fundo'])
         self.resizable(True, True)
         self.transient(parent)
@@ -446,8 +445,38 @@ class SettingsWindow(tk.Toplevel):
     def _build_ui(self):
         sup = TEMA['superficie']
 
+        # Ação principal: o rodapé entra primeiro e fica preso embaixo, para o botão
+        # Salvar estar sempre visível (antes ele ficava fora da janela, junto com o
+        # campo de samples, porque o conteúdo é mais alto que a janela).
+        rodape = tk.Frame(self, bg=TEMA['fundo'])
+        rodape.pack(side="bottom", fill="x", padx=ESPACO['g'], pady=(ESPACO['m'], ESPACO['g']))
+        criar_botao(rodape, "Salvar Configurações", self._save_settings, "principal", padx=ESPACO['g']).pack(side="right")
+
+        # Conteúdo com barra de rolagem (telas baixas ou com zoom do Windows)
+        area = tk.Frame(self, bg=TEMA['fundo'])
+        area.pack(side="top", fill="both", expand=True)
+        canvas = tk.Canvas(area, bg=TEMA['fundo'], highlightthickness=0, bd=0)
+        rolagem = ttk.Scrollbar(area, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=rolagem.set)
+        rolagem.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+        conteudo = tk.Frame(canvas, bg=TEMA['fundo'])
+        item_conteudo = canvas.create_window((0, 0), window=conteudo, anchor="nw")
+        conteudo.bind("<Configure>", lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(item_conteudo, width=e.width))
+
+        def rolar(evento):
+            if getattr(evento, "num", None) == 4 or getattr(evento, "delta", 0) > 0:
+                canvas.yview_scroll(-1, "units")
+            else:
+                canvas.yview_scroll(1, "units")
+        self.bind("<MouseWheel>", rolar)
+        self.bind("<Button-4>", rolar)
+        self.bind("<Button-5>", rolar)
+        self._area_conteudo, self._rodape = conteudo, rodape
+
         # Cabeçalho
-        cab = tk.Frame(self, bg=TEMA['fundo'])
+        cab = tk.Frame(conteudo, bg=TEMA['fundo'])
         cab.pack(fill="x", padx=ESPACO['g'], pady=(ESPACO['g'], ESPACO['m']))
         tk.Label(cab, text="⚙ Configurações e Diretórios", fg=TEMA['texto'], bg=TEMA['fundo'], font=FONTES['titulo'], anchor="w").pack(fill="x")
         tk.Label(cab, text="Caminhos e opções usados pelo app. Ficam salvos para as próximas vezes.",
@@ -464,7 +493,7 @@ class SettingsWindow(tk.Toplevel):
             criar_botao(linha, "Buscar...", comando, "secundario", font=FONTES['corpo'], pady=ESPACO['xs']).pack(side="right")
 
         # Cartão: programas e pastas
-        cartao_pastas, corpo_pastas = criar_cartao(self, "Programas e pastas")
+        cartao_pastas, corpo_pastas = criar_cartao(conteudo, "Programas e pastas")
         cartao_pastas.pack(fill="x", padx=ESPACO['g'], pady=(0, ESPACO['m']))
 
         # Executável do Blender
@@ -488,7 +517,7 @@ class SettingsWindow(tk.Toplevel):
                         self.blend_dir_var, self._select_blend_dir)
 
         # Cartão: renderização
-        cartao_render, corpo_render = criar_cartao(self, "Renderização")
+        cartao_render, corpo_render = criar_cartao(conteudo, "Renderização")
         cartao_render.pack(fill="x", padx=ESPACO['g'], pady=(0, ESPACO['m']))
 
         # Dropdown Blend
@@ -508,10 +537,16 @@ class SettingsWindow(tk.Toplevel):
                  fg=TEMA['texto_apagado'], bg=sup, font=FONTES['dica'], anchor="w").pack(fill="x", pady=(0, ESPACO['xs']))
         criar_entrada(f_samp, self.cycles_samples_var, width=15).pack(anchor="w", ipady=ESPACO['xs'] + 2)
 
-        # Ação principal
-        rodape = tk.Frame(self, bg=TEMA['fundo'])
-        rodape.pack(fill="x", padx=ESPACO['g'], pady=(0, ESPACO['g']))
-        criar_botao(rodape, "Salvar Configurações", self._save_settings, "principal", padx=ESPACO['g']).pack(side="right")
+        self._ajustar_tamanho()
+
+    def _ajustar_tamanho(self):
+        """Altura da janela = altura do conteúdo + rodapé, sem passar da tela (aí entra a rolagem)."""
+        self.update_idletasks()
+        largura = 640
+        altura = self._area_conteudo.winfo_reqheight() + self._rodape.winfo_reqheight() + ESPACO['m'] + ESPACO['g']
+        altura = max(360, min(altura, self.winfo_screenheight() - 120))
+        self.geometry(f"{largura}x{altura}")
+        self.minsize(560, min(altura, 360))
 
     def _select_blender(self):
         f = filedialog.askopenfilename(title="Selecione o executável do Blender", filetypes=[("Executável Blender", "blender.exe"), ("Todos", "*.*")])
