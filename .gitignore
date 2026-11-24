@@ -6,4 +6,6 @@ venv/
 logs/
 .versao
 config.local.json
+# config.json antigo (antes do config.local.json): se ainda existir no PC, só serve para a migração
+config.json
 config.json.bak

@@ -4,7 +4,8 @@
 - Higieniza o texto antes de gravar: o repositório é público, então caminhos do PC viram
   <CAMINHO>/<nome-do-arquivo>, nomes de usuário viram <USUARIO> e valores do config.local.json
   (e do config.json) viram <CONFIG>.
-- Cria o config.local.json (a configuração do usuário) a partir do config.json, se faltar.
+- Cria o config.local.json (a configuração do usuário), se faltar, a partir do config.json antigo
+  (migração) ou do config.exemplo.json.
 - Envia os logs novos para a branch 'logs' do GitHub (nunca a main), sem mexer na branch
   de trabalho, no índice nem nos arquivos do usuário: monta o commit com os comandos
   internos do git (hash-object, mktree, commit-tree) e faz push direto para refs/heads/logs.
@@ -30,9 +31,11 @@ ARQUIVO_ENVIADOS = ".enviados"      # dentro de logs/: nomes dos logs já enviad
 RAMO_LOGS = "logs"
 
 # Configuração: o app e o launcher leem e gravam só o config.local.json (no .gitignore, nunca
-# vai para o GitHub). O config.json versionado só serve de ponto de partida para criá-lo.
+# vai para o GitHub). Ele nasce do config.exemplo.json (versionado, com valores genéricos) ou,
+# na migração de quem ainda tem o config.json antigo com os seus valores, do config.json.
 ARQUIVO_CONFIG_LOCAL = "config.local.json"
-ARQUIVO_CONFIG_BASE = "config.json"
+ARQUIVO_CONFIG_BASE = "config.json"              # antigo: não é mais versionado (está no .gitignore)
+ARQUIVO_CONFIG_EXEMPLO = "config.exemplo.json"
 
 # Identidade neutra para os commits de log (não expõe o nome nem o e-mail do usuário)
 _AUTOR_LOGS = {
@@ -111,16 +114,27 @@ def caminho_config_local(pasta=PASTA_PROJETO):
     return os.path.join(pasta, ARQUIVO_CONFIG_LOCAL)
 
 
+def origem_config(pasta=PASTA_PROJETO):
+    """De onde o config.local.json nasce: o config.json antigo (valores do usuário, migração da
+    etapa 1), se existir; senão o config.exemplo.json. None se nenhum dos dois existir."""
+    for nome in (ARQUIVO_CONFIG_BASE, ARQUIVO_CONFIG_EXEMPLO):
+        caminho = os.path.join(pasta, nome)
+        if os.path.isfile(caminho):
+            return caminho
+    return None
+
+
 def garantir_config_local(pasta=PASTA_PROJETO):
-    """Cria o config.local.json copiando o config.json, se ainda não existir. Nunca sobrescreve.
+    """Cria o config.local.json, se ainda não existir, copiando o config.json antigo (se houver)
+    ou o config.exemplo.json. Nunca sobrescreve.
 
     Devolve (caminho do config.local.json, True se acabou de ser criado).
     """
     local = caminho_config_local(pasta)
     if os.path.exists(local):
         return local, False
-    base = os.path.join(pasta, ARQUIVO_CONFIG_BASE)
-    if not os.path.isfile(base):
+    base = origem_config(pasta)
+    if base is None:
         return local, False
     with open(base, "rb") as f:
         conteudo = f.read()
@@ -355,7 +369,7 @@ def _criar_blob(pasta, conteudo_bytes):
 _LEIAME_LOGS = (
     "# Logs de erro\n\n"
     "Branch só com os logs de erro enviados pelo launcher do Phy-2d-by-3d (pasta `logs/`).\n"
-    "Os logs são higienizados (sem caminhos do PC, nomes de usuário nem config.json).\n"
+    "Os logs são higienizados (sem caminhos do PC, nomes de usuário nem a configuração).\n"
     "Não faça merge desta branch na main.\n"
 )
 

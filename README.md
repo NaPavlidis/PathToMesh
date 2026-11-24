@@ -18,7 +18,7 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 | `launcher.bat` / `launcher.pyw` | Atalhos para abrir o launcher no Windows (com console / sem console) |
 | `instalar.bat` / `instalar.ps1` | Instalador para Windows (veja **Instalação**). O `.bat` é o que você baixa e roda; ele chama o `.ps1` |
 | `registro_erros.py` | Grava os logs de erro em `logs/` (sem dados do PC) e envia para a branch `logs` |
-| `config.json` | Configuração de partida (caminhos do Blender, das pastas e da cena, e o número de amostras do Cycles). Só serve para criar o `config.local.json` |
+| `config.exemplo.json` | Modelo da configuração, com valores genéricos (caminho do Blender, pastas `C:/Caminho/...`, cena e número de amostras do Cycles). Só serve para criar o `config.local.json` |
 | `config.local.json` | A **sua** configuração, a que o app e o launcher usam. Fica só no seu PC (está no `.gitignore` e nunca vai para o GitHub) |
 | `legado/` | Versão antiga do motor, guardada como referência |
 
@@ -64,15 +64,16 @@ Ao clicar em **Abrir o app**, o app abre como um programa independente e o launc
 
 A configuração que o app e o launcher usam fica em **`config.local.json`**, na pasta do projeto. Ele está no `.gitignore`: fica só no seu PC e nunca vai para o GitHub (o repositório é público).
 
-- Se o `config.local.json` não existir, o app e o launcher o criam copiando o `config.json`. A partir daí, as configurações do app (⚙) são gravadas só no `config.local.json`, e o `config.json` não é mais mudado.
-- Antes de atualizar pelo git, o launcher protege a sua configuração: se o `config.json` tiver mudanças suas e o `config.local.json` ainda não existir, copia o `config.json` para o `config.local.json`, descarta a mudança local do `config.json` (`git checkout`) e só então faz o `git pull`. Se o `config.local.json` já existir e o `config.json` tiver outro conteúdo, este é guardado em `config.json.bak` antes de ser descartado.
-- Na atualização pelo zip, o `config.local.json` nunca é sobrescrito.
+- Se o `config.local.json` não existir, o app, o launcher e o instalador o criam copiando o **`config.exemplo.json`** (o modelo, com valores genéricos). As configurações do app (⚙) são gravadas só no `config.local.json`.
+- **Quem ainda tem o `config.json` antigo** (de antes do `config.local.json`): se o `config.local.json` não existir, ele nasce do `config.json`, com os seus valores. O `config.json` não é mais usado nem versionado (está no `.gitignore`).
+- Antes de atualizar pelo git, o launcher (e o instalador) protegem a sua configuração: se o `config.json` antigo tiver mudanças suas, os valores vão para o `config.local.json` (se ele ainda não existir) ou, se o `config.local.json` já existir e o conteúdo for outro, para o `config.json.bak`. Depois a mudança local do `config.json` é descartada (`git checkout`) e só então é feito o `git pull`. Assim o `git pull` funciona também na atualização que tira o `config.json` do GitHub.
+- Na atualização pelo zip, o `config.local.json` (e um `config.json` antigo) nunca são sobrescritos.
 
 ## Logs de erro
 
 O app e o launcher gravam os erros (exceções, falhas do Blender e do pip) em `logs/erro-AAAAMMDD-HHMMSS.log`, com a versão (commit), o sistema e o traceback.
 
-Como o repositório é público, os logs são higienizados antes de serem gravados: os caminhos do PC (`C:\...`, `F:\...`, a pasta do usuário) viram `<CAMINHO>/<nome-do-arquivo>`, o nome do usuário e do PC vira `<USUARIO>`, e os valores do `config.local.json` (e do `config.json`) viram `<CONFIG>`.
+Como o repositório é público, os logs são higienizados antes de serem gravados: os caminhos do PC (`C:\...`, `F:\...`, a pasta do usuário) viram `<CAMINHO>/<nome-do-arquivo>`, o nome do usuário e do PC vira `<USUARIO>`, e os valores do `config.local.json` (e do `config.json` antigo, se ainda existir) viram `<CONFIG>`.
 
 - Com git e uma credencial do GitHub salva no PC, o launcher envia os logs novos para a branch **`logs`** (pasta `logs/` nela). A `main` e a branch em que você está trabalhando não mudam. Os logs já enviados ficam listados em `logs/.enviados`.
 - Sem git (ou sem credencial), os logs ficam só no PC. O launcher mostra onde eles estão e tem o botão **Abrir pasta de logs**.

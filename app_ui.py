@@ -20,7 +20,8 @@ except ImportError:
     HAS_SVGPATH = False
 
 # A configuração do usuário fica no config.local.json (no .gitignore, nunca vai para o GitHub).
-# Se ele não existir, é criado copiando o config.json; o app só grava no config.local.json.
+# Se ele não existir, é criado copiando o config.json antigo (se ainda houver) ou o
+# config.exemplo.json; o app só grava no config.local.json.
 CONFIG_FILE = registro_erros.caminho_config_local()
 
 # ==============================================================================

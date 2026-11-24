@@ -3,7 +3,8 @@
 Ao abrir:
   1. procura atualização no GitHub (git, se a pasta for um clone; senão a API pública e o zip da main);
   2. instala as dependências (pip install -r requirements.txt);
-  3. confere se o blender_path do config.local.json existe (criado a partir do config.json, se faltar);
+  3. confere se o blender_path do config.local.json existe (criado, se faltar, a partir do
+     config.json antigo ou do config.exemplo.json);
   4. envia os logs de erro novos para a branch 'logs' (se houver git com credencial).
 Depois é só clicar em "Abrir o app": o app abre como um processo independente e o launcher se
 fecha sozinho. Se o app não abrir, o launcher fica aberto, mostra o erro e grava o log.
@@ -41,11 +42,13 @@ URL_REPO = f"https://github.com/{REPO}.git"
 URL_API_COMMIT = f"https://api.github.com/repos/{REPO}/commits/{RAMO}"
 URL_ZIP = "https://codeload.github.com/" + REPO + "/zip/{sha}"
 
-# Configuração do usuário (no .gitignore) e cópia de segurança do config.json antigo
+# Configuração do usuário (no .gitignore), config.json antigo (só para a migração; também no
+# .gitignore desde a etapa 2), modelo versionado e cópia de segurança do config.json antigo
 CONFIG_LOCAL = reg.ARQUIVO_CONFIG_LOCAL
 CONFIG_BASE = reg.ARQUIVO_CONFIG_BASE
+CONFIG_EXEMPLO = reg.ARQUIVO_CONFIG_EXEMPLO
 CONFIG_BACKUP = "config.json.bak"
-# Na atualização pelo zip estes nunca são sobrescritos (o config.json só é criado se faltar)
+# Na atualização pelo zip estes nunca são sobrescritos (o zip da main não tem mais o config.json)
 PRESERVAR = {CONFIG_BASE}
 IGNORAR_NO_ZIP = {".git", "logs", ".venv", "venv", "__pycache__", reg.ARQUIVO_VERSAO,
                   CONFIG_LOCAL, CONFIG_BACKUP}
@@ -172,21 +175,26 @@ def proteger_config(pasta=PASTA):
     - config.local.json ainda não existe: copia o config.json (os valores do usuário) para ele.
     - config.local.json já existe e o config.json tem outro conteúdo: guarda o config.json em
       config.json.bak, para nada se perder.
-    Depois descarta a mudança local do config.json (volta à versão do commit).
+    Depois descarta a mudança local do config.json (volta à versão do commit). Assim o git pull
+    funciona também quando o GitHub apagou o config.json (etapa 2: ele virou config.exemplo.json):
+    o pull só apaga o config.json sem mudanças, e os valores do usuário já estão a salvo.
     Devolve (ok, lista de avisos).
     """
-    codigo, _, _ = reg.git(pasta, "ls-files", "--error-unmatch", "--", CONFIG_BASE)
-    if codigo != 0:
-        return True, []                      # config.json não é versionado: nada a proteger
+    codigo, saida, _ = reg.git(pasta, "ls-tree", "--name-only", "HEAD", "--", CONFIG_BASE)
+    if codigo != 0 or not saida.strip():
+        return True, []                      # config.json não está no commit atual: nada a proteger
     codigo, _, _ = reg.git(pasta, "diff", "--quiet", "HEAD", "--", CONFIG_BASE)
     if codigo == 0:
         return True, []                      # sem mudanças locais
     avisos = []
     caminho_base = os.path.join(pasta, CONFIG_BASE)
     try:
+        existia_base = os.path.isfile(caminho_base)
         local, criado = reg.garantir_config_local(pasta)
-        if criado:
+        if criado and existia_base:
             avisos.append(f"Os seus valores do {CONFIG_BASE} foram copiados para o {CONFIG_LOCAL}.")
+        elif criado:
+            avisos.append(f"O {CONFIG_LOCAL} foi criado a partir do {CONFIG_EXEMPLO}.")
         else:
             atual = _ler_bytes(caminho_base)
             if atual is not None and atual != _ler_bytes(local):
@@ -208,9 +216,10 @@ def atualizar_git(pasta=PASTA):
     if not ok:
         return False, "\n".join(avisos)
     try:
-        # config.json sem mudanças locais: o config.local.json nasce dele antes do pull
+        # config.json sem mudanças locais: o config.local.json nasce dele (ou do exemplo) antes do pull
+        origem = reg.origem_config(pasta)
         if reg.garantir_config_local(pasta)[1]:
-            avisos.append(f"O {CONFIG_LOCAL} foi criado a partir do {CONFIG_BASE}.")
+            avisos.append(f"O {CONFIG_LOCAL} foi criado a partir do {os.path.basename(origem)}.")
     except OSError as e:
         return False, f"Não deu para criar o {CONFIG_LOCAL} antes de atualizar: {e}"
     codigo, saida, erro = reg.git(pasta, "pull", "--ff-only", "--no-rebase", _remoto_git(pasta), RAMO, timeout=180)
@@ -314,13 +323,14 @@ def instalar_dependencias(pasta=PASTA):
 
 
 def ler_config(pasta=PASTA):
-    """Lê o config.local.json (criado a partir do config.json, se faltar). Devolve (dados, erro)."""
+    """Lê o config.local.json (criado a partir do config.json antigo ou do config.exemplo.json,
+    se faltar). Devolve (dados, erro)."""
     try:
         caminho, _ = reg.garantir_config_local(pasta)
     except OSError as e:
         return None, f"Não deu para criar o {CONFIG_LOCAL}: {e}"
     if not os.path.isfile(caminho):
-        return None, f"Não achei o {CONFIG_LOCAL} nem o {CONFIG_BASE} na pasta do projeto."
+        return None, f"Não achei o {CONFIG_LOCAL} nem o {CONFIG_EXEMPLO} na pasta do projeto."
     try:
         with open(caminho, "r", encoding="utf-8") as f:
             dados = json.load(f)

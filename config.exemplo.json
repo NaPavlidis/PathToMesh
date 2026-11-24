@@ -1,0 +1,8 @@
+{
+    "blender_path": "C:/Program Files/Blender Foundation/Blender 5.3/blender.exe",
+    "resina_dir": "C:/Caminho/Modelo Resin",
+    "blend_dir": "C:/Caminho/CENAS",
+    "catalogo_dir": "C:/Caminho/CATALOGO",
+    "selected_blend": "",
+    "cycles_samples": 64
+}
