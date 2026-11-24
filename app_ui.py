@@ -1,7 +1,6 @@
 import os
 import re
 import json
-import math
 import subprocess
 import threading
 import textwrap
@@ -41,50 +40,46 @@ MAPA_MATERIAIS = {
 # ==============================================================================
 # FUNÇÕES DE EXTRAÇÃO SVG E MAPEAMENTO DO CATÁLOGO
 # ==============================================================================
-def hex_para_rgb(hex_str):
-    hex_str = hex_str.lstrip('#').strip()
-    if len(hex_str) == 3:
-        hex_str = ''.join([c*2 for c in hex_str])
-    if len(hex_str) != 6:
-        return (0, 0, 0)
-    return tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4))
+TAGS_PECAS = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line']
+TAGS_DESCARTADAS = ['clipPath', 'mask']
 
-def identificar_material(cor_hex):
-    if not cor_hex or cor_hex == 'none':
+def normalizar_cor(cor):
+    # Mesma normalização do blender_engine: minúsculas, sem aspas/espaços e #abc vira #aabbcc
+    if not cor or cor == 'none':
+        return ''
+    cor_limpa = cor.replace('"', '').replace("'", "").replace('\n', '').replace(' ', '').lower()
+    if len(cor_limpa) == 4 and cor_limpa.startswith('#'):
+        cor_limpa = f"#{cor_limpa[1]*2}{cor_limpa[2]*2}{cor_limpa[3]*2}"
+    return cor_limpa
+
+def obter_cor_contorno(elem):
+    # Lê o contorno do mesmo jeito que o blender_engine (atributo stroke e style; sem CSS de classe)
+    stroke = elem.attrib.get('stroke', None)
+    style = elem.attrib.get('style', '')
+    if style:
+        m = re.search(r'stroke:\s*([^;]+)', style)
+        if m and m.group(1) != 'none': stroke = m.group(1).strip()
+    return normalizar_cor(stroke)
+
+def identificar_material(cor_contorno):
+    # Só vale a cor de contorno EXATA da tabela; qualquer outra é descartada pelo motor
+    if not cor_contorno:
         return None
-    cor_clean = cor_hex.strip().lower()
-    if cor_clean in MAPA_MATERIAIS:
-        return MAPA_MATERIAIS[cor_clean]
+    return MAPA_MATERIAIS.get(cor_contorno)
 
-    rgb_alvo = hex_para_rgb(cor_clean)
-    menor_distancia = float('inf')
-    melhor_match = None
-
-    for hex_mapa, dados in MAPA_MATERIAIS.items():
-        rgb_mapa = hex_para_rgb(hex_mapa)
-        dist = math.sqrt(sum((a - b) ** 2 for a, b in zip(rgb_alvo, rgb_mapa)))
-        if dist < menor_distancia:
-            menor_distancia = dist
-            melhor_match = dados
-
-    if menor_distancia < 45.0:
-        return melhor_match
-
-    return {'tipo': 'OUTRO', 'nome_material': f'Cor_{cor_clean}'}
-
-def extrair_classes_css(root):
-    mapa_css = {}
-    for style_elem in root.iter('{http://www.w3.org/2000/svg}style'):
-        text = style_elem.text or ''
-        regras = re.findall(r'\.([\w-]+)\s*\{([^}]+)\}', text)
-        for classe, props in regras:
-            dic_props = {}
-            for item in props.split(';'):
-                if ':' in item:
-                    k, v = item.split(':', 1)
-                    dic_props[k.strip().lower()] = v.strip().lower()
-            mapa_css[classe] = dic_props
-    return mapa_css
+def listar_pecas_svg(root):
+    # Percorre as peças como o motor: o que está dentro de clipPath/mask é removido e não conta
+    pecas = []
+    def visitar(elem):
+        for filho in list(elem):
+            tag = filho.tag.split('}')[-1]
+            if tag in TAGS_DESCARTADAS:
+                continue
+            if tag in TAGS_PECAS:
+                pecas.append((tag, filho))
+            visitar(filho)
+    visitar(root)
+    return pecas
 
 def extrair_informacoes_svg(caminho_svg):
     if not os.path.exists(caminho_svg):
@@ -96,8 +91,8 @@ def extrair_informacoes_svg(caminho_svg):
     except Exception:
         return None
 
-    mapa_css = extrair_classes_css(root)
     materiais_qtd = {}
+    pecas_descartadas = []
 
     vb = root.attrib.get('viewBox', '').split()
     vb_w = float(vb[2]) if len(vb) == 4 else 0.0
@@ -112,91 +107,64 @@ def extrair_informacoes_svg(caminho_svg):
 
     re_coords = re.compile(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?')
 
-    def obter_cor_elemento(elem):
-        stroke, fill = '', ''
-        classe = elem.attrib.get('class', '')
-        if classe in mapa_css:
-            stroke = mapa_css[classe].get('stroke', '')
-            fill = mapa_css[classe].get('fill', '')
-
-        stroke = elem.attrib.get('stroke', stroke)
-        fill = elem.attrib.get('fill', fill)
-        style = elem.attrib.get('style', '')
-
-        if 'stroke:' in style:
-            m = re.search(r'stroke:\s*([^;]+)', style)
-            if m: stroke = m.group(1).strip()
-
-        if 'fill:' in style:
-            m = re.search(r'fill:\s*([^;]+)', style)
-            if m: fill = m.group(1).strip()
-
-        if stroke and stroke != 'none' and stroke.startswith('#'):
-            return stroke.lower()
-        if fill and fill != 'none' and fill.startswith('#'):
-            return fill.lower()
-        return None
-
     TIPOS_CORPO_EXCLUSIVO = {'ACRILICO', 'ACRILICO_ESPELHADO', 'MDF'}
     pecas_isoladas = []
 
-    for elem in root.iter():
-        tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
-        if tag in ['defs', 'clipPath', 'style', 'metadata', 'svg']:
-            continue
+    for indice, (tag, elem) in enumerate(listar_pecas_svg(root), start=1):
+        cor = obter_cor_contorno(elem)
+        mat_info = identificar_material(cor)
 
-        if tag in ['path', 'rect', 'polygon', 'polyline', 'circle', 'ellipse']:
-            cor = obter_cor_elemento(elem)
-            mat_info = identificar_material(cor)
+        if mat_info:
+            chave = (mat_info['tipo'], mat_info['nome_material'])
+            materiais_qtd[chave] = materiais_qtd.get(chave, 0) + 1
+        else:
+            id_peca = elem.attrib.get('id') or f"{tag} nº {indice}"
+            pecas_descartadas.append((id_peca, cor))
 
-            if mat_info:
-                chave = (mat_info['tipo'], mat_info['nome_material'])
-                materiais_qtd[chave] = materiais_qtd.get(chave, 0) + 1
+        eh_pagina = False
+        if tag == 'rect' and vb_w > 0 and vb_h > 0:
+            w = float(elem.attrib.get('width', 0))
+            h = float(elem.attrib.get('height', 0))
+            if abs(w - vb_w) < 5.0 or abs(h - vb_h) < 5.0:
+                eh_pagina = True
 
-            eh_pagina = False
-            if tag == 'rect' and vb_w > 0 and vb_h > 0:
-                w = float(elem.attrib.get('width', 0))
-                h = float(elem.attrib.get('height', 0))
-                if abs(w - vb_w) < 5.0 or abs(h - vb_h) < 5.0:
-                    eh_pagina = True
+        if mat_info and mat_info['tipo'] in TIPOS_CORPO_EXCLUSIVO and not eh_pagina:
+            if tag == 'path':
+                d = elem.attrib.get('d', '')
+                if HAS_SVGPATH:
+                    try:
+                        path_obj = parse_path(d)
+                        for sp in path_obj.continuous_subpaths():
+                            xmin, xmax, ymin, ymax = sp.bbox()
+                            w_mm = (xmax - xmin) * fator_mm
+                            h_mm = (ymax - ymin) * fator_mm
+                            larg = min(w_mm, h_mm)
+                            alt = max(w_mm, h_mm)
+                            if larg > 30.0 and alt > 30.0:
+                                pecas_isoladas.append((larg, alt, mat_info['nome_material']))
+                    except Exception:
+                        pass
+                else:
+                    sub_str = re.split(r'(?=[Mm])', d)
+                    for sp in sub_str:
+                        if not sp.strip(): continue
+                        coords = [float(v) for v in re_coords.findall(sp)]
+                        if len(coords) >= 4:
+                            xs, ys = coords[0::2], coords[1::2]
+                            w_mm = (max(xs) - min(xs)) * fator_mm
+                            h_mm = (max(ys) - min(ys)) * fator_mm
+                            larg, alt = min(w_mm, h_mm), max(w_mm, h_mm)
+                            if larg > 30.0 and alt > 30.0:
+                                pecas_isoladas.append((larg, alt, mat_info['nome_material']))
 
-            if mat_info and mat_info['tipo'] in TIPOS_CORPO_EXCLUSIVO and not eh_pagina:
-                if tag == 'path':
-                    d = elem.attrib.get('d', '')
-                    if HAS_SVGPATH:
-                        try:
-                            path_obj = parse_path(d)
-                            for sp in path_obj.continuous_subpaths():
-                                xmin, xmax, ymin, ymax = sp.bbox()
-                                w_mm = (xmax - xmin) * fator_mm
-                                h_mm = (ymax - ymin) * fator_mm
-                                larg = min(w_mm, h_mm)
-                                alt = max(w_mm, h_mm)
-                                if larg > 30.0 and alt > 30.0:
-                                    pecas_isoladas.append((larg, alt, mat_info['nome_material']))
-                        except Exception:
-                            pass
-                    else:
-                        sub_str = re.split(r'(?=[Mm])', d)
-                        for sp in sub_str:
-                            if not sp.strip(): continue
-                            coords = [float(v) for v in re_coords.findall(sp)]
-                            if len(coords) >= 4:
-                                xs, ys = coords[0::2], coords[1::2]
-                                w_mm = (max(xs) - min(xs)) * fator_mm
-                                h_mm = (max(ys) - min(ys)) * fator_mm
-                                larg, alt = min(w_mm, h_mm), max(w_mm, h_mm)
-                                if larg > 30.0 and alt > 30.0:
-                                    pecas_isoladas.append((larg, alt, mat_info['nome_material']))
-
-                elif tag == 'rect':
-                    rw = float(elem.attrib.get('width', 0))
-                    rh = float(elem.attrib.get('height', 0))
-                    if rw > 0 and rh > 0:
-                        w_mm, h_mm = rw * fator_mm, rh * fator_mm
-                        larg, alt = min(w_mm, h_mm), max(w_mm, h_mm)
-                        if larg > 30.0 and alt > 30.0:
-                            pecas_isoladas.append((larg, alt, mat_info['nome_material']))
+            elif tag == 'rect':
+                rw = float(elem.attrib.get('width', 0))
+                rh = float(elem.attrib.get('height', 0))
+                if rw > 0 and rh > 0:
+                    w_mm, h_mm = rw * fator_mm, rh * fator_mm
+                    larg, alt = min(w_mm, h_mm), max(w_mm, h_mm)
+                    if larg > 30.0 and alt > 30.0:
+                        pecas_isoladas.append((larg, alt, mat_info['nome_material']))
 
     if pecas_isoladas:
         pecas_isoladas.sort(key=lambda p: p[1], reverse=True)
@@ -211,7 +179,8 @@ def extrair_informacoes_svg(caminho_svg):
         'altura_mm': alt_mm,
         'largura_cm': larg_mm / 10.0,
         'altura_cm': alt_mm / 10.0,
-        'nome_fundo': nome_fundo
+        'nome_fundo': nome_fundo,
+        'pecas_descartadas': pecas_descartadas
     }
 
 
@@ -671,11 +640,36 @@ class VectorConvertProApp(tk.Tk):
             resumo += f" • Fundo    : {info['nome_fundo']}\n"
             resumo += f" • Largura  : {info['largura_mm']:.2f} mm ({info['largura_cm']:.2f} cm)\n"
             resumo += f" • Altura   : {info['altura_mm']:.2f} mm ({info['altura_cm']:.2f} cm)\n"
+            if info['pecas_descartadas']:
+                resumo += "─" * 40 + "\n"
+                resumo += f"⚠️ PEÇAS QUE NÃO SERÃO CONVERTIDAS: {len(info['pecas_descartadas'])}\n"
             self.txt_analise_svg.insert("1.0", resumo)
         else:
             self.txt_analise_svg.insert("1.0", "❌ Não foi possível extrair dados estruturais do SVG.")
 
         self.txt_analise_svg.configure(state="disabled")
+
+        if info and info['pecas_descartadas']:
+            self._avisar_pecas_descartadas(info['pecas_descartadas'])
+
+    def _avisar_pecas_descartadas(self, pecas_descartadas):
+        por_cor = {}
+        for id_peca, cor in pecas_descartadas:
+            chave = cor if cor else "sem contorno"
+            por_cor.setdefault(chave, []).append(id_peca)
+
+        linhas = []
+        for cor, ids in por_cor.items():
+            ids_txt = ", ".join(ids[:8])
+            if len(ids) > 8:
+                ids_txt += f" (+{len(ids) - 8})"
+            linhas.append(f" • {cor}: {len(ids)} peça(s) — {ids_txt}")
+
+        mensagem = (f"{len(pecas_descartadas)} peça(s) deste SVG têm cor de contorno fora da tabela de materiais "
+                    "(ou não têm contorno) e NÃO serão convertidas: vão sumir do 3D.\n\n")
+        mensagem += "\n".join(linhas)
+        mensagem += "\n\nSó a cor de contorno exata da tabela de materiais é aceita."
+        messagebox.showwarning("Atenção: cores fora da tabela", mensagem)
 
     def _build_catalogo_screen(self):
         screen = tk.Frame(self.main_container, bg="#0B0F17")
