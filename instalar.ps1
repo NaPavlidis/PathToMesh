@@ -18,7 +18,7 @@ $ErrorActionPreference = 'Continue'     # os erros dos programas (git, pip) são
 $RepoUrl = 'https://github.com/NaPavlidis/PathToMesh.git'
 $NomeApp = 'PathToMesh'
 $NomeAntigo = 'Phy-2d-by-3d'
-$IconeAtalho = 'assets\icones\1.ico'
+$IconeAtalho = 'assets\icones\3.ico'     # ícone principal do PathToMesh
 
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 $env:PYTHONIOENCODING = 'utf-8'

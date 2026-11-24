@@ -536,17 +536,13 @@ class Launcher(tk.Tk if tk else object):
     # ---- montagem
     def _montar(self):
         f = self.fontes
-        # Barra de 56 px igual à do app: logo, nome em azul, selo e linha embaixo
+        # Barra de 56 px igual à do app: logo (ícone 1; 2 com a janela larga), selo e linha embaixo
         barra = tk.Frame(self, bg=COR_BARRA, height=56, padx=24)
         barra.pack(fill="x")
         barra.pack_propagate(False)
-        logo = tk.Frame(barra, bg=COR_TITULO, width=32, height=32)
-        logo.pack(side="left")
-        logo.pack_propagate(False)
-        tk.Label(logo, text="⬢", fg=COR_SOBRE_TITULO, bg=COR_TITULO, font=f["icone"]).pack(expand=True)
-        tk.Label(barra, text=tema_janela.NOME_APP, fg=COR_DESTAQUE, bg=COR_BARRA, font=f["marca"]).pack(side="left", padx=(12, 0))
+        tema_janela.criar_logo_cabecalho(barra, self, COR_BARRA, COR_DESTAQUE, f["marca"]).pack(side="left")
         selo = tk.Frame(barra, bg=COR_LINHA, padx=1, pady=1)
-        selo.pack(side="left", padx=(8, 0))
+        selo.pack(side="left", padx=(12, 0))
         tk.Label(selo, text="LAUNCHER", fg=COR_SUAVE, bg=COR_BOTAO, font=f["selo"], padx=8, pady=2).pack()
         tk.Frame(self, bg=COR_BORDA, height=1).pack(fill="x")
 

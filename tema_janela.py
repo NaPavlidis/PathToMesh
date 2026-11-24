@@ -3,6 +3,7 @@
 - TEMA: a paleta, tirada do modelo de layout (docs/modelo-layout.html, tema escuro).
 - familias_fontes(): escolhe as fontes do modelo, se estiverem instaladas, ou as do sistema.
 - aplicar_icone(): ícone da janela (.ico com iconbitmap; se faltar, o .png com iconphoto).
+- criar_logo_cabecalho(): logo do canto esquerdo do cabeçalho (1, ou 2 com a janela larga).
 - pintar_barra_titulo(): pinta a barra de título nativa do Windows (DWM) com as cores do TEMA.
 - preparar_janela(): as duas coisas de uma vez.
 
@@ -15,12 +16,20 @@ import sys
 NOME_APP = "PathToMesh"
 PASTA_ICONES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "icones")
 
-# Qual imagem de assets/icones vai em cada janela (veja assets/icones/README.md)
+# Função de cada imagem de assets/icones (veja assets/icones/README.md)
+# Ícone 3 = ícone principal: todas as janelas (app, launcher, configurações, mensagens), os atalhos
+# e o instalador (o instalar.ps1 usa o 3.ico).
 ICONES = {
-    "app": "3",        # só o símbolo: o único legível em 16-32 px (barra de título e de tarefas)
-    "launcher": "2",   # símbolo + nome na horizontal
-    "atalho": "1",     # símbolo com o nome embaixo (instalador e atalhos; o instalar.ps1 usa o 1.ico)
+    "app": "3",
+    "launcher": "3",
+    "atalho": "3",
 }
+# Logo do canto esquerdo do cabeçalho (no lugar do nome digitado): o 1; com a janela larga, o 2.
+LOGOS = {"normal": "1", "largo": "2"}
+LARGURA_LOGO_LARGO = 1200   # px: a partir desta largura da janela, o cabeçalho usa o logo 2
+# Altura do logo no cabeçalho (a barra tem 56 px). As versões já reduzidas ficam em
+# assets/icones/<n>_cabecalho.png; se faltarem, o <n>.png grande é reduzido com subsample.
+ALTURA_LOGO = {"1": 46, "2": 34}
 
 # ------------------------------------------------------------------------------ paleta
 # Nome no TEMA: valor do modelo  (token do modelo-layout.html)
@@ -191,6 +200,68 @@ def aplicar_icone(janela, nome="app", padrao=False):
         except Exception:
             pass
     return ""
+
+
+# ------------------------------------------------------------------------------ logo do cabeçalho
+def carregar_logo(janela, numero):
+    """PhotoImage do logo <numero> no tamanho do cabeçalho, ou None se não der.
+    Usa o <numero>_cabecalho.png (já reduzido); se faltar, reduz o <numero>.png com subsample."""
+    import tkinter
+    altura = ALTURA_LOGO.get(numero, 40)
+    pronto = os.path.join(PASTA_ICONES, f"{numero}_cabecalho.png")
+    grande = os.path.join(PASTA_ICONES, f"{numero}.png")
+    for caminho in (pronto, grande):
+        if not os.path.isfile(caminho):
+            continue
+        try:
+            imagem = tkinter.PhotoImage(master=janela, file=caminho)
+            fator = -(-imagem.height() // altura)    # arredonda para cima: nunca passa da altura
+            if fator > 1:
+                imagem = imagem.subsample(fator, fator)
+            return imagem
+        except Exception:
+            continue
+    return None
+
+
+def versao_logo(largura, limite=LARGURA_LOGO_LARGO):
+    """'largo' (logo 2) a partir da largura limite; senão 'normal' (logo 1)."""
+    return "largo" if largura >= limite else "normal"
+
+
+def trocar_logo(rotulo, largura, limite=LARGURA_LOGO_LARGO):
+    """Troca só a imagem do rótulo quando a largura cruza o limite (mesmo widget, sem piscar).
+    Devolve True se trocou."""
+    imagens = getattr(rotulo, "_imagens_logo", None)
+    if not imagens:
+        return False
+    versao = versao_logo(largura, limite)
+    if versao == rotulo._versao_logo:
+        return False
+    rotulo.configure(image=imagens[versao])
+    rotulo._versao_logo = versao
+    return True
+
+
+def criar_logo_cabecalho(pai, janela, bg, fg=None, fonte=None, limite=LARGURA_LOGO_LARGO):
+    """Rótulo com o logo do cabeçalho (1; o 2 quando a janela passa de 'limite' px de largura).
+    As duas imagens são carregadas uma vez só e a troca acontece no <Configure> da janela.
+    Sem nenhuma imagem, devolve o nome digitado (como antes). O chamador faz o pack."""
+    import tkinter
+    imagens = {chave: carregar_logo(janela, numero) for chave, numero in LOGOS.items()}
+    imagens["normal"] = imagens["normal"] or imagens["largo"]
+    imagens["largo"] = imagens["largo"] or imagens["normal"]
+    if imagens["normal"] is None:
+        return tkinter.Label(pai, text=NOME_APP, fg=fg, bg=bg, font=fonte)
+    rotulo = tkinter.Label(pai, image=imagens["normal"], bg=bg, bd=0, highlightthickness=0)
+    rotulo._imagens_logo = imagens          # guarda as referências (senão o Tk apaga as imagens)
+    rotulo._versao_logo = "normal"
+
+    def ao_redimensionar(evento):
+        if evento.widget is janela:         # o <Configure> da janela chega também dos filhos
+            trocar_logo(rotulo, evento.width, limite)
+    janela.bind("<Configure>", ao_redimensionar, add="+")
+    return rotulo
 
 
 def preparar_janela(janela, icone="app", padrao=False):

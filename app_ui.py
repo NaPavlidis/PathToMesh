@@ -774,13 +774,9 @@ class VectorConvertProApp(tk.Tk):
         navbar = tk.Frame(self, bg=TEMA['barra'], height=56, padx=ESPACO['g'])
         navbar.grid(row=0, column=0, columnspan=2, sticky="ew")
         navbar.pack_propagate(False)
-        # Logo: quadrado de 32 px em primary-container
-        logo = tk.Frame(navbar, bg=TEMA['marca'], width=32, height=32)
-        logo.pack(side="left")
-        logo.pack_propagate(False)
-        tk.Label(logo, text="⬢", fg=TEMA['sobre_marca'], bg=TEMA['marca'], font=FONTES['icone']).pack(expand=True)
-        tk.Label(navbar, text=tema_janela.NOME_APP, fg=TEMA['destaque'], bg=TEMA['barra'], font=FONTES['marca']).pack(side="left", padx=(ESPACO['pm'], 0))
-        criar_selo(navbar, "SVG → 3D").pack(side="left", padx=(ESPACO['p'], 0))
+        # Logo (ícone 1; ícone 2 com a janela larga) no lugar do nome digitado
+        tema_janela.criar_logo_cabecalho(navbar, self, TEMA['barra'], TEMA['destaque'], FONTES['marca']).pack(side="left")
+        criar_selo(navbar, "SVG → 3D").pack(side="left", padx=(ESPACO['pm'], 0))
 
         right_icons_frame = tk.Frame(navbar, bg=TEMA['barra'])
         right_icons_frame.pack(side="right")
