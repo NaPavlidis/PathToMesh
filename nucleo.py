@@ -533,11 +533,12 @@ def interpretar_linha_blender(linha_limpa):
     return None
 
 
-def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=subprocess.Popen):
+def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None):
     """Roda o Blender e chama ao_evento(evento) para cada mudança da tela (veja
     interpretar_linha_blender), depois ao_evento(('concluido',)). Se o Blender terminar com erro,
     grava o log; se nem der para rodar, grava o log e chama ao_evento(('erro', mensagem)).
     Roda na thread de quem chamou (as interfaces chamam numa thread separada)."""
+    popen = popen or subprocess.Popen
     try:
         processo = popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='ignore')
         ultimas_linhas = collections.deque(maxlen=200)   # para o log de erro
