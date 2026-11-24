@@ -5,7 +5,8 @@ Ao abrir:
   2. instala as dependências (pip install -r requirements.txt);
   3. confere se o blender_path do config.local.json existe (criado a partir do config.json, se faltar);
   4. envia os logs de erro novos para a branch 'logs' (se houver git com credencial).
-Depois é só clicar em "Abrir o app".
+Depois é só clicar em "Abrir o app": o app abre como um processo independente e o launcher se
+fecha sozinho. Se o app não abrir, o launcher fica aberto, mostra o erro e grava o log.
 
 A lógica fica em funções sem Tkinter, para poder ser testada sem janela.
 """
@@ -15,7 +16,9 @@ import os
 import queue
 import subprocess
 import sys
+import tempfile
 import threading
+import traceback
 import urllib.error
 import urllib.request
 import zipfile
@@ -341,8 +344,74 @@ def verificar_blender(pasta=PASTA):
     return True, f"Blender encontrado: {caminho}"
 
 
-def abrir_app(pasta=PASTA):
-    subprocess.Popen([sys.executable, os.path.join(pasta, "app_ui.py")], cwd=pasta)
+# Segundos esperando o app: se ele ainda estiver aberto depois disso, abriu bem
+ESPERA_ABRIR = 4.0
+# Saída do app (prints e erros do Python antes de a janela abrir), para mostrar se ele falhar
+ARQUIVO_SAIDA_APP = os.path.join(tempfile.gettempdir(), "phy-2d-by-3d-app-saida.txt")
+
+
+def python_janela():
+    """pythonw.exe (sem a janela preta do console) ao lado do Python atual, se existir."""
+    exe = sys.executable
+    pasta, nome = os.path.split(exe)
+    if os.name == "nt" and nome.lower() == "python.exe" and os.path.isfile(os.path.join(pasta, "pythonw.exe")):
+        return os.path.join(pasta, "pythonw.exe")
+    return exe
+
+
+def opcoes_independente():
+    """Opções do Popen para o app seguir rodando depois que o launcher fechar."""
+    if os.name == "nt":
+        return {"creationflags": getattr(subprocess, "DETACHED_PROCESS", 0x00000008)
+                | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)}
+    return {"start_new_session": True}
+
+
+def _ler_saida(caminho, limite=3000):
+    try:
+        with open(caminho, "r", encoding="utf-8", errors="replace") as f:
+            return f.read()[-limite:].strip()
+    except OSError:
+        return ""
+
+
+def abrir_app(pasta=PASTA, espera=ESPERA_ABRIR, comando=None, arquivo_saida=None):
+    """Abre o app como um processo independente e confere se ele abriu.
+
+    Espera alguns segundos: se o app ainda estiver rodando (ou fechou sem erro), deu certo.
+    Se não deu para iniciar, ou se ele fechou com erro logo no começo, devolve a mensagem de
+    erro com a saída do app. Devolve (ok, mensagem).
+    """
+    arquivo_saida = arquivo_saida or ARQUIVO_SAIDA_APP
+    if comando is None:
+        script = os.path.join(pasta, "app_ui.py")
+        if not os.path.isfile(script):
+            return False, "Não achei o app_ui.py na pasta do programa. Rode o instalador de novo."
+        comando = [python_janela(), script]
+    try:
+        saida = open(arquivo_saida, "wb")
+    except OSError:
+        saida = None
+    try:
+        try:
+            processo = subprocess.Popen(comando, cwd=pasta, stdin=subprocess.DEVNULL,
+                                        stdout=saida or subprocess.DEVNULL,
+                                        stderr=subprocess.STDOUT if saida else subprocess.DEVNULL,
+                                        close_fds=True, **opcoes_independente())
+        except (OSError, ValueError, subprocess.SubprocessError) as e:
+            return False, f"Não deu para iniciar o app: {e}"
+        try:
+            codigo = processo.wait(timeout=espera)
+        except subprocess.TimeoutExpired:
+            return True, "App aberto."
+    finally:
+        if saida:
+            saida.close()
+    if codigo == 0:
+        return True, "O app abriu e já foi fechado."
+    texto = _ler_saida(arquivo_saida)
+    return False, (f"O app fechou logo ao abrir (código {codigo})."
+                   + (f"\n\nMensagem do app:\n{texto}" if texto else ""))
 
 
 def abrir_pasta(caminho):
@@ -354,6 +423,8 @@ def abrir_pasta(caminho):
 # ---------------------------------------------------------------- janela
 
 class Launcher(tk.Tk if tk else object):
+    TEXTO_ABRIR = "▶  Abrir o app"
+
     def __init__(self):
         super().__init__()
         self.title("Phy-2d-by-3d - Launcher")
@@ -364,6 +435,7 @@ class Launcher(tk.Tk if tk else object):
         self.fila = queue.Queue()
         self.info_atualizacao = None
         self.ocupado = False
+        self.abrindo = False
         self._montar()
         self.after(100, self._ler_fila)
         self._em_segundo_plano(self._verificar_tudo)
@@ -393,9 +465,10 @@ class Launcher(tk.Tk if tk else object):
         self._botao(linha, "Abrir pasta de logs", lambda: abrir_pasta(reg.PASTA_LOGS))
         self._botao(linha, "Enviar agora", lambda: self._em_segundo_plano(self._enviar_logs))
 
-        tk.Button(corpo, text="▶  Abrir o app", bg=COR_DESTAQUE, fg=COR_TEXTO, activebackground=COR_TITULO,
-                  activeforeground=COR_TEXTO, bd=0, font=("Helvetica", 12, "bold"), pady=10,
-                  command=self._clicar_abrir).pack(fill="x", pady=(10, 8))
+        self.btn_abrir = tk.Button(corpo, text=self.TEXTO_ABRIR, bg=COR_DESTAQUE, fg=COR_TEXTO, activebackground=COR_TITULO,
+                                   activeforeground=COR_TEXTO, disabledforeground=COR_APAGADO, bd=0,
+                                   font=("Helvetica", 12, "bold"), pady=10, command=self._clicar_abrir)
+        self.btn_abrir.pack(fill="x", pady=(10, 8))
 
         self.txt = tk.Text(corpo, height=6, bg=COR_CAMPO, fg=COR_SUAVE, font=("Consolas", 9), bd=0,
                            padx=8, pady=6, wrap="word")
@@ -541,13 +614,42 @@ class Launcher(tk.Tk if tk else object):
         self._em_segundo_plano(tarefa)
 
     def _clicar_abrir(self):
-        try:
-            abrir_app()
-        except OSError as e:
-            caminho = reg.gravar_excecao("launcher", type(e), e, e.__traceback__)
-            messagebox.showerror("Erro", f"Não deu para abrir o app:\n{e}" + (f"\n\nDetalhes em {caminho}" if caminho else ""))
+        """Abre o app; se ele abrir, o launcher se fecha sozinho. Se não, fica aberto com o erro."""
+        if self.abrindo:
             return
-        self._mostrar("App aberto.")
+        self.abrindo = True
+        self.btn_abrir.configure(state="disabled", text="Abrindo o app...")
+        self._mostrar("Abrindo o app...")
+
+        def tarefa():
+            try:
+                ok, msg = abrir_app()
+            except Exception as e:
+                ok, msg = False, f"Erro inesperado ao abrir o app: {e}\n\n{traceback.format_exc()}"
+            self._ui(self._resultado_abrir, ok, msg)
+
+        threading.Thread(target=tarefa, daemon=True).start()
+
+    def _resultado_abrir(self, ok, msg):
+        self.abrindo = False
+        if ok:
+            self._mostrar(msg + " Fechando o launcher...")
+            self._fechar_quando_livre()
+            return
+        self.btn_abrir.configure(state="normal", text=self.TEXTO_ABRIR)
+        caminho = reg.gravar_log("launcher", "o app não abriu", msg)
+        detalhe = f"\n\nDetalhes em {caminho}" if caminho else ""
+        self._mostrar("O app não abriu:\n" + msg + detalhe)
+        messagebox.showerror("O app não abriu", "Não deu para abrir o app:\n\n" + msg[-1500:] + detalhe, parent=self)
+
+    def _fechar_quando_livre(self, avisou=False):
+        """Fecha o launcher; se ainda houver uma tarefa rodando (pip, atualização), espera ela acabar."""
+        if self.ocupado:
+            if not avisou:
+                self._mostrar("O launcher fecha quando terminar a tarefa em andamento.")
+            self.after(500, self._fechar_quando_livre, True)
+            return
+        self.destroy()
 
 
 def main():

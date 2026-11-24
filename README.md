@@ -40,6 +40,8 @@ Dê dois cliques em `launcher.pyw` (abre sem a janela preta) ou em `launcher.bat
 3. **Blender**: confere se o `blender_path` do `config.local.json` existe. Se não existir, ajuste nas configurações do app (⚙).
 4. **Logs de erro**: envia os logs novos para o GitHub (veja abaixo).
 
+Ao clicar em **Abrir o app**, o app abre como um programa independente e o launcher se fecha sozinho (se ainda estiver terminando uma tarefa, como o pip, ele espera ela acabar). Se o app não abrir, o launcher fica aberto, mostra o erro e grava o log de erro.
+
 ## Configuração
 
 A configuração que o app e o launcher usam fica em **`config.local.json`**, na pasta do projeto. Ele está no `.gitignore`: fica só no seu PC e nunca vai para o GitHub (o repositório é público).
