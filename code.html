@@ -1,0 +1,524 @@
+<!DOCTYPE html><html lang="pt-BR" class="dark"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VectorConvert Pro — Novo troféu</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#34D399',
+        'on-success': '#00291B',
+        'success-container': '#064E3B',
+        'on-success-container': '#A7F3D0',
+        'warning': '#FBBF24',
+        'on-warning': '#291800',
+        'warning-container': '#452700',
+        'on-warning-container': '#FDE68A',
+        'light-primary': '#006194',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#007BB9',
+        'light-on-primary-container': '#FDFCFF',
+        'light-secondary': '#43617C',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#C1E0FF',
+        'light-on-secondary-container': '#45647F',
+        'light-tertiary': '#894D00',
+        'light-on-tertiary': '#FFFFFF',
+        'light-tertiary-container': '#AC6200',
+        'light-on-tertiary-container': '#FFFBFF',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#F7F9FF',
+        'light-on-background': '#181C20',
+        'light-surface': '#F7F9FF',
+        'light-surface-dim': '#D7DAE0',
+        'light-surface-bright': '#F7F9FF',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#F1F4FA',
+        'light-surface-container': '#EBEEF4',
+        'light-surface-container-high': '#E5E8EE',
+        'light-surface-container-highest': '#DFE3E8',
+        'light-on-surface': '#181C20',
+        'light-surface-variant': '#DBE3EE',
+        'light-on-surface-variant': '#3F4850',
+        'light-outline': '#707881',
+        'light-outline-variant': '#BFC7D2',
+        'light-inverse-surface': '#2D3135',
+        'light-inverse-on-surface': '#EEF1F7',
+        'light-inverse-primary': '#93CCFF',
+        'light-shadow': '#000000',
+        'light-scrim': '#000000',
+        'dark-primary': '#93CCFF',
+        'dark-on-primary': '#003351',
+        'dark-primary-container': '#3198DC',
+        'dark-on-primary-container': '#001524',
+        'dark-secondary': '#ABCAE9',
+        'dark-on-secondary': '#11334B',
+        'dark-secondary-container': '#2D4C66',
+        'dark-on-secondary-container': '#9DBCDA',
+        'dark-tertiary': '#FFB875',
+        'dark-on-tertiary': '#4B2800',
+        'dark-tertiary-container': '#D07D1C',
+        'dark-on-tertiary-container': '#210E00',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#101418',
+        'dark-on-background': '#DFE3E8',
+        'dark-surface': '#101418',
+        'dark-surface-dim': '#101418',
+        'dark-surface-bright': '#353A3E',
+        'dark-surface-container-lowest': '#0A0F13',
+        'dark-surface-container-low': '#181C20',
+        'dark-surface-container': '#1C2024',
+        'dark-surface-container-high': '#262A2F',
+        'dark-surface-container-highest': '#31353A',
+        'dark-on-surface': '#DFE3E8',
+        'dark-surface-variant': '#3F4850',
+        'dark-on-surface-variant': '#BFC7D2',
+        'dark-outline': '#89929B',
+        'dark-outline-variant': '#3F4850',
+        'dark-inverse-surface': '#DFE3E8',
+        'dark-inverse-on-surface': '#2D3135',
+        'dark-inverse-primary': '#006398',
+        'dark-shadow': '#000000',
+        'dark-scrim': '#000000',
+      },
+      borderRadius: {
+        'sm': '6px',
+        'DEFAULT': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'full': '9999px',
+      },
+      spacing: {
+        'xs': '4px',
+        'sm': '8px',
+        'md': '12px',
+        'lg': '16px',
+        'xl': '24px',
+        '2xl': '32px',
+        '3xl': '48px',
+      },
+      fontFamily: {
+        'display': ['"Red Hat Text"', 'sans-serif'],
+        'headline': ['"Red Hat Text"', 'sans-serif'],
+        'title': ['"Red Hat Text"', 'sans-serif'],
+        'body': ['"Instrument Sans"', 'sans-serif'],
+        'label': ['"Instrument Sans"', 'sans-serif'],
+        'mono': ['"Red Hat Mono"', 'monospace'],
+      },
+      fontSize: {
+        'display-sm': ['36px', { lineHeight: '42px', letterSpacing: '-0.5px', fontWeight: '700' }],
+        'display-sm-mobile': ['28px', { lineHeight: '34px', letterSpacing: '-0.25px', fontWeight: '700' }],
+        'headline-lg': ['28px', { lineHeight: '34px', letterSpacing: '-0.3px', fontWeight: '600' }],
+        'headline-md': ['20px', { lineHeight: '28px', letterSpacing: '-0.2px', fontWeight: '600' }],
+        'title-md': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-md': ['14px', { lineHeight: '21px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-sm': ['13px', { lineHeight: '19px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0.1px', fontWeight: '600' }],
+        'label-md': ['12px', { lineHeight: '16px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'mono-md': ['13px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '500' }],
+        'mono-sm': ['12px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '400' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'surface-enter': '200ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'surface-enter': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'surface-enter': 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&amp;family=Red+Hat+Mono:wght@400;500;600&amp;family=Red+Hat+Text:wght@500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      line-height: 1 !important;
+      box-sizing: content-box;
+      overflow: hidden;
+      white-space: nowrap;
+      direction: ltr;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body class="bg-dark-surface text-dark-on-surface font-body antialiased selection:bg-dark-primary-container selection:text-dark-on-primary-container">
+  <div class="min-h-[1024px] flex flex-col bg-dark-surface text-dark-on-surface" data-stitch-vh="min-h-[1024px]===min-h-screen">
+
+    <!-- Top Application Bar -->
+    <header class="sticky top-0 z-20 h-14 px-xl bg-dark-surface-container-low border-b border-dark-outline flex items-center justify-between gap-lg">
+      <div class="flex items-center gap-md">
+        <div class="w-8 h-8 rounded bg-dark-primary-container text-dark-on-primary-container flex items-center justify-center">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">deployed_code</span>
+        </div>
+        <div class="flex items-center gap-sm">
+          <span data-design-text-token="title-md" class="font-headline text-title-md text-dark-primary">VectorConvert Pro</span>
+          <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-dark-on-surface-variant bg-dark-surface-container-high border border-dark-outline-variant px-sm py-xs rounded-sm">SVG → 3D</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-sm">
+        <!-- COMPONENT: button-icon -->
+        <button data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Configurações" class="inline-flex items-center justify-center w-9 h-9 rounded bg-dark-surface-container text-dark-on-surface-variant border border-dark-outline-variant hover:bg-dark-surface-container-high hover:text-dark-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-primary transition-colors duration-state-change ease-state-change">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">settings</span>
+        </button>
+
+        <div class="w-px h-5 bg-dark-outline mx-xs" aria-hidden="true"></div>
+
+        <button data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Minimizar janela" class="inline-flex items-center justify-center w-9 h-9 rounded bg-dark-surface-container text-dark-on-surface-variant border border-dark-outline-variant hover:bg-dark-surface-container-high hover:text-dark-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-primary transition-colors duration-state-change ease-state-change">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">minimize</span>
+        </button>
+
+        <button data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Maximizar janela" class="inline-flex items-center justify-center w-9 h-9 rounded bg-dark-surface-container text-dark-on-surface-variant border border-dark-outline-variant hover:bg-dark-surface-container-high hover:text-dark-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-primary transition-colors duration-state-change ease-state-change">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">crop_square</span>
+        </button>
+
+        <button data-component-id="button-icon" data-component-type="button" data-component-variant="icon" type="button" aria-label="Fechar janela" class="inline-flex items-center justify-center w-9 h-9 rounded bg-dark-surface-container text-dark-on-surface-variant border border-dark-outline-variant hover:bg-dark-error-container hover:text-dark-on-error-container hover:border-dark-error focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-error transition-colors duration-state-change ease-state-change">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">close</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Workspace Body -->
+    <div class="flex-1 flex flex-col md:flex-row">
+
+      <!-- Left Navigation Rail -->
+      <aside class="w-full md:w-60 shrink-0 bg-dark-surface-container-low border-b md:border-b-0 md:border-r border-dark-outline flex flex-col justify-between p-lg gap-xl">
+        <div class="flex flex-col gap-xl">
+          <div class="px-sm pt-xs pb-lg border-b border-dark-outline-variant">
+            <p data-design-text-token="title-md" class="font-headline text-title-md text-dark-on-surface">SVG Converter</p>
+            <p data-design-text-token="label-md" class="font-label text-label-md text-dark-outline uppercase">HIGH PRECISION TOOL</p>
+          </div>
+
+          <nav aria-label="Navegação principal" class="flex flex-col gap-xs">
+            <p data-design-text-token="label-md" class="font-label text-label-md text-dark-outline uppercase px-md pb-xs">NAVEGAÇÃO</p>
+
+            <a href="#upload" aria-current="page" class="flex items-center gap-md px-md py-sm rounded bg-dark-surface-container-high text-dark-primary border border-dark-outline transition-colors duration-state-change ease-state-change">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">upload_file</span>
+              <span data-design-text-token="label-lg" class="font-label text-label-lg">Upload</span>
+            </a>
+
+            <a href="#processing" class="flex items-center gap-md px-md py-sm rounded text-dark-on-surface-variant hover:bg-dark-surface-container hover:text-dark-on-surface transition-colors duration-state-change ease-state-change">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">memory</span>
+              <span data-design-text-token="body-md" class="font-body text-body-md">Processing</span>
+            </a>
+
+            <a href="#download" class="flex items-center gap-md px-md py-sm rounded text-dark-on-surface-variant hover:bg-dark-surface-container hover:text-dark-on-surface transition-colors duration-state-change ease-state-change">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">download</span>
+              <span data-design-text-token="body-md" class="font-body text-body-md">Download</span>
+            </a>
+
+            <a href="#catalogo" class="flex items-center gap-md px-md py-sm rounded text-dark-on-surface-variant hover:bg-dark-surface-container hover:text-dark-on-surface transition-colors duration-state-change ease-state-change">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">inventory_2</span>
+              <span data-design-text-token="body-md" class="font-body text-body-md">Catálogo</span>
+            </a>
+          </nav>
+        </div>
+
+        <footer class="hidden md:block px-sm pt-lg border-t border-dark-outline">
+          <p data-design-text-token="body-sm" class="font-body text-body-sm text-dark-outline">
+            © 2026 VectorConvert Pro. All rights reserved.
+          </p>
+        </footer>
+      </aside>
+
+      <!-- Main Workspace Canvas -->
+      <main class="flex-1 p-xl md:p-2xl flex flex-col gap-xl max-w-[1160px] w-full mx-auto">
+
+        <!-- Pipeline Stepper -->
+        <nav aria-label="Etapas de conversão" class="flex items-center justify-center gap-md sm:gap-xl py-md border-b border-dark-outline-variant">
+          <div class="flex items-center gap-sm">
+            <span class="w-7 h-7 rounded-full bg-dark-primary text-dark-on-primary font-mono text-mono-sm font-semibold flex items-center justify-center tabular-nums">1</span>
+            <span data-design-text-token="label-md" class="font-label text-label-md text-dark-on-surface uppercase">UPLOAD</span>
+          </div>
+
+          <div class="h-px w-10 sm:w-20 bg-dark-outline" aria-hidden="true"></div>
+
+          <div class="flex items-center gap-sm">
+            <span class="w-7 h-7 rounded-full bg-dark-surface-container-high border border-dark-outline text-dark-on-surface-variant font-mono text-mono-sm flex items-center justify-center tabular-nums">2</span>
+            <span data-design-text-token="label-md" class="font-label text-label-md text-dark-on-surface-variant uppercase">PROCESSING</span>
+          </div>
+
+          <div class="h-px w-10 sm:w-20 bg-dark-outline" aria-hidden="true"></div>
+
+          <div class="flex items-center gap-sm">
+            <span class="w-7 h-7 rounded-full bg-dark-surface-container-high border border-dark-outline text-dark-on-surface-variant font-mono text-mono-sm flex items-center justify-center tabular-nums">3</span>
+            <span data-design-text-token="label-md" class="font-label text-label-md text-dark-on-surface-variant uppercase">DOWNLOAD</span>
+          </div>
+        </nav>
+
+        <!-- Page Heading -->
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-lg">
+          <div class="flex flex-col gap-xs">
+            <h1 data-design-text-token="headline-lg" class="font-headline text-headline-lg text-dark-on-surface text-balance">Novo troféu</h1>
+            <p data-design-text-token="body-md" class="font-body text-body-md text-dark-on-surface-variant text-pretty">
+              Escolha o arquivo SVG, ajuste as opções e avance para o Blender.
+            </p>
+          </div>
+        </div>
+
+        <!-- Two-Column Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-xl items-stretch">
+
+          <!-- Left Column: Upload & Parameters -->
+          <!-- COMPONENT: card-action -->
+          <article data-component-id="card-action" data-component-type="card" data-component-variant="action" class="lg:col-span-6 h-full bg-dark-surface-container-low border border-dark-outline rounded-md p-xl flex flex-col justify-between gap-xl">
+            <div class="flex flex-col gap-lg">
+              <header class="flex flex-col gap-xs pb-lg border-b border-dark-outline-variant">
+                <h2 data-design-text-token="headline-md" class="font-headline text-headline-md text-dark-on-surface">Upload e Parâmetros do SVG</h2>
+                <p data-design-text-token="body-sm" class="font-body text-body-sm text-dark-on-surface-variant">Selecione o vetor base e configure renderização e acabamento.</p>
+              </header>
+
+              <!-- ARQUIVO -->
+              <section class="flex flex-col gap-sm">
+                <span data-design-text-token="label-md" class="font-label text-label-md text-dark-on-surface-variant uppercase">ARQUIVO</span>
+                <div class="bg-dark-surface-container-lowest border border-dark-outline rounded p-md flex flex-wrap items-center justify-between gap-md">
+                  <div class="flex items-center gap-md">
+                    <div class="w-9 h-9 rounded-sm bg-success-container text-on-success-container flex items-center justify-center shrink-0">
+                      <span class="material-symbols-outlined text-title-md" aria-hidden="true">polyline</span>
+                    </div>
+                    <div class="flex flex-col">
+                      <span id="selected-svg-name" data-design-text-token="mono-md" class="font-mono text-mono-md text-success">KAR25001.svg</span>
+                      <span data-design-text-token="body-sm" class="font-body text-body-sm text-dark-on-surface-variant">Vetor pronto para conversão</span>
+                    </div>
+                  </div>
+
+                  <!-- COMPONENT: button-secondary -->
+                  <button id="btn-select-svg" data-component-id="button-secondary" data-component-type="button" data-component-variant="secondary" type="button" class="inline-flex items-center justify-center gap-sm px-lg py-sm rounded bg-dark-surface-container-high text-dark-on-surface border border-dark-outline font-label text-label-lg hover:bg-dark-surface-container-highest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-primary transition-colors duration-state-change ease-state-change">
+                    <span data-design-text-token="label-lg">Selecionar Arquivo SVG</span>
+                  </button>
+                </div>
+              </section>
+
+              <!-- RENDERIZAÇÃO -->
+              <section class="flex flex-col gap-md pt-lg border-t border-dark-outline-variant">
+                <span data-design-text-token="label-md" class="font-label text-label-md text-dark-on-surface-variant uppercase">RENDERIZAÇÃO</span>
+
+                <!-- COMPONENT: checkbox-standard -->
+                <label data-component-id="checkbox-standard" data-component-type="checkbox" data-component-variant="standard" class="inline-flex items-center gap-md cursor-pointer select-none">
+                  <input type="checkbox" name="render_auto" value="true" checked class="w-4 h-4 rounded-sm bg-dark-surface-container-lowest border-dark-outline text-dark-primary-container focus:ring-dark-primary focus:ring-offset-dark-surface-container-low cursor-pointer">
+                  <span data-design-text-token="body-md" class="font-body text-body-md text-dark-on-surface">Renderizar automaticamente no Blender</span>
+                </label>
+
+                <!-- COMPONENT: checkbox-group -->
+                <fieldset data-component-id="checkbox-group" data-component-type="checkbox" data-component-variant="group" class="flex flex-col gap-sm bg-dark-surface-container rounded p-md border border-dark-outline">
+                  <legend data-design-text-token="label-md" class="font-label text-label-md text-dark-primary flex items-center gap-sm px-xs">
+                    <span class="material-symbols-outlined text-body-md" aria-hidden="true">videocam</span>
+                    <span>Câmeras a Renderizar:</span>
+                  </legend>
+                  <div class="flex flex-wrap items-center gap-xl pt-xs">
+                    <label class="inline-flex items-center gap-sm cursor-pointer select-none">
+                      <input type="checkbox" name="cameras" value="principal" class="w-4 h-4 rounded-sm bg-dark-surface-container-lowest border-dark-outline text-dark-primary-container focus:ring-dark-primary focus:ring-offset-dark-surface-container cursor-pointer">
+                      <span data-design-text-token="body-md" class="font-body text-body-md text-dark-on-surface">Principal</span>
+                    </label>
+                    <label class="inline-flex items-center gap-sm cursor-pointer select-none">
+                      <input type="checkbox" name="cameras" value="esquerda" class="w-4 h-4 rounded-sm bg-dark-surface-container-lowest border-dark-outline text-dark-primary-container focus:ring-dark-primary focus:ring-offset-dark-surface-container cursor-pointer">
+                      <span data-design-text-token="body-md" class="font-body text-body-md text-dark-on-surface">Esquerda</span>
+                    </label>
+                    <label class="inline-flex items-center gap-sm cursor-pointer select-none">
+                      <input type="checkbox" name="cameras" value="direita" checked class="w-4 h-4 rounded-sm bg-dark-surface-container-lowest border-dark-outline text-dark-primary-container focus:ring-dark-primary focus:ring-offset-dark-surface-container cursor-pointer">
+                      <span data-design-text-token="body-md" class="font-body text-body-md text-dark-on-surface">Direita</span>
+                    </label>
+                  </div>
+                </fieldset>
+              </section>
+
+              <!-- ACABAMENTO -->
+              <section class="flex flex-col gap-md pt-lg border-t border-dark-outline-variant">
+                <span data-design-text-token="label-md" class="font-label text-label-md text-dark-on-surface-variant uppercase">ACABAMENTO</span>
+                <div class="flex flex-col gap-sm">
+                  <label class="inline-flex items-center gap-md cursor-pointer select-none">
+                    <input type="checkbox" name="texturas" value="true" checked class="w-4 h-4 rounded-sm bg-dark-surface-container-lowest border-dark-outline text-dark-primary-container focus:ring-dark-primary focus:ring-offset-dark-surface-container-low cursor-pointer">
+                    <span data-design-text-token="body-md" class="font-body text-body-md text-dark-on-surface">Aplicar texturas (madeira no MDF)</span>
+                  </label>
+                  <label class="inline-flex items-center gap-md cursor-pointer select-none">
+                    <input type="checkbox" name="verniz" value="true" class="w-4 h-4 rounded-sm bg-dark-surface-container-lowest border-dark-outline text-dark-primary-container focus:ring-dark-primary focus:ring-offset-dark-surface-container-low cursor-pointer">
+                    <span data-design-text-token="body-md" class="font-body text-body-md text-dark-on-surface">Aplicar Verniz na madeira</span>
+                  </label>
+                </div>
+              </section>
+
+              <!-- MODELO 3D DE RESINA -->
+              <!-- COMPONENT: select-native -->
+              <label data-component-id="select-native" data-component-type="select" data-component-variant="native" class="flex flex-col gap-sm pt-lg border-t border-dark-outline-variant">
+                <span data-design-text-token="label-md" class="font-label text-label-md text-dark-primary flex items-center gap-sm">
+                  <span class="material-symbols-outlined text-body-md" aria-hidden="true">view_in_ar</span>
+                  <span>Modelo 3D de Resina para Encaixe:</span>
+                </span>
+                <select class="w-full rounded bg-dark-surface-container-lowest border border-dark-outline text-dark-on-surface font-body text-body-md px-md py-sm focus:border-dark-primary focus:ring-1 focus:ring-dark-primary transition-colors duration-state-change ease-state-change">
+                  <option value="piloto_meia_face" selected data-design-text-token="body-md">piloto meia face.obj</option>
+                  <option value="base_cilindrica" data-design-text-token="body-md">base cilindrica.obj</option>
+                  <option value="nenhum" data-design-text-token="body-md">Sem modelo de encaixe</option>
+                </select>
+              </label>
+            </div>
+
+            <footer class="pt-lg border-t border-dark-outline flex items-center justify-end gap-md">
+              <!-- COMPONENT: button-with-icon -->
+              <button data-component-id="button-with-icon" data-component-type="button" data-component-variant="with-icon" type="button" class="inline-flex items-center justify-center gap-sm px-xl py-md rounded bg-dark-primary text-dark-on-primary font-label text-label-lg hover:bg-dark-primary-container hover:text-dark-on-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-primary transition-colors duration-state-change ease-state-change">
+                <span data-design-text-token="label-lg">Avançar para Processing</span>
+                <span class="material-symbols-outlined text-title-md" aria-hidden="true">arrow_forward</span>
+              </button>
+            </footer>
+          </article>
+
+          <!-- Right Column: Structural SVG Analysis -->
+          <!-- COMPONENT: card-elevated -->
+          <article data-component-id="card-elevated" data-component-type="card" data-component-variant="elevated" class="lg:col-span-6 h-full bg-dark-surface-container-low border border-dark-outline rounded-md p-xl flex flex-col gap-lg">
+            <header class="flex flex-col gap-xs pb-lg border-b border-dark-outline-variant">
+              <div class="flex items-center gap-sm">
+                <span class="material-symbols-outlined text-headline-md text-dark-primary" aria-hidden="true">analytics</span>
+                <h2 data-design-text-token="headline-md" class="font-headline text-headline-md text-dark-primary">Análise Estrutural do SVG</h2>
+              </div>
+              <p data-design-text-token="body-sm" class="font-body text-body-sm text-dark-on-surface-variant">
+                Materiais, quantidades e medidas lidas do arquivo.
+              </p>
+            </header>
+
+            <!-- Structured Telemetry Panel -->
+            <div class="flex-1 bg-dark-surface-container-lowest border border-dark-outline rounded p-lg flex flex-col justify-between gap-lg">
+
+              <div class="flex flex-col gap-lg">
+                <!-- File Summary Bar -->
+                <div class="flex items-center justify-between gap-md pb-md border-b border-dark-outline">
+                  <div class="flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-body-md text-success" aria-hidden="true">folder_open</span>
+                    <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-dark-on-surface-variant">ARQUIVO:</span>
+                    <span data-design-text-token="mono-md" class="font-mono text-mono-md text-success">KAR25001.svg</span>
+                  </div>
+                  <span data-design-text-token="label-md" class="font-label text-label-md text-on-success-container bg-success-container px-sm py-xs rounded-full">Lido</span>
+                </div>
+
+                <!-- Materials & Quantities -->
+                <div class="flex flex-col gap-sm">
+                  <div class="flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-body-md text-success" aria-hidden="true">layers</span>
+                    <h3 data-design-text-token="mono-sm" class="font-mono text-mono-sm text-success uppercase">MATERIAIS &amp; QUANTIDADES</h3>
+                  </div>
+
+                  <ul class="flex flex-col gap-xs">
+                    <li class="flex items-center justify-between gap-md px-md py-sm rounded-sm bg-dark-surface-container-low border border-dark-outline-variant">
+                      <div class="flex items-center gap-md">
+                        <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-dark-primary bg-dark-surface-container-high px-sm py-xs rounded-sm min-w-24 text-center">BASE</span>
+                        <span data-design-text-token="mono-md" class="font-mono text-mono-md text-dark-on-surface">Base_3MM</span>
+                      </div>
+                      <span data-design-text-token="mono-md" class="font-mono text-mono-md text-success tabular-nums">1</span>
+                    </li>
+                    <li class="flex items-center justify-between gap-md px-md py-sm rounded-sm bg-dark-surface-container-low border border-dark-outline-variant">
+                      <div class="flex items-center gap-md">
+                        <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-dark-primary bg-dark-surface-container-high px-sm py-xs rounded-sm min-w-24 text-center">BASE</span>
+                        <span data-design-text-token="mono-md" class="font-mono text-mono-md text-dark-on-surface">Base_6MM</span>
+                      </div>
+                      <span data-design-text-token="mono-md" class="font-mono text-mono-md text-success tabular-nums">1</span>
+                    </li>
+                    <li class="flex items-center justify-between gap-md px-md py-sm rounded-sm bg-dark-surface-container-low border border-dark-outline-variant">
+                      <div class="flex items-center gap-md">
+                        <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-dark-secondary bg-dark-surface-container-high px-sm py-xs rounded-sm min-w-24 text-center">MDF</span>
+                        <span data-design-text-token="mono-md" class="font-mono text-mono-md text-dark-on-surface">MDF_6mm</span>
+                      </div>
+                      <span data-design-text-token="mono-md" class="font-mono text-mono-md text-success tabular-nums">1</span>
+                    </li>
+                    <li class="flex items-center justify-between gap-md px-md py-sm rounded-sm bg-dark-surface-container-low border border-dark-outline-variant">
+                      <div class="flex items-center gap-md">
+                        <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-dark-secondary bg-dark-surface-container-high px-sm py-xs rounded-sm min-w-24 text-center">MDF</span>
+                        <span data-design-text-token="mono-md" class="font-mono text-mono-md text-dark-on-surface">MDF_3mm</span>
+                      </div>
+                      <span data-design-text-token="mono-md" class="font-mono text-mono-md text-success tabular-nums">2</span>
+                    </li>
+                    <li class="flex items-center justify-between gap-md px-md py-sm rounded-sm bg-dark-surface-container-low border border-dark-outline-variant">
+                      <div class="flex items-center gap-md">
+                        <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-dark-on-surface-variant bg-dark-surface-container-high px-sm py-xs rounded-sm min-w-24 text-center">ADESIVO</span>
+                        <span data-design-text-token="mono-md" class="font-mono text-mono-md text-dark-on-surface">Adesivo_Padrao</span>
+                      </div>
+                      <span data-design-text-token="mono-md" class="font-mono text-mono-md text-success tabular-nums">2</span>
+                    </li>
+                    <li class="flex items-center justify-between gap-md px-md py-sm rounded-sm bg-dark-surface-container-low border border-dark-outline-variant">
+                      <div class="flex items-center gap-md">
+                        <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-dark-tertiary bg-dark-surface-container-high px-sm py-xs rounded-sm min-w-24 text-center">ACRILICO</span>
+                        <span data-design-text-token="mono-md" class="font-mono text-mono-md text-dark-on-surface">acrilico_padrão</span>
+                      </div>
+                      <span data-design-text-token="mono-md" class="font-mono text-mono-md text-success tabular-nums">1</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Trophy Dimensions -->
+                <div class="flex flex-col gap-sm pt-lg border-t border-dark-outline">
+                  <div class="flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-body-md text-success" aria-hidden="true">straighten</span>
+                    <h3 data-design-text-token="mono-sm" class="font-mono text-mono-sm text-success uppercase">DIMENSÃO DO TROFÉU</h3>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-md">
+                    <div class="bg-dark-surface-container-low border border-dark-outline rounded-sm p-md flex flex-col gap-xs">
+                      <span data-design-text-token="label-md" class="font-label text-label-md text-dark-on-surface-variant">Fundo</span>
+                      <span data-design-text-token="mono-md" class="font-mono text-mono-md text-dark-on-surface">MDF_6mm</span>
+                    </div>
+                    <div class="bg-dark-surface-container-low border border-dark-outline rounded-sm p-md flex flex-col gap-xs">
+                      <span data-design-text-token="label-md" class="font-label text-label-md text-dark-on-surface-variant">Largura</span>
+                      <span data-design-text-token="mono-md" class="font-mono text-mono-md text-success tabular-nums">154.86 mm</span>
+                      <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-dark-on-surface-variant tabular-nums">(15.49 cm)</span>
+                    </div>
+                    <div class="bg-dark-surface-container-low border border-dark-outline rounded-sm p-md flex flex-col gap-xs">
+                      <span data-design-text-token="label-md" class="font-label text-label-md text-dark-on-surface-variant">Altura</span>
+                      <span data-design-text-token="mono-md" class="font-mono text-mono-md text-success tabular-nums">299.99 mm</span>
+                      <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-dark-on-surface-variant tabular-nums">(30.00 cm)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Unconverted Parts Warning -->
+              <div role="status" class="bg-warning-container border border-warning rounded-sm p-md flex items-center justify-between gap-md">
+                <div class="flex items-center gap-sm">
+                  <span class="material-symbols-outlined text-title-md text-warning" aria-hidden="true">warning</span>
+                  <span data-design-text-token="mono-sm" class="font-mono text-mono-sm text-on-warning-container uppercase">PEÇAS QUE NÃO SERÃO CONVERTIDAS</span>
+                </div>
+                <span data-design-text-token="mono-md" class="font-mono text-mono-md text-warning tabular-nums">3</span>
+              </div>
+
+            </div>
+          </article>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const btnSelect = document.getElementById('btn-select-svg');
+      const svgLabel = document.getElementById('selected-svg-name');
+      const samples = ['KAR25001.svg', 'KAR25002_ouro.svg', 'TROF_CORRIDA_26.svg'];
+      let idx = 0;
+
+      if (btnSelect && svgLabel) {
+        btnSelect.addEventListener('click', function () {
+          idx = (idx + 1) % samples.length;
+          svgLabel.textContent = samples[idx];
+        });
+      }
+    })();
+  </script>
+
+
+</body></html>
