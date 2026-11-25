@@ -475,6 +475,7 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
 
         self.sidebar_buttons = {}
         self.screens = {}
+        self._render_galeria = None       # galeria.RenderAtual do render desta sessão
 
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(1, weight=1)

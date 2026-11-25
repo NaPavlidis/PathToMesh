@@ -261,26 +261,40 @@ select.campo option { background: var(--surface-container); color: var(--on-surf
 .logo-espera .label-md { overflow-wrap: anywhere; }
 .processando.demorando .logo-espera { opacity: 1; visibility: visible; transition: opacity 320ms ease-out, visibility 0s; }
 .logo-espera-anel { position: relative; width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; }
-/* anel girando em volta do logo (indicador de espera: o arco azul é o que gira, não é contorno) */
+/* trilho da órbita (anel fixo, discreto) e a bolinha que orbita em volta do logo. A órbita é um
+   bloco (span com display: block, posição absoluta) do tamanho do anel que gira inteiro; a
+   bolinha fica presa no alto dele, em cima da linha do anel. transform não vale em elemento
+   inline: por isso os dois spans são display: block. */
 .logo-espera-anel::before {
   content: ""; position: absolute; inset: 0; border-radius: 9999px;
-  border: 2px solid var(--surface-container-high); border-top-color: var(--primary); border-right-color: var(--primary);
+  border: 2px solid var(--surface-container-high);
 }
-.logo-espera-anel img { width: 52px; height: 52px; object-fit: contain; }
+.logo-orbita { display: block; position: absolute; inset: 0; border-radius: 9999px; pointer-events: none; }
+.logo-bolinha {
+  display: block; position: absolute; top: -4px; left: 50%; width: 10px; height: 10px; margin-left: -5px;
+  border-radius: 9999px; background: var(--primary); box-shadow: 0 0 8px rgba(147, 204, 255, 0.7);
+}
+.logo-espera-anel img { display: block; width: 52px; height: 52px; object-fit: contain; }
 /* as animações só rodam enquanto o logo está na tela */
-.processando.demorando .logo-espera-anel::before { animation: girar 1.8s linear infinite; }
+.processando.demorando .logo-orbita { animation: girar 1.6s linear infinite; }
 .processando.demorando .logo-espera-anel img { animation: respirar 2.4s ease-in-out infinite; }
 @keyframes girar { to { transform: rotate(360deg); } }
 @keyframes respirar { 0%, 100% { transform: scale(0.92); opacity: 0.78; } 50% { transform: scale(1.04); opacity: 1; } }
 
+/* Movimento reduzido (prefers-reduced-motion: no Windows, "Efeitos de animação" desligado em
+   Configurações > Acessibilidade > Efeitos visuais; o WebView2 segue essa opção). As animações de
+   FEEDBACK continuam (listras da barra rodando, faixa indeterminada do "trabalhando", bolinha
+   orbitando o logo, ponto da etapa em andamento), só mais lentas e suaves; os enfeites (brilho que
+   passa, brilho da conclusão, logo "respirando") ficam desligados. */
 @media (prefers-reduced-motion: reduce) {
-  .barra { transition: none; }
-  .trilho.rodando .barra::before, .trilho.rodando .barra::after, .trilho.trabalhando::after,
-  .trilho.concluido .barra::after, .processando.demorando .logo-espera-anel::before,
+  .barra { transition: width 300ms linear, background-color 240ms linear; }
+  .trilho.rodando .barra::before { animation-duration: 2.4s; }
+  .trilho.trabalhando::after { animation-duration: 3.2s; animation-timing-function: linear; }
+  .processando.demorando .logo-orbita { animation-duration: 3.6s; }
+  .trilho.rodando .barra::after, .trilho.concluido .barra::after,
   .processando.demorando .logo-espera-anel img { animation: none; }
   .trilho.rodando .barra::after, .trilho.concluido .barra::after { opacity: 0; }
-  .trilho.trabalhando::after { opacity: 0.6; transform: none; width: 100%; }   /* faixa parada, sem ir e voltar */
-  .logo-espera, .processando.demorando .logo-espera { transition: none; }
+  .logo-espera, .processando.demorando .logo-espera { transition: opacity 160ms linear, visibility 0s; }
 }
 #proc-samples { font-variant-numeric: tabular-nums; }
 .processando .secao-linha { margin-top: var(--xl); }
@@ -305,7 +319,7 @@ select.campo option { background: var(--surface-container); color: var(--on-surf
   content: ""; width: 8px; height: 8px; border-radius: 9999px; background: var(--primary); animation: pulsar 1.2s ease-in-out infinite;
 }
 @keyframes pulsar { 50% { opacity: 0.3; } }
-@media (prefers-reduced-motion: reduce) { .linha-tempo li[data-estado="andamento"] .marca::before { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .linha-tempo li[data-estado="andamento"] .marca::before { animation-duration: 2.4s; } }
 .linha-tempo li[data-estado="pulada"] { color: var(--outline); text-decoration: line-through; }
 .linha-tempo li[data-estado="erro"] { color: var(--error); font-weight: 600; }
 .linha-tempo li[data-estado="erro"] .marca { background: var(--error-container); color: var(--on-error-container); }

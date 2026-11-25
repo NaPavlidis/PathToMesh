@@ -54,6 +54,9 @@
   flex: none; min-height: 0; max-height: clamp(64px, 24vh, 220px); margin: 0; padding: 0;
   background: transparent; color: var(--on-surface-variant);
 }
+/* movimento reduzido (Windows com "Efeitos de animação" desligado): o indicador de trabalho
+   continua girando (é o aviso de que o launcher está trabalhando), só mais devagar */
 @media (prefers-reduced-motion: reduce) {
-  .detalhes-launcher, .detalhes-launcher.trabalhando .girando { animation: none; }
+  .detalhes-launcher { animation: none; }
+  .detalhes-launcher.trabalhando .girando { animation-duration: 1.8s; }
 }
