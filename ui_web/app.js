@@ -262,13 +262,71 @@
   // ------------------------------------------------------------------ Processing (eventos do Blender)
   // A barra mostra o progresso real calculado no Python (nucleo.ProgressoRender): nunca volta,
   // só chega a 100% quando o Blender termina com sucesso e, enquanto o Blender não manda
-  // informação, fica no modo "trabalhando" (listras andando) sem inventar progresso.
-  var prog = { real: false, base: null, recebido: 0, relogio: null, inicio: 0, pct: 0 };
+  // informação, fica no modo "trabalhando" (faixa que vai e volta) sem inventar progresso.
+  // avanco: hora em que a porcentagem subiu pela última vez; ocupado: o Blender trabalha sem
+  // progresso medido (preparação, shaders/BVH, denoise, gravação); fim: concluiu ou deu erro
+  var prog = { real: false, base: null, recebido: 0, relogio: null, inicio: 0, pct: 0, avanco: 0, ocupado: true, fim: false };
   var ROTULO_ESTADO = { concluida: 'concluída', andamento: 'em andamento', pendente: 'pendente', pulada: 'pulada', erro: 'erro' };
   var MARCA_ESTADO = { concluida: '✓', erro: '!' };
 
+  // ---- animações da barra e do logo (o visual fica no estilo.css)
+  // Estados da barra: uma destas classes por vez no #proc-trilho.
+  //   rodando = samples chegando; trabalhando = ocupado sem progresso medido (faixa vai e volta);
+  //   concluido = terminou bem (efeito curto); erro = cor de erro, sem animação.
+  var ESTADOS_BARRA = ['rodando', 'trabalhando', 'concluido', 'erro'];
+  var DEMORA_MS = 4000;                 // sem avanço por mais que isto: mostra o logo animado
+  var ESPERA_CONCLUSAO_MS = 900;        // tempo do efeito de conclusão antes de ir para o Download
+
+  function movimentoReduzido() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function estadoBarra(nome) {
+    var trilho = $('proc-trilho');
+    ESTADOS_BARRA.forEach(function (e) { trilho.classList.toggle(e, e === nome); });
+  }
+
+  // estado da barra a partir de um evento 'progresso' (nucleo.ProgressoRender.estado())
+  function estadoDoProgresso(d) {
+    if (d.concluido) return d.sucesso === false ? 'erro' : 'concluido';
+    if ((d.etapas || []).some(function (e) { return e.estado === 'erro'; })) return 'erro';
+    return d.trabalhando ? 'trabalhando' : 'rodando';
+  }
+
+  // logo animado: enquanto o Blender está ocupado sem progresso medido ou a barra está parada há
+  // mais de DEMORA_MS; some quando o progresso volta a andar ou o render termina
+  function estaDemorando() {
+    if (prog.fim) return false;
+    return prog.ocupado || Date.now() - prog.avanco > DEMORA_MS;
+  }
+
+  function textoDaEtapa() {
+    var etapas = (prog.base && prog.base.etapas) || [];
+    for (var i = 0; i < etapas.length; i++) {
+      if (etapas[i].estado === 'andamento') return etapas[i].titulo;
+    }
+    return $('proc-status').textContent;
+  }
+
+  function atualizarDemora() {
+    var demorando = estaDemorando();
+    $('proc-cartao').classList.toggle('demorando', demorando);
+    if (demorando) {
+      var txt = textoDaEtapa();
+      if ($('proc-logo-texto').textContent !== txt) $('proc-logo-texto').textContent = txt;
+    }
+  }
+
+  function terminarAnimacoes(estado) {
+    if (prog.fim && $('proc-trilho').classList.contains('erro')) estado = 'erro';   // erro não vira sucesso
+    prog.fim = true;
+    estadoBarra(estado);
+    atualizarDemora();
+  }
+
   function porcentagem(valor) {
     valor = Math.max(prog.pct, Math.max(0, Math.min(100, valor)));
+    if (valor > prog.pct) prog.avanco = Date.now();
     prog.pct = valor;
     $('proc-barra').style.width = valor + '%';
     $('proc-porcentagem').textContent = Math.floor(valor) + '%';
@@ -301,14 +359,19 @@
 
   function iniciarProgresso() {
     pararRelogio();
-    prog = { real: false, base: null, recebido: Date.now(), relogio: null, inicio: Date.now(), pct: 0 };
+    prog = { real: false, base: null, recebido: Date.now(), relogio: null, inicio: Date.now(), pct: 0,
+             avanco: Date.now(), ocupado: true, fim: false };
     $('proc-barra').style.width = '0%';
     $('proc-porcentagem').textContent = '0%';
     $('proc-trilho').setAttribute('aria-valuenow', '0');
-    $('proc-trilho').classList.add('trabalhando');
+    estadoBarra('trabalhando');          // sem dados do Blender ainda: faixa indeterminada
     $('proc-etapas').textContent = '';
     etapasMostradas = null;
-    prog.relogio = setInterval(function () { if (prog.real) mostrarTempos(); }, 1000);
+    atualizarDemora();
+    prog.relogio = setInterval(function () {
+      if (prog.real) mostrarTempos();
+      atualizarDemora();
+    }, 1000);
   }
 
   var etapasMostradas = null;
@@ -344,10 +407,14 @@
     prog.base = d;
     prog.recebido = Date.now();
     porcentagem(d.porcentagem);
-    $('proc-trilho').classList.toggle('trabalhando', !!d.trabalhando);
+    if (prog.ocupado && !d.trabalhando) prog.avanco = Date.now();   // as samples começaram: conta a demora daqui
+    prog.ocupado = !!d.trabalhando;
     $('proc-status').textContent = d.atual;
     mostrarEtapas(d.etapas || []);
     mostrarTempos();
+    var estado = estadoDoProgresso(d);
+    if (estado === 'concluido' || estado === 'erro') terminarAnimacoes(estado);
+    else if (!prog.fim) { estadoBarra(estado); atualizarDemora(); }
     if (d.concluido) pararRelogio();
     var prontas = camerasProntas(d.etapas);
     if (prontas > gal.camsProntas) {                 // uma câmera terminou: a imagem dela já está gravada
@@ -371,12 +438,20 @@
           mostrarProgresso(d);
         } else if (d.tipo === 'concluido') {
           pararRelogio();
-          $('proc-trilho').classList.remove('trabalhando');
+          var falhou = d.sucesso === false || prog.base && prog.base.sucesso === false;
+          terminarAnimacoes(falhou ? 'erro' : 'concluido');
           $('proc-status').textContent = d.status;
           if (d.porcentagem !== null && d.porcentagem !== undefined) porcentagem(d.porcentagem);
           $('proc-samples').textContent = d.samples;
-          mostrarTela('download');                   // atualiza a galeria com as imagens novas
+          if (falhou || movimentoReduzido()) {
+            mostrarTela('download');                 // atualiza a galeria com as imagens novas
+          } else {
+            // deixa a barra chegar a 100% e mostrar o efeito de conclusão antes de trocar de tela
+            setTimeout(function () { mostrarTela('download'); }, ESPERA_CONCLUSAO_MS);
+          }
         } else if (d.tipo === 'erro') {
+          pararRelogio();
+          terminarAnimacoes('erro');
           mostrarAviso(d.titulo, d.mensagem, 'erro');
         }
       } catch (e) {
@@ -642,6 +717,8 @@
       document.title = e.nome_app;
       $('nome-app').textContent = e.nome_app;
       $('logo-cabecalho').alt = e.nome_app;
+      var icone = e.icone || (e.logos && e.logos.normal);   // logo animado do cartão de progresso
+      if (icone) { $('proc-logo-img').setAttribute('src', icone); $('proc-logo-img').hidden = false; }
       $('rodape-texto').textContent = '© 2026 ' + e.nome_app + '. All rights reserved.';
       $('analise-vazia').textContent = e.aguardando;
       $('proc-status').textContent = e.status_inicial;

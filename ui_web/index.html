@@ -208,9 +208,18 @@
         <section id="tela-processing" class="tela" data-etapa="2" hidden>
           <nav class="etapas" aria-label="Etapas de conversão"></nav>
           <article class="cartao cartao-cheio">
-            <div class="processando">
-              <h1 class="headline-lg">Processando Troféu no Blender...</h1>
-              <p id="proc-status" class="title-md destaque">🔄 Iniciando importação e montagem de malhas...</p>
+            <div id="proc-cartao" class="processando">
+              <div class="proc-cab">
+                <div class="proc-textos">
+                  <h1 class="headline-lg">Processando Troféu no Blender...</h1>
+                  <p id="proc-status" class="title-md destaque">🔄 Iniciando importação e montagem de malhas...</p>
+                </div>
+                <!-- Logo animado: aparece quando a etapa demora (preparação, shaders, gravação ou > 4 s parada) -->
+                <div id="proc-logo" class="logo-espera" aria-hidden="true">
+                  <div class="logo-espera-anel"><img id="proc-logo-img" alt="" hidden></div>
+                  <span id="proc-logo-texto" class="label-md suave"></span>
+                </div>
+              </div>
               <div class="progresso">
                 <div class="progresso-info">
                   <span id="proc-samples" class="label-md suave">Aguardando início do Cycles...</span>

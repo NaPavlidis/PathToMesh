@@ -185,6 +185,8 @@ class Api:
             "logos": {"normal": logo_data_uri(tema_janela.LOGOS["normal"]),
                       "largo": logo_data_uri(tema_janela.LOGOS["largo"])},
             "limite_logo": tema_janela.LARGURA_LOGO_LARGO,
+            # ícone principal (PathToMash-icon.png), animado no cartão de progresso quando a etapa demora
+            "icone": logo_data_uri(tema_janela.ICONE_PRINCIPAL),
             "aguardando": nucleo.TEXTO_AGUARDANDO_SVG,
             "status_inicial": nucleo.STATUS_INICIAL,
             "samples_inicial": nucleo.SAMPLES_INICIAL,
