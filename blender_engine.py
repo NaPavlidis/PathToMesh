@@ -61,7 +61,10 @@ COR_PADRAO_MDF_HEX = '#5c4033'
 #   PTM_CAMERA <i>/<n> <nome>               começo do render de uma câmera
 #   PTM_CAMERA_FIM <i>/<n> <nome>           imagem da câmera renderizada e gravada
 #   PTM_FIM                                 o script terminou (o Blender vai fechar)
-# As samples de cada câmera vêm das próprias linhas do Cycles ("... | Sample 37/64").
+#   PTM_STATS <texto do Cycles>             progresso do render (handler render_stats), por exemplo
+#                                           "Fra:1 ... | Sample 37/64"
+# As samples de cada câmera vêm do próprio Cycles: das linhas PTM_STATS ou, em versões do Blender
+# que ainda as imprimem, das linhas "... | Sample 37/64".
 ETAPAS_MOTOR = ["estudio", "svg", "materiais", "montagem", "cameras", "render", "final"]
 
 
@@ -1007,16 +1010,41 @@ def renderizar_cena(cameras_nomes, pasta_saida_renders, cycles_samples):
     n_cams = len(cameras_validas)
     print(f"PTM_PLANO {total_samples} {n_cams} {','.join(nome for nome, _ in cameras_validas)}", flush=True)
 
-    for idx_cam, (nome_cam, cam) in enumerate(cameras_validas):
-        scene.camera = cam
-        scene.render.filepath = os.path.join(pasta_dest, f"{nome_cam}.png")
-        print(f"PTM_CAMERA {idx_cam + 1}/{n_cams} {nome_cam}", flush=True)
-        print(f">>> Renderizando câmera: {nome_cam} via Cycles...", flush=True)
-        # O progresso das samples é o que o próprio Cycles imprime ("Sample N/M"); nada é simulado.
-        bpy.ops.render.render(write_still=True)
-        print(f"PTM_CAMERA_FIM {idx_cam + 1}/{n_cams} {nome_cam}", flush=True)
+    # O Blender 5.3 em --background não imprime mais as linhas "Fra:... | Sample N/M" (e o que ele
+    # imprime pelo C chega atrasado, em bloco). O handler render_stats recebe esse mesmo texto do
+    # Cycles durante o render; ele sai como "PTM_STATS <texto>", com flush, para a barra do app.
+    handlers_stats = getattr(bpy.app.handlers, "render_stats", None)
+    if handlers_stats is not None and _ptm_render_stats not in handlers_stats:
+        handlers_stats.append(_ptm_render_stats)
+    try:
+        for idx_cam, (nome_cam, cam) in enumerate(cameras_validas):
+            scene.camera = cam
+            scene.render.filepath = os.path.join(pasta_dest, f"{nome_cam}.png")
+            print(f"PTM_CAMERA {idx_cam + 1}/{n_cams} {nome_cam}", flush=True)
+            print(f">>> Renderizando câmera: {nome_cam} via Cycles...", flush=True)
+            # O progresso das samples é o que o próprio Cycles informa ("Sample N/M"); nada é simulado.
+            bpy.ops.render.render(write_still=True)
+            print(f"PTM_CAMERA_FIM {idx_cam + 1}/{n_cams} {nome_cam}", flush=True)
+    finally:
+        if handlers_stats is not None and _ptm_render_stats in handlers_stats:
+            handlers_stats.remove(_ptm_render_stats)
 
     print(f"Renders salvos em: {pasta_dest}", flush=True)
+
+
+_ultimo_stats = [None]
+
+
+def _ptm_render_stats(*args):
+    """Handler render_stats: repassa o texto de progresso do Cycles (sem repetir o mesmo texto)."""
+    try:
+        texto = next((a for a in args if isinstance(a, str)), "")
+        texto = " ".join(texto.split())
+        if texto and texto != _ultimo_stats[0]:
+            _ultimo_stats[0] = texto
+            print(f"PTM_STATS {texto}", flush=True)
+    except Exception:
+        pass
 
 # ==============================================================================
 # 4. FUNÇÃO PRINCIPAL (ORQUESTRADOR)

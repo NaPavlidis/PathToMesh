@@ -570,10 +570,12 @@ def interpretar_linha_blender(linha_limpa):
 # Progresso real da renderização (barra composta e etapas)
 # ------------------------------------------------------------------------------
 # Pesos de cada parte na barra (somam 1). A preparação é rápida; o render das câmeras é quase todo
-# o tempo; a finalização (gravar e fechar o Blender) é curta. Calibrar com os logs render-*.log.
+# o tempo; a finalização (gravar e fechar o Blender) é curta. Calibrado com os logs render-*.log
+# de 2026-11-25 (Blender 5.3, 1 câmera, 64 samples): abrir o Blender + preparar = 1,6 a 5,8 s
+# (5-15% do total), render da câmera = 31,5 a 32,2 s (85-95%), PTM_FIM até fechar = 0,2-0,3 s (<1%).
 PESO_PREPARACAO = 0.10
-PESO_RENDER = 0.85
-PESO_FINAL = 0.05
+PESO_RENDER = 0.89
+PESO_FINAL = 0.01
 # Dentro de cada câmera: as samples valem esta fração; o resto (denoise e gravação da imagem) só
 # conta quando a câmera termina (PTM_CAMERA_FIM), sem inventar progresso no meio.
 FRACAO_SAMPLES_CAMERA = 0.90
@@ -602,6 +604,7 @@ _RE_SAMPLE = re.compile(r"\bSample (\d+)\s*/\s*(\d+)")
 _RE_RENDERED = re.compile(r"\bRendered (\d+)\s*/\s*(\d+) samples", re.IGNORECASE)
 _RE_TILE = re.compile(r"\bTile (\d+)\s*/\s*(\d+)|\b(\d+)\s*/\s*(\d+) Tiles", re.IGNORECASE)
 _RE_FRACAO = re.compile(r"^(\d+)\s*/\s*(\d+)\s*(.*)$")
+_RE_SAVED = re.compile(r"(?:^|\|)\s*Saved[: ]")
 
 
 def plano_do_comando(comando):
@@ -827,7 +830,8 @@ class ProgressoRender:
         if re.search(r"\bdenois", texto, re.IGNORECASE) and e["fase"] == "samples":
             e["fase"] = "denoise"
             mudou = True
-        if texto.startswith("Saved:") or texto.startswith("Saved "):
+        # "Saved: '...'" (Blender ≤ 4.x) ou "00:36.282  render  | Saved: '...'" (Blender 5.x)
+        if _RE_SAVED.search(texto):
             e["fase"] = "gravando"
             mudou = True
         return mudou
