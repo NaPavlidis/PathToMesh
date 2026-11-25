@@ -17,6 +17,7 @@ import queue
 import threading
 import traceback
 
+import area_transferencia
 import galeria
 import nucleo
 import registro_erros
@@ -112,6 +113,9 @@ class Api:
         # Galeria: a tela só pede imagens pela chave de uma imagem listada (nunca um caminho)
         self._galeria = {}                 # chave -> caminho
         self._render = None                # galeria.RenderAtual do render desta sessão
+        self._chaves_galeria = []          # as chaves da última lista mandada à tela (Copiar todas)
+        self._area = None                  # testes: área de transferência falsa (area_transferencia.AreaWindows)
+        self._dotnet = None                # testes: classes .NET falsas para o arrastar
         self._cache_miniaturas = galeria.Cache(48)
         self._cache_imagens = galeria.Cache(3)
         threading.Thread(target=self._enviar_fila, name="eventos-js", daemon=True).start()
@@ -192,6 +196,8 @@ class Api:
             "status_inicial": nucleo.STATUS_INICIAL,
             "samples_inicial": nucleo.SAMPLES_INICIAL,
             "resina": self.listar_resinas(),
+            # arrastar a imagem para fora (WinForms do pywebview); sem isso, a tela orienta a usar Copiar
+            "arrastar": area_transferencia.arrastar_disponivel(self._janela, self._dotnet),
         }
 
     # ------------------------------------------------------------ Upload
@@ -265,6 +271,7 @@ class Api:
         if len(self._galeria) > 500:
             self._galeria.clear()
         self._galeria.update({i["chave"]: i["caminho"] for i in itens})
+        self._chaves_galeria = [i["chave"] for i in itens]
         lista = []
         for i in itens:
             dados = galeria.para_js(i)
@@ -298,6 +305,39 @@ class Api:
         if resultado["ok"]:
             self._cache_imagens.guardar(chave, resultado)
         return resultado
+
+    # ------------------------------------------------------------ copiar e arrastar (para outros programas)
+    def _caminhos_da_tela(self, chaves):
+        caminhos = [self._galeria.get(c) for c in (chaves or []) if isinstance(c, str)]
+        return [c for c in caminhos if c]
+
+    def _hwnd(self):
+        return _hwnd_da_janela(self._janela) if self._janela is not None else 0
+
+    def copiar_imagem(self, chave):
+        """Copia UMA imagem da galeria para a área de transferência do Windows: o arquivo
+        (CF_HDROP), o bitmap (CF_DIB) e o PNG. Cola com Ctrl+V no WhatsApp, e-mail ou Explorer."""
+        caminhos = self._caminhos_da_tela([chave])
+        if not caminhos:
+            return {"ok": False, "mensagem": "Imagem desconhecida."}
+        return area_transferencia.copiar(caminhos, self._hwnd(), com_imagem=True, win=self._area)
+
+    def copiar_todas(self):
+        """Copia todas as imagens da galeria (as do render) como arquivos (CF_HDROP)."""
+        caminhos = self._caminhos_da_tela(self._chaves_galeria)
+        if not caminhos:
+            return {"ok": False, "mensagem": "Nenhuma imagem na galeria."}
+        return area_transferencia.copiar(caminhos, self._hwnd(), com_imagem=len(caminhos) == 1, win=self._area)
+
+    def arrastar_imagem(self, chave):
+        """Começa o arrastar de arquivo nativo do Windows (a tela chama no dragstart)."""
+        caminhos = self._caminhos_da_tela([chave])
+        if not caminhos:
+            return {"ok": False, "mensagem": "Imagem desconhecida."}
+
+        def ao_erro(e):
+            registro_erros.gravar_log(f"{ORIGEM} (arrastar imagem)", f"O arrasto da imagem falhou: {e}", traceback.format_exc())
+        return area_transferencia.arrastar(caminhos, self._janela, win=self._area, dotnet=self._dotnet, ao_erro=ao_erro)
 
     def relatorio_catalogo(self):
         modalidades, status = nucleo.mapear_catalogo(self._estado.catalogo_dir)

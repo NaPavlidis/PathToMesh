@@ -507,10 +507,13 @@
 
   function montarItem(item, indice, lista) {
     var li = document.createElement('li');
+    li.className = 'galeria-celula';
     var botao = document.createElement('button');
     botao.type = 'button';
     botao.className = 'galeria-item';
-    botao.title = 'Ampliar ' + item.arquivo;
+    botao.title = 'Ampliar ' + item.arquivo + ' (ou arraste para outro programa)';
+    botao.draggable = true;
+    botao.addEventListener('dragstart', function (ev) { aoArrastar(ev, item); });
     var quadro = document.createElement('div');
     quadro.className = 'galeria-miniatura';
     var img = document.createElement('img');
@@ -535,7 +538,51 @@
     botao.appendChild(dados);
     botao.addEventListener('click', function () { abrirImagem(lista, indice); });
     li.appendChild(botao);
+    var copiar = document.createElement('button');
+    copiar.type = 'button';
+    copiar.className = 'botao-icone galeria-copiar';
+    copiar.title = 'Copiar imagem (cole com Ctrl+V)';
+    copiar.setAttribute('aria-label', 'Copiar imagem ' + item.camera);
+    copiar.innerHTML = '<svg class="ic"><use href="#i-copiar"/></svg>';
+    copiar.addEventListener('click', function (ev) { ev.stopPropagation(); copiarImagem(item); });
+    li.appendChild(copiar);
     return li;
+  }
+
+  // ---- levar a imagem para outros programas (WhatsApp, Explorer, e-mail)
+  // Arrastar: o arrasto do HTML (imagem data:) não sai da janela como arquivo; por isso ele é
+  // cancelado e o Python começa o arrastar de arquivo nativo do Windows (DoDragDrop com o arquivo
+  // real). Sem suporte neste PC, a tela orienta a usar Copiar imagem.
+  var DICA_SEM_ARRASTO = 'Arrastar para fora não está disponível neste PC: use Copiar imagem e cole com Ctrl+V.';
+
+  function aoArrastar(ev, item) {
+    ev.preventDefault();
+    if (!item) return;
+    if (!inicio || !inicio.arrastar) { avisoRapido(DICA_SEM_ARRASTO, 'aviso'); return; }
+    chamar('arrastar_imagem', item.chave).then(function (r) {
+      if (!r || !r.ok) avisoRapido((r && r.mensagem) || DICA_SEM_ARRASTO, 'aviso');
+    });
+  }
+
+  function copiarImagem(item) {
+    if (!item) return;
+    chamar('copiar_imagem', item.chave).then(function (r) { avisoRapido(r.mensagem, r.ok ? 'ok' : 'erro'); });
+  }
+
+  function copiarTodas() {
+    chamar('copiar_todas').then(function (r) { avisoRapido(r.mensagem, r.ok ? 'ok' : 'erro'); });
+  }
+
+  var avisoRapidoRelogio = null;
+
+  function avisoRapido(texto, tipo) {
+    var el = $('aviso-rapido');
+    if (!el || !texto) return;
+    el.textContent = texto;
+    el.className = 'aviso-rapido tipo-' + (tipo || 'ok');
+    el.hidden = false;
+    if (avisoRapidoRelogio) clearTimeout(avisoRapidoRelogio);
+    avisoRapidoRelogio = setTimeout(function () { el.hidden = true; avisoRapidoRelogio = null; }, 3500);
   }
 
   function mostrarMiniatura(chave, src) {
@@ -742,6 +789,9 @@
     ligar('btn-avancar', avancar);
     ligar('btn-abrir-pasta', function () { chamar('abrir_pasta_saida'); });
     ligar('btn-galeria-pasta', function () { chamar('abrir_pasta_saida'); });
+    ligar('btn-galeria-copiar-todas', copiarTodas);
+    ligar('btn-imagem-copiar', function () { copiarImagem(gal.lista[gal.atual]); });
+    $('imagem-grande').addEventListener('dragstart', function (ev) { aoArrastar(ev, gal.lista[gal.atual]); });
     ligar('btn-imagem-fechar', fecharImagem);
     ligar('btn-imagem-anterior', function () { navegarImagem(-1); });
     ligar('btn-imagem-proxima', function () { navegarImagem(1); });

@@ -365,6 +365,26 @@ select.campo option { background: var(--surface-container); color: var(--on-surf
 .galeria-nome { font-family: var(--f-titulo); font-size: 14px; line-height: 20px; font-weight: 600; overflow-wrap: anywhere; }
 .galeria-dados { font-family: var(--f-mono); font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
 .galeria-vazia { padding: var(--sm) 0; }
+/* botão de copiar no canto da miniatura (fora do botão de ampliar: botão não vai dentro de botão) */
+.galeria-celula { position: relative; }
+.galeria-copiar {
+  position: absolute; top: calc(var(--sm) + 6px); right: calc(var(--sm) + 6px); width: 32px; height: 32px;
+  background: rgba(16, 20, 24, 0.82); opacity: 0; transition: opacity var(--t-estado), background-color var(--t-estado);
+}
+.galeria-celula:hover .galeria-copiar, .galeria-copiar:focus-visible { opacity: 1; }
+.galeria-item[draggable="true"] { cursor: grab; }
+.imagem-grande[draggable="true"] { cursor: grab; }
+
+/* aviso rápido (copiar/arrastar), embaixo no meio; some sozinho */
+.aviso-rapido {
+  position: fixed; left: 50%; bottom: var(--xl); transform: translateX(-50%); z-index: 50; max-width: min(640px, calc(100% - 48px));
+  padding: var(--sm) var(--lg); border-radius: var(--r); background: var(--surface-container-highest); color: var(--on-surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .45); font-size: 13px; line-height: 19px; pointer-events: none;
+  animation: entrar 160ms ease-out;
+}
+.aviso-rapido.tipo-ok { color: var(--on-success-container); background: var(--success-container); }
+.aviso-rapido.tipo-erro { color: var(--on-error-container); background: var(--error-container); }
+.aviso-rapido.tipo-aviso { color: var(--on-warning-container); background: var(--warning-container); }
 
 .fundo-imagem { z-index: 35; background: rgba(0, 0, 0, .8); }
 .modal-imagem { width: min(1200px, 100%); height: 100%; background: var(--surface-container-low); }
