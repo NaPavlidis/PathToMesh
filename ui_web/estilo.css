@@ -378,6 +378,48 @@ select.campo option { background: var(--surface-container); color: var(--on-surf
 .circulo-ok .ic { width: 44px; height: 44px; stroke-width: 3; }
 .concluido .botao { margin-top: var(--xl); }
 
+/* ---------------------------------------------------------------- galeria (imagens geradas) */
+/* com imagens, o bloco "Processamento Concluído" fica compacto e a galeria aparece logo abaixo */
+#tela-download.com-imagens .cartao-cheio { flex: none; }
+#tela-download.com-imagens .concluido { padding: var(--lg) 0; }
+#tela-download.com-imagens .circulo-ok { width: 56px; height: 56px; margin-bottom: var(--md); }
+#tela-download.com-imagens .circulo-ok .ic { width: 28px; height: 28px; }
+.galeria-grade {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--lg);
+}
+.galeria-item {
+  display: flex; flex-direction: column; gap: var(--sm); width: 100%; padding: var(--sm); text-align: left;
+  background: var(--surface-container-lowest); border: 1px solid var(--outline-variant); border-radius: var(--r);
+  color: var(--on-surface); cursor: pointer; font: inherit;
+  transition: border-color var(--t-estado), background-color var(--t-estado);
+}
+.galeria-item:hover { border-color: var(--primary); background: var(--surface-container); }
+.galeria-item:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--primary); }
+.galeria-miniatura {
+  aspect-ratio: 16 / 10; border-radius: var(--r-sm); overflow: hidden;
+  background: var(--surface-container) repeating-linear-gradient(-45deg, transparent 0 10px, rgba(147, 204, 255, 0.05) 10px 20px);
+  display: flex; align-items: center; justify-content: center; color: var(--outline);
+}
+/* sem o Pillow a miniatura é a imagem original: o tamanho fica limitado aqui (CSS) */
+.galeria-miniatura img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.galeria-miniatura .ic { width: 28px; height: 28px; }
+.galeria-nome { font-family: var(--f-titulo); font-size: 14px; line-height: 20px; font-weight: 600; overflow-wrap: anywhere; }
+.galeria-dados { font-family: var(--f-mono); font-size: 12px; line-height: 18px; color: var(--on-surface-variant); }
+.galeria-vazia { padding: var(--sm) 0; }
+
+.fundo-imagem { z-index: 35; background: rgba(0, 0, 0, .8); }
+.modal-imagem { width: min(1200px, 100%); height: 100%; background: var(--surface-container-low); }
+.imagem-cab {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: var(--lg);
+  padding: var(--lg) var(--xl); border-bottom: 1px solid var(--outline-variant);
+}
+.imagem-palco { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; gap: var(--md); padding: var(--lg); }
+.imagem-grande { max-width: calc(100% - 104px); max-height: 100%; object-fit: contain; border-radius: var(--r-sm); background: var(--surface-container-lowest); }
+.seta-imagem { flex: none; width: 40px; height: 40px; }
+.seta-imagem:disabled { opacity: .35; cursor: default; }
+#imagem-carregando { position: absolute; bottom: var(--lg); left: 50%; transform: translateX(-50%); }
+
 /* ---------------------------------------------------------------- catálogo */
 .relatorio {
   flex: 1; margin: 0; overflow: auto; white-space: pre-wrap; user-select: text; min-height: 240px;

@@ -5,6 +5,8 @@ __pycache__/
 venv/
 logs/
 .versao
+# pasta do último render (a galeria do app mostra ela ao abrir)
+.ultimo_render.json
 config.local.json
 # config.json antigo (antes do config.local.json): se ainda existir no PC, só serve para a migração
 config.json

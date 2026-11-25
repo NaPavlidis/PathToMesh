@@ -131,6 +131,8 @@
       tela.hidden = tela.id !== 'tela-' + chave;
     });
     document.querySelector('.area').scrollTop = 0;
+    if (chave === 'download' && inicio) atualizarGaleria();   // lista rápida; miniaturas só das novas
+    else if (chave === 'processing') pedirMiniaturas();
   }
 
   // ------------------------------------------------------------------ logo do cabeçalho (1; 2 com a janela larga)
@@ -224,6 +226,7 @@
       nome.classList.add('sucesso');
       $('svg-dica').hidden = false;
       mostrarAnalise(r);
+      atualizarGaleria();                            // a galeria passa a ser a da pasta deste SVG
       if (r.aviso) mostrarAviso(r.aviso.titulo, r.aviso.mensagem, 'aviso');
     });
   }
@@ -249,6 +252,9 @@
       $('proc-status').textContent = r.status;
       $('proc-samples').textContent = r.samples;
       iniciarProgresso();
+      gal.inicioRender = Date.now() / 1000;
+      gal.camsProntas = 0;
+      desenharGalerias();
       mostrarTela('processing');
     });
   }
@@ -336,6 +342,11 @@
     mostrarEtapas(d.etapas || []);
     mostrarTempos();
     if (d.concluido) pararRelogio();
+    var prontas = camerasProntas(d.etapas);
+    if (prontas > gal.camsProntas) {                 // uma câmera terminou: a imagem dela já está gravada
+      gal.camsProntas = prontas;
+      atualizarGaleria();
+    }
   }
 
   window.ptm = {
@@ -357,7 +368,7 @@
           $('proc-status').textContent = d.status;
           if (d.porcentagem !== null && d.porcentagem !== undefined) porcentagem(d.porcentagem);
           $('proc-samples').textContent = d.samples;
-          mostrarTela('download');
+          mostrarTela('download');                   // atualiza a galeria com as imagens novas
         } else if (d.tipo === 'erro') {
           mostrarAviso(d.titulo, d.mensagem, 'erro');
         }
@@ -367,6 +378,164 @@
       return true;
     }
   };
+
+  // ------------------------------------------------------------------ Galeria (imagens geradas)
+  // A lista vem rápida do Python (sem ler as imagens); as miniaturas vêm depois, uma por vez, e
+  // só quando uma galeria está na tela. A imagem ampliada abre num modal (anterior/próxima).
+  var gal = { itens: [], assinatura: null, mini: {}, falhou: {}, pedindo: false, imgs: {},
+              inicioRender: null, camsProntas: 0, lista: [], atual: -1, pedidoGrande: 0, listando: false, denovo: false };
+
+  function galeriaVisivel() {
+    return !$('tela-download').hidden || (!$('tela-processing').hidden && !$('galeria-processing').hidden);
+  }
+
+  function atualizarGaleria() {
+    if (gal.listando) { gal.denovo = true; return; }
+    gal.listando = true;
+    chamar('listar_galeria').then(function (r) {
+      gal.listando = false;
+      gal.itens = r.itens || [];
+      desenharGalerias();
+      pedirMiniaturas();
+      if (gal.denovo) { gal.denovo = false; atualizarGaleria(); }
+    });
+  }
+
+  function itensDa(tipo) {
+    if (tipo !== 'render') return gal.itens;
+    if (gal.inicioRender === null) return [];
+    // só as imagens gravadas depois que este render começou
+    return gal.itens.filter(function (i) { return i.mtime >= gal.inicioRender - 2; });
+  }
+
+  function desenharGalerias() {
+    var assinatura = gal.itens.map(function (i) { return i.chave; }).join('\n') + '|' + gal.inicioRender;
+    if (assinatura === gal.assinatura) return;      // nada mudou: o DOM fica como está
+    gal.assinatura = assinatura;
+    gal.imgs = {};
+    document.querySelectorAll('[data-galeria]').forEach(function (cartao) {
+      var tipo = cartao.getAttribute('data-galeria');
+      var itens = itensDa(tipo);
+      var grade = cartao.querySelector('.galeria-grade');
+      grade.textContent = '';
+      itens.forEach(function (item, i) { grade.appendChild(montarItem(item, i, itens)); });
+      var vazia = cartao.querySelector('.galeria-vazia');
+      if (vazia) vazia.hidden = itens.length > 0;
+      if (tipo === 'render') cartao.hidden = itens.length === 0;
+    });
+    $('tela-download').classList.toggle('com-imagens', gal.itens.length > 0);
+  }
+
+  function montarItem(item, indice, lista) {
+    var li = document.createElement('li');
+    var botao = document.createElement('button');
+    botao.type = 'button';
+    botao.className = 'galeria-item';
+    botao.title = 'Ampliar ' + item.arquivo;
+    var quadro = document.createElement('div');
+    quadro.className = 'galeria-miniatura';
+    var img = document.createElement('img');
+    img.alt = item.camera;
+    img.decoding = 'async';
+    if (gal.mini[item.chave]) {
+      img.src = gal.mini[item.chave];
+    } else {
+      img.hidden = true;
+      quadro.innerHTML = '<svg class="ic"><use href="#i-imagem"/></svg>';
+    }
+    quadro.appendChild(img);
+    (gal.imgs[item.chave] = gal.imgs[item.chave] || []).push(img);
+    var nome = document.createElement('span');
+    nome.className = 'galeria-nome';
+    nome.textContent = item.camera;
+    var dados = document.createElement('span');
+    dados.className = 'galeria-dados';
+    dados.textContent = [item.dimensoes, item.tamanho, item.data].filter(Boolean).join('  ·  ');
+    botao.appendChild(quadro);
+    botao.appendChild(nome);
+    botao.appendChild(dados);
+    botao.addEventListener('click', function () { abrirImagem(lista, indice); });
+    li.appendChild(botao);
+    return li;
+  }
+
+  function mostrarMiniatura(chave, src) {
+    (gal.imgs[chave] || []).forEach(function (img) {
+      img.src = src;
+      img.hidden = false;
+      var icone = img.parentNode && img.parentNode.querySelector('.ic');
+      if (icone) icone.parentNode.removeChild(icone);
+    });
+  }
+
+  function pedirMiniaturas() {
+    if (gal.pedindo || !galeriaVisivel()) return;
+    var falta = gal.itens.filter(function (i) { return !gal.mini[i.chave] && !gal.falhou[i.chave]; })[0];
+    if (!falta) return;
+    gal.pedindo = true;
+    chamar('miniatura', falta.chave).then(function (r) {
+      gal.pedindo = false;
+      if (r && r.ok) {
+        gal.mini[falta.chave] = r.src;
+        mostrarMiniatura(falta.chave, r.src);
+      } else {
+        gal.falhou[falta.chave] = true;
+      }
+      setTimeout(pedirMiniaturas, 0);              // a próxima, sem segurar a tela
+    });
+  }
+
+  function abrirImagem(lista, indice) {
+    gal.lista = lista;
+    $('janela-imagem').hidden = false;
+    mostrarImagem(indice);
+    $('btn-imagem-fechar').focus();
+  }
+
+  function mostrarImagem(indice) {
+    var item = gal.lista[indice];
+    if (!item) return;
+    gal.atual = indice;
+    $('imagem-titulo').textContent = item.camera;
+    $('imagem-info').textContent = [item.arquivo, item.dimensoes, item.tamanho, item.data].filter(Boolean).join('  ·  ');
+    $('imagem-posicao').textContent = (indice + 1) + ' / ' + gal.lista.length;
+    $('btn-imagem-anterior').disabled = indice <= 0;
+    $('btn-imagem-proxima').disabled = indice >= gal.lista.length - 1;
+    var img = $('imagem-grande');
+    img.alt = item.camera;
+    if (gal.mini[item.chave]) img.src = gal.mini[item.chave]; else img.removeAttribute('src');
+    $('imagem-carregando').hidden = false;
+    var pedido = ++gal.pedidoGrande;
+    chamar('imagem', item.chave).then(function (r) {
+      if (pedido !== gal.pedidoGrande) return;      // já foi para outra imagem
+      $('imagem-carregando').hidden = true;
+      if (r && r.ok) {
+        img.src = r.src;
+      } else {
+        $('imagem-carregando').textContent = (r && r.erro) || 'Não deu para abrir a imagem.';
+        $('imagem-carregando').hidden = false;
+      }
+    });
+  }
+
+  function navegarImagem(passo) {
+    var novo = gal.atual + passo;
+    if (novo >= 0 && novo < gal.lista.length) {
+      $('imagem-carregando').textContent = 'Carregando...';
+      mostrarImagem(novo);
+    }
+  }
+
+  function fecharImagem() {
+    gal.pedidoGrande++;
+    $('janela-imagem').hidden = true;
+    $('imagem-grande').removeAttribute('src');      // solta a memória da imagem grande
+    $('imagem-carregando').textContent = 'Carregando...';
+  }
+
+  function camerasProntas(etapas) {
+    return (etapas || []).filter(function (e) { return String(e.id).indexOf('camera:') === 0 && e.estado === 'concluida'; }).length;
+  }
 
   // ------------------------------------------------------------------ Catálogo
   var REALCES = [
@@ -462,6 +631,8 @@
       $('proc-samples').textContent = e.samples_inicial;
       mostrarResinas(e.resina);
       ajustarLogo();
+      // galeria do último render: só a lista (rápida), depois que a tela já apareceu
+      setTimeout(atualizarGaleria, 400);
     });
   }
 
@@ -476,6 +647,11 @@
     ligar('btn-selecionar-svg', selecionarSvg);
     ligar('btn-avancar', avancar);
     ligar('btn-abrir-pasta', function () { chamar('abrir_pasta_saida'); });
+    ligar('btn-galeria-pasta', function () { chamar('abrir_pasta_saida'); });
+    ligar('btn-imagem-fechar', fecharImagem);
+    ligar('btn-imagem-anterior', function () { navegarImagem(-1); });
+    ligar('btn-imagem-proxima', function () { navegarImagem(1); });
+    $('janela-imagem').addEventListener('click', function (ev) { if (ev.target === $('janela-imagem')) fecharImagem(); });
     ligar('btn-atualizar-catalogo', atualizarCatalogo);
     ligar('btn-configuracoes', abrirConfiguracoes);
     ligar('btn-config-fechar', fecharConfiguracoes);
@@ -490,7 +666,11 @@
     document.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape') {
         if (!$('janela-aviso').hidden) fecharAviso();
+        else if (!$('janela-imagem').hidden) fecharImagem();
         else if (!$('janela-config').hidden) fecharConfiguracoes();
+      } else if (!$('janela-imagem').hidden && $('janela-aviso').hidden && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) {
+        ev.preventDefault();
+        navegarImagem(ev.key === 'ArrowLeft' ? -1 : 1);
       } else if (ev.key === 'Enter' && !$('janela-aviso').hidden) {
         ev.preventDefault();
         fecharAviso();

@@ -1,8 +1,10 @@
+import base64
 import os
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+import galeria
 import registro_erros
 import tema_janela
 
@@ -560,6 +562,8 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
 
         if screen_key == "catalogo":
             self._atualizar_relatorio_catalogo()
+        elif screen_key == "download":
+            self._atualizar_galeria()
 
         self.screens[screen_key].tkraise()
 
@@ -724,6 +728,7 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
             widget.destroy()
             
         self._show_screen("processing")
+        galeria.gravar_ultima_saida(self.output_path)    # a galeria mostra este render ao abrir o app
         self._iniciar_processamento_background()
 
     def _analisar_e_exibir_svg(self, caminho_svg):
@@ -894,6 +899,77 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
         tk.Label(centro, text="Abra a pasta para ver as imagens e os arquivos gerados.", fg=TEMA['texto_suave'], bg=sup, font=FONTES['subtitulo']).pack(pady=(ESPACO['xs'], 0))
         criar_botao(centro, "Abrir Pasta de Imagens / Arquivos", lambda: nucleo.abrir_pasta_saida(self.output_path), "sucesso",
                     padx=ESPACO['g'], pady=ESPACO['p'] + 2).pack(pady=(ESPACO['g'], 0))
+
+        # Galeria das imagens geradas (miniaturas com PhotoImage e botão para abrir cada imagem)
+        self._centro_download = centro
+        self.frame_galeria = tk.Frame(corpo, bg=sup)
+        self.frame_galeria.pack(side="bottom", fill="x", padx=ESPACO['g'], pady=(0, ESPACO['g']))
+        self._fotos_galeria = []          # referências das PhotoImage (senão o Tk apaga as imagens)
+        self._assinatura_galeria = None
+
+    # ---- galeria (reserva da galeria da interface web)
+    LADO_MINIATURA_TK = 160
+
+    def _atualizar_galeria(self):
+        """Lista as imagens (e reduz com o Pillow, se houver) numa thread; a tela muda pelo after."""
+        pasta = galeria.pasta_da_galeria(self.svg_selecionado, self.output_path)
+
+        def trabalho():
+            itens = galeria.listar_imagens(pasta)
+            dados = [(i, galeria.bytes_miniatura(i["caminho"], self.LADO_MINIATURA_TK, so_png=True)) for i in itens]
+            self.after(0, lambda: self._mostrar_galeria(dados))
+
+        threading.Thread(target=trabalho, name="galeria", daemon=True).start()
+
+    def _foto_miniatura(self, item, reduzida):
+        try:
+            if reduzida:
+                return tk.PhotoImage(master=self, data=base64.b64encode(reduzida[0]).decode("ascii"))
+            if item["arquivo"].lower().endswith(".png"):
+                foto = tk.PhotoImage(master=self, file=item["caminho"])
+                fator = -(-max(foto.width(), foto.height()) // self.LADO_MINIATURA_TK)
+                return foto.subsample(fator, fator) if fator > 1 else foto
+        except Exception:
+            pass
+        return None                       # JPEG sem o Pillow: só o nome e o botão para abrir
+
+    @staticmethod
+    def _abrir_imagem(caminho):
+        if hasattr(os, "startfile") and os.path.isfile(caminho):
+            os.startfile(caminho)
+
+    def _mostrar_galeria(self, dados):
+        assinatura = tuple(i["chave"] for i, _ in dados)
+        if assinatura == self._assinatura_galeria:
+            return
+        self._assinatura_galeria = assinatura
+        for filho in self.frame_galeria.winfo_children():
+            filho.destroy()
+        self._fotos_galeria = []
+        sup = TEMA['superficie']
+        self._centro_download.place_configure(rely=0.3 if dados else 0.45)
+        if not dados:
+            return
+        criar_divisor(self.frame_galeria).pack(fill="x", pady=(0, ESPACO['m']))
+        tk.Label(self.frame_galeria, text="Imagens geradas", fg=TEMA['destaque'], bg=sup, font=FONTES['secao'],
+                 anchor="w").pack(fill="x", pady=(0, ESPACO['p']))
+        grade = tk.Frame(self.frame_galeria, bg=sup)
+        grade.pack(fill="x")
+        for indice, (item, reduzida) in enumerate(dados):
+            celula = tk.Frame(grade, bg=TEMA['campo'], highlightthickness=1, highlightbackground=TEMA['divisor'],
+                              padx=ESPACO['p'], pady=ESPACO['p'])
+            celula.grid(row=indice // 3, column=indice % 3, sticky="nsew", padx=(0, ESPACO['pm']), pady=(0, ESPACO['pm']))
+            foto = self._foto_miniatura(item, reduzida)
+            if foto is not None:
+                self._fotos_galeria.append(foto)
+                tk.Label(celula, image=foto, bg=TEMA['campo'], bd=0).pack()
+            tk.Label(celula, text=item["camera"], fg=TEMA['texto'], bg=TEMA['campo'], font=FONTES['corpo_negrito'],
+                     anchor="w").pack(fill="x", pady=(ESPACO['p'], 0))
+            detalhes = "  ·  ".join(t for t in (item["dimensoes"], item["tamanho"], item["data"]) if t)
+            tk.Label(celula, text=detalhes, fg=TEMA['texto_suave'], bg=TEMA['campo'], font=FONTES['mono_peq'],
+                     anchor="w").pack(fill="x")
+            criar_botao(celula, "Abrir imagem", lambda c=item["caminho"]: self._abrir_imagem(c), "secundario",
+                        pady=ESPACO['xs']).pack(anchor="w", pady=(ESPACO['p'], 0))
 
     def _build_footer(self):
         # Como no modelo: o rodapé fica no pé do menu lateral, com linha em cima (outline)

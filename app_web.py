@@ -17,6 +17,7 @@ import queue
 import threading
 import traceback
 
+import galeria
 import nucleo
 import registro_erros
 import tema_janela
@@ -94,6 +95,10 @@ class Api:
         self._fila = queue.Queue()
         self._eventos = []                 # sem janela (testes), os eventos ficam aqui
         self._threads = []
+        # Galeria: a tela só pede imagens pela chave de uma imagem listada (nunca um caminho)
+        self._galeria = {}                 # chave -> caminho
+        self._cache_miniaturas = galeria.Cache(48)
+        self._cache_imagens = galeria.Cache(3)
         threading.Thread(target=self._enviar_fila, name="eventos-js", daemon=True).start()
 
     # ------------------------------------------------------------ janela e eventos
@@ -205,6 +210,7 @@ class Api:
         comando = nucleo.montar_comando_blender(self._estado, self._resina, render_auto,
                                                 bool(opcoes.get("usar_textura")), bool(opcoes.get("usar_verniz")),
                                                 nucleo.cameras_selecionadas_str(*cams))
+        galeria.gravar_ultima_saida(self._estado.output_path)    # a galeria mostra este render ao abrir o app
         thread = threading.Thread(target=self._executar, name="blender", daemon=True,
                                   args=(comando, lambda ev: self._enviar(evento_para_js(ev))),
                                   kwargs={"origem": f"{ORIGEM} (Blender)"})
@@ -213,8 +219,56 @@ class Api:
         return {"ok": True, "status": nucleo.STATUS_INICIAL, "samples": nucleo.SAMPLES_INICIAL}
 
     # ------------------------------------------------------------ Download e Catálogo
+    def _pasta_galeria(self):
+        return galeria.pasta_da_galeria(self._estado.svg_selecionado, self._estado.output_path)
+
     def abrir_pasta_saida(self):
-        return {"ok": nucleo.abrir_pasta_saida(self._estado.output_path)}
+        # sem SVG escolhido nesta sessão, abre a pasta do último render (a da galeria)
+        pasta = self._estado.output_path if self._estado.svg_selecionado else (self._pasta_galeria() or self._estado.output_path)
+        return {"ok": nucleo.abrir_pasta_saida(pasta)}
+
+    # ------------------------------------------------------------ Galeria (imagens geradas)
+    def listar_galeria(self):
+        """Imagens da pasta de saída (a do SVG escolhido ou a do último render): câmera, tamanho,
+        dimensões e data. Rápido: não lê as imagens (as miniaturas vêm depois, uma por vez)."""
+        pasta = self._pasta_galeria()
+        itens = galeria.listar_imagens(pasta)
+        if len(self._galeria) > 500:
+            self._galeria.clear()
+        self._galeria.update({i["chave"]: i["caminho"] for i in itens})
+        lista = []
+        for i in itens:
+            dados = galeria.para_js(i)
+            dados["mtime"] = i["mtime"]
+            lista.append(dados)
+        return {"tem_pasta": bool(pasta), "pasta": os.path.basename(pasta) if pasta else "", "itens": lista}
+
+    def miniatura(self, chave):
+        """Miniatura (data URI) de uma imagem da galeria: reduzida no Python com o Pillow, se houver;
+        senão a original (a tela limita o tamanho)."""
+        caminho = self._galeria.get(chave)
+        if not caminho:
+            return {"ok": False, "erro": "imagem desconhecida"}
+        guardada = self._cache_miniaturas.pegar(chave)
+        if guardada is not None:
+            return guardada
+        resultado = galeria.miniatura(caminho)
+        if resultado["ok"]:
+            self._cache_miniaturas.guardar(chave, resultado)
+        return resultado
+
+    def imagem(self, chave):
+        """A imagem original (data URI), para a imagem ampliada."""
+        caminho = self._galeria.get(chave)
+        if not caminho:
+            return {"ok": False, "erro": "imagem desconhecida"}
+        guardada = self._cache_imagens.pegar(chave)
+        if guardada is not None:
+            return guardada
+        resultado = galeria.imagem_completa(caminho)
+        if resultado["ok"]:
+            self._cache_imagens.guardar(chave, resultado)
+        return resultado
 
     def relatorio_catalogo(self):
         modalidades, status = nucleo.mapear_catalogo(self._estado.catalogo_dir)

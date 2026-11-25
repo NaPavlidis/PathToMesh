@@ -30,6 +30,9 @@
       <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
       <symbol id="i-atualizar" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.4 6.4L3 16"/><path d="M3 21v-5h5"/><path d="M3 12a9 9 0 0 1 15.4-6.4L21 8"/><path d="M21 3v5h-5"/></symbol>
       <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-imagem" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+      <symbol id="i-anterior" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+      <symbol id="i-proxima" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
       <symbol id="i-pasta-aberta" viewBox="0 0 24 24"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13l3 3 3-3"/></symbol>
     </defs>
   </svg>
@@ -221,6 +224,17 @@
               </div>
             </div>
           </article>
+          <!-- Imagens deste render: aparecem conforme cada câmera termina -->
+          <article id="galeria-processing" class="cartao galeria-cartao" data-galeria="render" hidden>
+            <header class="cartao-cab">
+              <div class="com-icone">
+                <svg class="ic ic-titulo destaque"><use href="#i-imagem"/></svg>
+                <h2 class="headline-md destaque">Imagens prontas</h2>
+              </div>
+              <p class="body-sm suave">Clique numa imagem para ampliar.</p>
+            </header>
+            <ul class="galeria-grade"></ul>
+          </article>
         </section>
 
         <!-- ============================================================ DOWNLOAD -->
@@ -236,6 +250,23 @@
                 <span>Abrir Pasta de Imagens / Arquivos</span>
               </button>
             </div>
+          </article>
+          <!-- Galeria das imagens geradas (também a do último render, ao abrir o app) -->
+          <article id="galeria-download" class="cartao galeria-cartao" data-galeria="todas">
+            <header class="cartao-cab cab-com-acao">
+              <div class="pilha-xs">
+                <div class="com-icone">
+                  <svg class="ic ic-titulo destaque"><use href="#i-imagem"/></svg>
+                  <h2 class="headline-md destaque">Imagens geradas</h2>
+                </div>
+                <p class="body-sm suave galeria-legenda">Clique numa imagem para ampliar.</p>
+              </div>
+              <button id="btn-galeria-pasta" type="button" class="botao botao-secundario">
+                <svg class="ic"><use href="#i-pasta"/></svg><span>Abrir pasta</span>
+              </button>
+            </header>
+            <p class="body-md suave galeria-vazia">Nenhuma imagem gerada ainda.</p>
+            <ul class="galeria-grade"></ul>
           </article>
         </section>
 
@@ -317,6 +348,28 @@
       <footer class="modal-rodape">
         <button id="btn-config-salvar" type="button" class="botao botao-principal">Salvar Configurações</button>
       </footer>
+    </div>
+  </div>
+
+  <!-- ============================================================ IMAGEM AMPLIADA (galeria) -->
+  <div id="janela-imagem" class="fundo-modal fundo-imagem" hidden>
+    <div class="modal modal-imagem" role="dialog" aria-modal="true" aria-labelledby="imagem-titulo">
+      <header class="imagem-cab">
+        <div class="pilha-xs">
+          <h2 id="imagem-titulo" class="headline-md"></h2>
+          <p id="imagem-info" class="mono-sm suave"></p>
+        </div>
+        <div class="acoes-topo">
+          <span id="imagem-posicao" class="selo"></span>
+          <button id="btn-imagem-fechar" type="button" class="botao-icone" aria-label="Fechar" title="Fechar (Esc)"><svg class="ic"><use href="#i-fechar"/></svg></button>
+        </div>
+      </header>
+      <div class="imagem-palco">
+        <button id="btn-imagem-anterior" type="button" class="botao-icone seta-imagem" aria-label="Imagem anterior" title="Anterior (←)"><svg class="ic"><use href="#i-anterior"/></svg></button>
+        <img id="imagem-grande" class="imagem-grande" alt="">
+        <p id="imagem-carregando" class="body-md suave" hidden>Carregando...</p>
+        <button id="btn-imagem-proxima" type="button" class="botao-icone seta-imagem" aria-label="Próxima imagem" title="Próxima (→)"><svg class="ic"><use href="#i-proxima"/></svg></button>
+      </div>
     </div>
   </div>
 

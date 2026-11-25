@@ -13,6 +13,7 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 | `app.py` | **Entrada do app** (é o que o launcher abre). Abre a janela web (`app_web.py`); se o pywebview ou o WebView2 não funcionarem, grava um log de erro e abre a interface Tkinter (`app_ui.py`). Com `python app.py --tk`, abre direto a Tkinter |
 | `app_web.py` | Janela do app com **pywebview** (WebView2 do Windows): mostra a tela de `ui_web/` e liga os botões à lógica pela classe `Api` (`js_api`). Diálogos de arquivo e pasta nativos; o Blender roda numa thread e as etapas e o progresso chegam à tela por `evaluate_js`; avisos e erros aparecem em janelas (modais) na própria tela |
 | `ui_web/` | A tela do app: `index.html`, `estilo.css` e `app.js`, feitos a partir do `docs/modelo-layout.html`. Funciona offline: sem CDN, ícones em SVG dentro da página e fontes do modelo em `ui_web/fontes/` (Instrument Sans, Red Hat Text e Red Hat Mono, `.ttf` variáveis com a licença SIL OFL nos `*-OFL.txt`; se faltarem, usa a Segoe UI) |
+| `galeria.py` | Galeria das imagens geradas (pasta `imagens 3d`): lista as imagens com câmera, tamanho, dimensões e data e prepara as miniaturas (reduzidas com o Pillow, se ele estiver instalado; senão vai a imagem original, com o tamanho limitado na tela). Guarda a pasta do último render em `.ultimo_render.json` (no `.gitignore`), para a galeria mostrar ele ao abrir o app |
 | `requirements-base.txt` / `requirements.txt` | Dependências do Python: o `requirements-base.txt` tem as essenciais (`svgpathtools`); o `requirements.txt` inclui o base e acrescenta o `pywebview` (a janela do app) |
 | `nucleo.py` | A lógica do app, sem interface: análise do SVG e das cores (`MAPA_MATERIAIS`), configuração (`config.local.json`), mapa do catálogo e a chamada do Blender com o progresso. Usada pelas duas interfaces |
 | `app_ui.py` | Interface Tkinter do app (a de reserva): escolhe o catálogo, a cena `.blend` e os modelos, e chama o Blender (pelo `nucleo.py`). Usa o `TEMA`/`ESPACO` do `tema_janela.py` e as fontes de `FONTES`, aplicados por `aplicar_estilo` |
@@ -85,6 +86,13 @@ A barra da tela **Processing** mostra o trabalho real do Blender:
 - O `blender_engine.py` imprime marcadores (`PTM_ETAPA <id> <i>/<n> <descrição>`, `PTM_PLANO`, `PTM_CAMERA <i>/<n> <nome>`, `PTM_CAMERA_FIM`, `PTM_FIM`). As samples de cada câmera vêm das próprias linhas do Cycles (`... | Sample 37/64`).
 - A barra é composta (pesos no `nucleo.py`): preparação 10%, render das câmeras 85% (dividido entre as câmeras, que usam as mesmas samples) e finalização 5%. Ela nunca volta e só chega a 100% quando o Blender termina com sucesso. Enquanto o Blender trabalha sem mandar informação (carregar os kernels, montar o BVH, denoise, gravar a imagem), a barra fica parada com listras, no modo "trabalhando".
 - A tela mostra a lista de etapas (concluída, em andamento ou pendente), a etapa atual (ex.: "Renderizando câmera 2 de 3 (Camera_Esquerda) — 37/64 samples"), o tempo decorrido e, quando já há dados suficientes, uma estimativa do tempo restante pelo ritmo real das câmeras. Na interface clássica (Tkinter) aparecem a etapa atual, os tempos e a barra.
+
+## Pré-visualização das imagens
+
+- Durante o render, a tela **Processing** mostra as imagens prontas à medida que cada câmera termina. Na tela **Download** fica a galeria com todas as imagens da pasta de saída (`imagens 3d`, ao lado do SVG), com o nome da câmera, as dimensões, o tamanho e a data. Ao abrir o app, a galeria do **Download** mostra o último render.
+- Clique numa miniatura para ver a imagem ampliada, sem abrir o Explorer: ← e → (ou os botões) passam para a anterior ou a próxima, e Esc fecha. O botão **Abrir pasta** abre a pasta no Explorer.
+- As miniaturas são reduzidas no Python quando o **Pillow** está instalado (`pip install pillow`, opcional). Sem ele, a tela recebe a imagem original e limita o tamanho dela. A tela só pede imagens da lista da galeria, nunca de outro caminho.
+- Na interface clássica (Tkinter), a tela **Download** mostra a lista com as miniaturas (PNG) e um botão **Abrir imagem** para cada uma.
 
 ## Logs de erro
 
