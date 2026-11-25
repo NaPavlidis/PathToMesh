@@ -120,6 +120,17 @@
     });
   }
 
+  // Transição entre telas: a anterior some na hora e a nova entra com fade + leve deslize
+  // (classe "entrando", ~220 ms, só CSS com opacity/transform; com movimento reduzido, só fade).
+  // Como a anterior não fica por baixo, nada pisca nem se sobrepõe; a classe sai no fim.
+  var telaAtual = null;
+
+  function animarEntrada(tela) {
+    tela.classList.remove('entrando');
+    void tela.offsetWidth;                          // reinicia a animação se a classe já estava
+    tela.classList.add('entrando');
+  }
+
   function mostrarTela(chave) {
     document.querySelectorAll('.nav-item').forEach(function (item) {
       var ativo = item.getAttribute('data-tela') === chave;
@@ -127,8 +138,13 @@
       if (ativo) item.setAttribute('aria-current', 'page'); else item.removeAttribute('aria-current');
     });
     if (chave === 'catalogo') atualizarCatalogo();
+    var mudou = chave !== telaAtual;
+    telaAtual = chave;
     document.querySelectorAll('.tela').forEach(function (tela) {
-      tela.hidden = tela.id !== 'tela-' + chave;
+      var ativa = tela.id === 'tela-' + chave;
+      tela.hidden = !ativa;
+      if (!ativa) tela.classList.remove('entrando');
+      else if (mudou) animarEntrada(tela);
     });
     document.querySelector('.area').scrollTop = 0;
     // a galeria só existe no Download: lista rápida; miniaturas só das novas
@@ -779,6 +795,12 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     montarEtapas();
+    document.querySelectorAll('.tela').forEach(function (tela) {
+      tela.addEventListener('animationend', function (ev) {
+        // só a animação da própria tela (as da barra e do logo também disparam animationend aqui)
+        if (ev.target === tela && /^tela-/.test(ev.animationName)) tela.classList.remove('entrando');
+      });
+    });
     document.querySelectorAll('.nav-item').forEach(function (item) {
       item.addEventListener('click', function (ev) {
         ev.preventDefault();

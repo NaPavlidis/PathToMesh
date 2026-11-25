@@ -112,7 +112,7 @@ Só na interface web, no Windows (`area_transferencia.py`):
 ## Desempenho
 
 - O `svgpathtools` (que puxa o numpy) não é importado ao abrir o app: ele carrega em segundo plano logo depois que a janela aparece, antes de o primeiro SVG ser analisado.
-- As telas são seções da mesma página, só mostradas ou escondidas. A lista de etapas do Processing só é refeita quando uma etapa muda, e o relatório do Catálogo só é repintado quando o texto muda (a troca de tela não espera o mapeamento do catálogo).
+- As telas são seções da mesma página, só mostradas ou escondidas. Ao trocar de tela, a nova entra com um fade e um leve deslize (~220 ms, só `opacity`/`transform`, sem refazer o layout); a anterior some na hora, então nada pisca nem fica por cima. Com movimento reduzido, só o fade. A lista de etapas do Processing só é refeita quando uma etapa muda, e o relatório do Catálogo só é repintado quando o texto muda (a troca de tela não espera o mapeamento do catálogo).
 - Os eventos de progresso do Blender que chegam juntos viram um só (cada um já traz o estado inteiro), para a tela não ficar para trás quando o Cycles manda muitas linhas por segundo.
 - O logo do cabeçalho é lido do disco uma vez só.
 
