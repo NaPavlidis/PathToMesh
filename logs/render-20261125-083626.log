@@ -1,0 +1,123 @@
+PathToMesh - registro de renderização
+Data: 2026-11-25 08:36:26
+Versão: 03fab06 (2026-11-25)
+Sistema: Windows 11 (10.0.26300), Python 3.14.10
+
+Início: 2026-11-25 08:36:26
+Duração total: 33.3 s
+Código de saída do Blender: 0
+Resultado: sucesso
+Render automático: True  ·  Samples: 64  ·  Câmeras: Camera_Direita
+Pesos: preparação 0.1, render 0.85, final 0.05, samples/câmera 0.9
+Comando: "<CAMINHO>/blender.exe" "--background" "--python" "<CAMINHO>/blender_engine.py" "--" "<CAMINHO>/KAR25001.svg" "<CAMINHO>/imagens 3d" "<CAMINHO>/<CONFIG>" "True" "True" "64" "False" "" "Camera_Direita"
+
+Tempo de cada etapa:
+  Abrir o estúdio base: concluida, 0.0 s
+  Ler e importar o SVG: concluida, 0.1 s
+  Aplicar materiais e extrusões: concluida, 0.1 s
+  Montar o troféu: concluida, 0.0 s
+  Posicionar as câmeras: concluida, 0.0 s
+  Renderizar câmera 1 de 1 (Camera_Direita): concluida, 31.5 s
+  Gravar as imagens e fechar o Blender: concluida, 0.2 s
+
+Saída do Blender (segundos desde o início | linha):
+    1.417 | PTM_ETAPA estudio 1/7 Abrindo o estúdio base
+    1.418 | >>> Carregando estúdio base: <CAMINHO>/<CONFIG>
+    1.418 | 00:01.375  blend            | Read blend: "<CAMINHO>/<CONFIG>"
+    1.431 | <CAMINHO>/blender_engine.py:248: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+    1.431 |   if bpy.context.scene.world and bpy.context.scene.world.use_nodes:
+    1.432 | PTM_ETAPA svg 2/7 Lendo e importando o SVG
+    1.432 | >>> Analisando e importando o arquivo SVG...
+    1.493 | PTM_ETAPA materiais 3/7 Aplicando materiais, texturas e extrusões
+    1.494 | >>> Aplicando materiais, texturas e extrusões...
+    1.498 | <CAMINHO>/blender_engine.py:119: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    1.498 |   mat.use_nodes = True
+    1.500 | <CAMINHO>/blender_engine.py:584: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    1.500 |   if mat and mat.use_nodes:
+    1.552 | <CAMINHO>/blender_engine.py:543: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    1.552 |   mat.use_nodes = True
+    1.608 | PTM_ETAPA montagem 4/7 Montando o troféu (corpo, costas e resina)
+    1.609 | Troféu base montado e alinhado com sucesso!
+    1.609 | PTM_ETAPA cameras 5/7 Posicionando as câmeras
+    1.609 | PTM_ETAPA render 6/7 Renderizando as câmeras
+    1.610 | PTM_PLANO 64 1 Camera_Direita
+    1.610 | PTM_CAMERA 1/1 Camera_Direita
+    1.610 | >>> Renderizando câmera: Camera_Direita via Cycles...
+   26.824 | Blender 5.3.0 (hash 02f0899d78e3 built 2026-11-10 01:33:43)
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.824 | Warning: degenerated triangle detected, correcting
+   26.825 | Warning: edge 1463 - 1462 appears twice, correcting
+   26.825 | Warning: edge 1462 - 1463 appears twice, correcting
+   26.825 | Warning: edge 1463 - 1464 appears twice, correcting
+   26.825 | Warning: edge 1464 - 1463 appears twice, correcting
+   26.825 | Warning: edge 1463 - 1467 appears twice, correcting
+   26.825 | Warning: edge 1467 - 1463 appears twice, correcting
+   26.825 | Warning: edge 1463 - 1468 appears twice, correcting
+   26.825 | Warning: edge 1468 - 1463 appears twice, correcting
+   26.825 | Warning: edge 1463 - 1477 appears twice, correcting
+   26.825 | Warning: edge 1477 - 1463 appears twice, correcting
+   26.825 | Warning: edge 1463 - 1478 appears twice, correcting
+   26.825 | Warning: edge 1478 - 1463 appears twice, correcting
+   26.826 | Warning: degenerated triangle detected, correcting
+   26.826 | Warning: degenerated triangle detected, correcting
+   26.826 | Warning: degenerated triangle detected, correcting
+   26.826 | Warning: degenerated triangle detected, correcting
+   26.826 | Warning: degenerated triangle detected, correcting
+   26.826 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: degenerated triangle detected, correcting
+   26.827 | Warning: edge 286 - 272 appears twice, correcting
+   26.827 | Warning: edge 272 - 286 appears twice, correcting
+   26.827 | Warning: edge 286 - 273 appears twice, correcting
+   26.827 | Warning: edge 273 - 286 appears twice, correcting
+   26.828 | Warning: edge 1339 - 1340 appears twice, correcting
+   26.828 | Warning: edge 1340 - 1339 appears twice, correcting
+   26.828 | Warning: edge 1339 - 1341 appears twice, correcting
+   26.828 | Warning: edge 1341 - 1339 appears twice, correcting
+   26.828 | Warning: edge 1339 - 1344 appears twice, correcting
+   26.828 | Warning: edge 1344 - 1339 appears twice, correcting
+   26.828 | Warning: edge 1339 - 1345 appears twice, correcting
+   26.828 | Warning: edge 1345 - 1339 appears twice, correcting
+   26.828 | Warning: edge 1339 - 1348 appears twice, correcting
+   26.828 | Warning: edge 1348 - 1339 appears twice, correcting
+   26.828 | Warning: edge 1339 - 1349 appears twice, correcting
+   26.828 | Warning: edge 1349 - 1339 appears twice, correcting
+   26.828 | Warning: edge 1339 - 1352 appears twice, correcting
+   26.828 | Warning: edge 1352 - 1339 appears twice, correcting
+   26.828 | Warning: edge 1339 - 1353 appears twice, correcting
+   26.828 | Warning: edge 1353 - 1339 appears twice, correcting
+   33.159 | 00:33.109  render           | Saved: '<CAMINHO>/Camera_Direita.png'
+   33.159 | PTM_CAMERA_FIM 1/1 Camera_Direita
+   33.160 | Renders salvos em: <CAMINHO>/imagens 3d
+   33.160 | PTM_ETAPA final 7/7 Finalizando
+   33.160 | PTM_FIM
+   33.299 | 
+   33.299 | Blender quit
