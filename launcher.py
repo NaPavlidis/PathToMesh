@@ -8,6 +8,10 @@ Ao abrir:
   3. confere se o blender_path do config.local.json existe (criado, se faltar, a partir do
      config.json antigo ou do config.exemplo.json);
   4. envia os logs de erro novos para a branch 'logs' (se houver git com credencial).
+Se uma atualização ("Atualizar agora") mudar arquivos do próprio launcher (ARQUIVOS_LAUNCHER: o
+código, o tema, as telas e os ícones), ele mostra "Atualizado, reiniciando…" por ~1 s, abre uma
+nova instância (mesmo Python, mesmos argumentos, sem janela de cmd) e fecha esta. A nova recebe
+--reiniciado=<sha>: no máximo 1 reinício por atualização.
 Depois é só clicar em "Abrir o app": o app abre como um processo independente e o launcher se
 fecha sozinho. Se o app não abrir, o launcher fica aberto, mostra o erro e grava o log.
 
@@ -317,6 +321,103 @@ def atualizar(info, pasta=PASTA):
     if info.get("modo") == "git":
         return atualizar_git(pasta)
     return atualizar_zip(info, pasta)
+
+
+# ---------------------------------------------------------------- reiniciar depois de atualizar
+# Arquivos que o próprio launcher carrega (código, tema, telas e ícones). Se a atualização mudar
+# algum deles, o launcher que está aberto ficou velho: ele se reinicia sozinho.
+ARQUIVOS_LAUNCHER = ("launcher.py", "launcher.pyw", "launcher_web.py", "registro_erros.py", "tema_janela.py",
+                     "app.py", "ui_web/launcher.html", "ui_web/launcher.js", "ui_web/launcher.css",
+                     "ui_web/tema.css", "ui_web/estilo.css")
+PASTAS_LAUNCHER = ("ui_web/fontes", "assets/icones")
+FLAG_REINICIADO = "--reiniciado"
+TEXTO_REINICIANDO = "Atualizado, reiniciando…"
+ESPERA_REINICIAR = 1.0          # segundos mostrando TEXTO_REINICIANDO antes de reiniciar
+# argumentos com que o launcher foi aberto (main guarda; o reinício repete os mesmos)
+ARGV = []
+
+
+def assinatura_launcher(pasta=PASTA):
+    """{caminho relativo: sha1 do conteúdo} dos arquivos do launcher (None se o arquivo não existe).
+    Tirada antes e depois da atualização: vale igual para o git pull e para o zip."""
+    import hashlib
+    nomes = list(ARQUIVOS_LAUNCHER)
+    for sub in PASTAS_LAUNCHER:
+        base = os.path.join(pasta, *sub.split("/"))
+        if os.path.isdir(base):
+            for raiz, pastas, arquivos in os.walk(base):
+                pastas[:] = [p for p in pastas if p != "__pycache__"]
+                for a in arquivos:
+                    nomes.append(os.path.relpath(os.path.join(raiz, a), pasta).replace("\\", "/"))
+    resultado = {}
+    for nome in sorted(set(nomes)):
+        conteudo = _ler_bytes(os.path.join(pasta, *nome.split("/")))
+        resultado[nome] = None if conteudo is None else hashlib.sha1(conteudo).hexdigest()
+    return resultado
+
+
+def arquivos_launcher_mudados(antes, depois):
+    """Arquivos do launcher que a atualização criou, mudou ou apagou."""
+    return sorted(n for n in set(antes) | set(depois) if antes.get(n) != depois.get(n))
+
+
+def valor_reiniciado(argv=None):
+    """None sem a flag; '' com '--reiniciado'; o sha com '--reiniciado=<sha>'."""
+    for a in (ARGV if argv is None else argv):
+        if a == FLAG_REINICIADO:
+            return ""
+        if a.startswith(FLAG_REINICIADO + "="):
+            return a.split("=", 1)[1]
+    return None
+
+
+def pode_reiniciar(sha, argv=None):
+    """No máximo 1 reinício por atualização: um launcher aberto pelo reinício da atualização
+    <sha> (--reiniciado=<sha>) não se reinicia de novo para ela; com '--reiniciado' sem sha, nunca."""
+    feito = valor_reiniciado(argv)
+    if feito is None:
+        return True
+    sha = (sha or "").strip().lower()
+    feito = feito.strip().lower()
+    if not feito or not sha:
+        return False
+    return not (sha.startswith(feito) or feito.startswith(sha))
+
+
+def comando_reinicio(sha, argv=None, executavel=None, script=None, pasta=PASTA):
+    """Mesmo interpretador e mesmos argumentos, sem a flag antiga e com --reiniciado=<sha>."""
+    argv = list(ARGV if argv is None else argv)
+    script = script or (sys.argv[0] if sys.argv and sys.argv[0] else "")
+    if not script or not os.path.isfile(script):
+        script = os.path.join(pasta, "launcher.py")
+    resto = [a for a in argv if a != FLAG_REINICIADO and not a.startswith(FLAG_REINICIADO + "=")]
+    flag = f"{FLAG_REINICIADO}={sha[:12]}" if sha else FLAG_REINICIADO
+    return [executavel or sys.executable, os.path.abspath(script)] + resto + [flag]
+
+
+def reiniciar_launcher(sha, argv=None, popen=None, pasta=PASTA):
+    """Abre uma nova instância do launcher (processo independente, sem janela de cmd). Quem
+    chamou fecha a janela dele depois. Devolve (ok, mensagem)."""
+    popen = popen or subprocess.Popen
+    comando = comando_reinicio(sha, argv, pasta=pasta)
+    try:
+        popen(comando, cwd=pasta, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+              stderr=subprocess.DEVNULL, close_fds=True, **opcoes_independente())
+    except (OSError, ValueError, subprocess.SubprocessError) as e:
+        return False, f"Não deu para reiniciar o launcher: {e}"
+    return True, "Launcher reiniciado."
+
+
+def decidir_reinicio(antes, depois, sha, argv=None):
+    """Depois de uma atualização: ('reiniciar', mudados), ('bloqueado', mudados) ou ('nada', [])."""
+    mudados = arquivos_launcher_mudados(antes, depois)
+    if not mudados:
+        return "nada", []
+    return ("reiniciar" if pode_reiniciar(sha, argv) else "bloqueado"), mudados
+
+
+MSG_SEM_MUDANCA = "Pronto. O launcher não mudou nesta atualização; a versão nova já vale para o app."
+MSG_REABRIR = "Pronto. Feche e abra o launcher de novo para usar a versão nova dele."
 
 
 # ---------------------------------------------------------------- dependências e config
@@ -884,6 +985,7 @@ class Launcher(tk.Tk if tk else object):
 
         def tarefa():
             self._ui(self._status, self.lbl_atualizacao, "Atualizando...")
+            antes = assinatura_launcher()
             ok, msg = atualizar(info)
             self._ui(self._mostrar, msg)
             if not ok:
@@ -894,9 +996,28 @@ class Launcher(tk.Tk if tk else object):
                 return
             self._verificar_versao()
             self._verificar_dependencias()
-            self._ui(self._mostrar, "Pronto. Feche e abra o launcher de novo para usar a versão nova dele.")
+            decisao, mudados = decidir_reinicio(antes, assinatura_launcher(), info.get("remoto_sha"))
+            if decisao == "reiniciar":
+                self._ui(self._reiniciar, info.get("remoto_sha"), mudados)
+            else:
+                self._ui(self._mostrar, MSG_REABRIR if decisao == "bloqueado" else MSG_SEM_MUDANCA)
 
         self._em_segundo_plano(tarefa)
+
+    def _reiniciar(self, sha, mudados):
+        """A atualização mudou o launcher: mostra o aviso por ~1 s, abre a nova instância e fecha esta."""
+        self._mostrar(f"{TEXTO_REINICIANDO} ({len(mudados)} arquivo(s) do launcher mudaram)")
+        self._status(self.lbl_atualizacao, TEXTO_REINICIANDO, True)
+
+        def agora():
+            ok, msg = reiniciar_launcher(sha)
+            if not ok:
+                reg.gravar_log("launcher", "reinício depois da atualização falhou", msg)
+                self._mostrar(msg + "\n" + MSG_REABRIR)
+                return
+            self._fechar_quando_livre(True)
+
+        self.after(int(ESPERA_REINICIAR * 1000), agora)
 
     def _clicar_abrir(self):
         """Abre o app; se ele abrir, o launcher se fecha sozinho. Se não, fica aberto com o erro."""
@@ -971,6 +1092,7 @@ def main(argv=None, abrir_web=abrir_launcher_web, abrir_tk=abrir_launcher_tk, se
     """Abre o launcher: o visual novo (pywebview) ou, se ele faltar ou falhar, a janela Tkinter.
     Devolve 'web', 'tk' ou 'config' (--preparar-config)."""
     argv = sys.argv[1:] if argv is None else argv
+    ARGV[:] = list(argv)            # para o reinício depois de uma atualização (mesmos argumentos)
     if "--preparar-config" in argv:
         # Chamado pelo instalador (instalar.ps1): resposta em JSON só com ASCII, para o
         # PowerShell ler sem problema de acentos

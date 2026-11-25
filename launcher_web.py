@@ -1,7 +1,8 @@
 """Launcher do PathToMesh no visual novo (pywebview + WebView2, o mesmo estilo de ui_web/).
 
 Faz o mesmo que a janela Tkinter do launcher.py, com as mesmas funções de lá:
-  1. procura atualização no GitHub (e atualiza, depois de confirmar);
+  1. procura atualização no GitHub (e atualiza, depois de confirmar; se a atualização mudou o
+     próprio launcher, ele se reinicia sozinho: veja launcher.decidir_reinicio);
   2. instala as dependências (pip: requirements-base.txt, o requirements.txt, com o pywebview, e o
      requirements-opcional.txt, com o Pillow, que só grava o log se falhar);
   3. confere o Blender do config.local.json;
@@ -57,7 +58,10 @@ class ApiLauncher:
                        verificar_blender=launcher.verificar_blender,
                        atualizar=launcher.atualizar, abrir_app=launcher.abrir_app,
                        logs_locais=reg.logs_locais, logs_pendentes=reg.logs_pendentes,
-                       enviar_logs=reg.enviar_logs)
+                       enviar_logs=reg.enviar_logs, assinatura=launcher.assinatura_launcher,
+                       reiniciar=launcher.reiniciar_launcher)
+        self._espera_reiniciar = launcher.ESPERA_REINICIAR
+        self._fechada = False              # depois do "fechar", os eventos que sobram são descartados
         self._f.update(tarefas or {})
         self._abrir_pasta = abrir_pasta or launcher.abrir_pasta
         threading.Thread(target=self._enviar_fila, name="eventos-launcher", daemon=True).start()
@@ -78,7 +82,10 @@ class ApiLauncher:
             if janela is None:
                 self._eventos.append(dados)
                 continue
+            if self._fechada:
+                continue
             if dados.get("tipo") == "fechar":
+                self._fechada = True
                 try:
                     janela.destroy()
                 except Exception:
@@ -232,6 +239,7 @@ class ApiLauncher:
 
         def tarefa():
             self._status("atualizacao", "Atualizando...")
+            antes = self._f["assinatura"]()
             ok, msg = self._f["atualizar"](info)
             self._mostrar(msg)
             if not ok:
@@ -242,7 +250,22 @@ class ApiLauncher:
                 return
             self._verificar_versao()
             self._verificar_dependencias()
-            self._mostrar("Pronto. Feche e abra o launcher de novo para usar a versão nova dele.")
+            sha = info.get("remoto_sha")
+            decisao, mudados = launcher.decidir_reinicio(antes, self._f["assinatura"](), sha)
+            if decisao != "reiniciar":
+                self._mostrar(launcher.MSG_REABRIR if decisao == "bloqueado" else launcher.MSG_SEM_MUDANCA)
+                return
+            # a atualização mudou o próprio launcher: aviso por ~1 s, nova instância e fecha esta
+            self._status("atualizacao", launcher.TEXTO_REINICIANDO, True)
+            self._mostrar(f"{launcher.TEXTO_REINICIANDO} ({len(mudados)} arquivo(s) do launcher mudaram)")
+            threading.Event().wait(self._espera_reiniciar)
+            ok, msg = self._f["reiniciar"](sha)
+            if not ok:
+                reg.gravar_log(ORIGEM, "reinício depois da atualização falhou", msg)
+                self._mostrar(msg + "\n" + launcher.MSG_REABRIR)
+                return
+            self._fechar_pedido = True
+            self._enviar({"tipo": "fechar"})
 
         return self._em_segundo_plano(tarefa)
 
