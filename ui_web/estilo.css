@@ -425,6 +425,21 @@ select.campo option { background: var(--surface-container); color: var(--on-surf
   animation: entrar 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 .fundo-aviso { z-index: 40; }
+/* desfoque leve do app atrás das janelas (só no WebView2/Chromium que tem backdrop-filter; senão
+   fica o fundo escurecido de sempre) */
+@supports (backdrop-filter: blur(1px)) {
+  .fundo-modal { backdrop-filter: blur(6px); }
+}
+
+/* fundo translúcido (classe "translucido" no <html>, posta pelo app.js só quando o Python ligou
+   o Acrylic do Windows 11): o fundo da página e o cabeçalho (a mesma cor) ficam com alfa 0.85 e
+   deixam ver, bem de leve, o efeito do sistema. Cartões, campos e janelas continuam opacos: a
+   legibilidade não muda. Sem a classe (Windows 10, sem suporte, erro): a cor sólida de sempre. */
+html.translucido body { background: rgba(16, 20, 24, 0.85); }
+html.translucido .barra-topo { background: transparent; }
+html.translucido .barra-topo::after {
+  background: linear-gradient(90deg, var(--surface-container-high), transparent 50%, var(--surface-container-high));
+}
 @keyframes entrar { from { opacity: 0; } to { opacity: 1; } }
 .modal {
   background: var(--surface-container-low); border: 0; border-radius: var(--r-md);

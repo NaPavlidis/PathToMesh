@@ -773,6 +773,15 @@
     $(id).addEventListener('click', function (ev) { ev.preventDefault(); funcao(); });
   }
 
+  function ligarFundoTranslucido() {
+    var ponte = api();
+    if (!ponte || typeof ponte.ativar_fundo_translucido !== 'function') return;
+    // sem chamar(): se falhar, só fica a cor sólida (sem aviso)
+    ponte.ativar_fundo_translucido().then(function (r) {
+      document.documentElement.classList.toggle('translucido', !!(r && r.ok));
+    }).catch(function () { document.documentElement.classList.remove('translucido'); });
+  }
+
   function iniciar() {
     if (inicio) return;
     chamar('estado_inicial').then(function (e) {
@@ -790,6 +799,9 @@
       ajustarLogo();
       // galeria do último render: só a lista (rápida), depois que a tela já apareceu
       setTimeout(atualizarGaleria, 400);
+      // fundo translúcido (Acrylic do Windows 11): só se o Python conseguiu ligar o efeito; senão a
+      // cor sólida continua (Windows 10, transparência desligada, erro)
+      setTimeout(ligarFundoTranslucido, 600);
     });
   }
 

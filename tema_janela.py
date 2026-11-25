@@ -7,6 +7,8 @@
 - pintar_barra_titulo(): pinta a barra de título nativa do Windows (DWM) com as cores do TEMA.
 - preparar_janela(): as duas coisas de uma vez.
 - logo_data_uri() e hwnd_pywebview(): o logo e o HWND das janelas web (app e launcher).
+- fundo_translucido_pywebview(): fundo Acrylic do Windows 11 na janela web do app (com volta
+  para a cor sólida se não der).
 
 Nada aqui importa o tkinter no topo do arquivo (os testes do launcher rodam sem ele), e tudo o
 que mexe no sistema fica dentro de try/except: se não der, a janela só fica com o visual padrão.
@@ -260,6 +262,163 @@ def preparar_hwnd(hwnd, icone="app"):
     except Exception:
         pass
     return resultado
+
+
+# ------------------------------------------------------------------------------ fundo translúcido (Windows 11)
+# Fundo da janela do app com o efeito do sistema (Acrylic: o que está atrás da janela, desfocado
+# e escurecido), visto através do fundo da página com alfa alto (0.85 no tema.css, classe
+# "translucido"): a cor continua quase a mesma e a legibilidade não muda (os cartões são opacos).
+# Como é feito: DwmSetWindowAttribute(DWMWA_SYSTEMBACKDROP_TYPE=38, Acrylic=3) e
+# DwmExtendFrameIntoClientArea(-1) no HWND; no WinForms do pywebview, o Form com fundo preto (o DWM
+# troca o preto da área estendida pelo efeito) e o WebView2 com DefaultBackgroundColor transparente.
+# NÃO usa o transparent=True do pywebview: no Windows ele faz a janela recortada por cor
+# (TransparencyKey), sem desfoque e com cliques passando para trás.
+# Só no Windows 11 22H2 (build 22621) ou mais novo e com "Efeitos de transparência" ligado; senão,
+# ou se qualquer passo falhar, tudo volta como estava (a cor sólida de sempre). Para desligar à
+# mão: variável de ambiente PTM_SEM_TRANSPARENCIA=1.
+DWMWA_SYSTEMBACKDROP_TYPE = 38
+DWMSBT_NENHUM = 1
+DWMSBT_MICA = 2
+DWMSBT_ACRILICO = 3
+FUNDO_SISTEMA = DWMSBT_ACRILICO
+BUILD_MINIMO_FUNDO = 22621
+
+
+def build_windows():
+    try:
+        return int(sys.getwindowsversion().build)
+    except Exception:
+        return 0
+
+
+def transparencia_ligada():
+    """'Efeitos de transparência' do Windows (Personalização > Cores). Sem conseguir ler: True."""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize") as chave:
+            valor, _ = winreg.QueryValueEx(chave, "EnableTransparency")
+        return bool(valor)
+    except Exception:
+        return True
+
+
+class _DwmReal:
+    """As duas chamadas do DWM usadas no fundo translúcido (ctypes)."""
+
+    def __init__(self):
+        import ctypes
+        from ctypes import wintypes
+        self._c, self._w, self._dwm = ctypes, wintypes, ctypes.windll.dwmapi
+
+        class MARGINS(ctypes.Structure):
+            _fields_ = [("esquerda", ctypes.c_int), ("direita", ctypes.c_int), ("cima", ctypes.c_int), ("baixo", ctypes.c_int)]
+        self._margens = MARGINS
+
+    def estender(self, hwnd, margem):
+        m = self._margens(margem, margem, margem, margem)
+        return self._dwm.DwmExtendFrameIntoClientArea(self._w.HWND(hwnd), self._c.byref(m)) == 0
+
+    def atributo(self, hwnd, atributo, valor):
+        dado = self._c.c_uint32(valor)
+        return self._dwm.DwmSetWindowAttribute(self._w.HWND(hwnd), self._c.c_uint32(atributo),
+                                               self._c.byref(dado), self._c.sizeof(dado)) == 0
+
+
+def _dotnet_cores():
+    """(Action, Color) do .NET (pythonnet, já carregado pelo pywebview), ou None."""
+    try:
+        import clr  # noqa: F401
+        from System import Action
+        from System.Drawing import Color
+        return Action, Color
+    except Exception:
+        return None
+
+
+def _achar_webview2(controle, nivel=0):
+    """O controle WebView2 dentro do Form (procura nos filhos, até 4 níveis)."""
+    try:
+        filhos = list(controle.Controls)
+    except Exception:
+        return None
+    for filho in filhos:
+        try:
+            if filho.GetType().Name == "WebView2":
+                return filho
+        except Exception:
+            continue
+    if nivel < 4:
+        for filho in filhos:
+            achado = _achar_webview2(filho, nivel + 1)
+            if achado is not None:
+                return achado
+    return None
+
+
+def fundo_translucido_pywebview(janela, hwnd=None, dwm=None, dotnet=None, build=None, transparencia=None,
+                                ambiente=None, windows=None):
+    """Liga o fundo translúcido (Acrylic) na janela do pywebview. Devolve {'ok': bool, 'motivo': str}.
+    Com ok=False nada mudou (ou foi desfeito): a página fica com a cor sólida."""
+    ambiente = os.environ if ambiente is None else ambiente
+    if ambiente.get("PTM_SEM_TRANSPARENCIA"):
+        return {"ok": False, "motivo": "desligado pela variável PTM_SEM_TRANSPARENCIA"}
+    if not (eh_windows() if windows is None else windows):
+        return {"ok": False, "motivo": "só no Windows"}
+    build = build_windows() if build is None else build
+    if build < BUILD_MINIMO_FUNDO:
+        return {"ok": False, "motivo": f"precisa do Windows 11 22H2 ou mais novo (build {build})"}
+    if not (transparencia_ligada() if transparencia is None else transparencia):
+        return {"ok": False, "motivo": "'Efeitos de transparência' desligado no Windows"}
+    form = getattr(janela, "native", None)
+    webview2 = _achar_webview2(form) if form is not None else None
+    net = dotnet or _dotnet_cores()
+    if form is None or webview2 is None or net is None:
+        return {"ok": False, "motivo": "janela sem WinForms/WebView2 acessível"}
+    Action, Color = net
+    hwnd = hwnd if hwnd is not None else hwnd_pywebview(janela)
+    if not hwnd:
+        return {"ok": False, "motivo": "sem o HWND da janela"}
+    try:
+        dwm = dwm or _DwmReal()
+        if not dwm.atributo(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, FUNDO_SISTEMA):
+            return {"ok": False, "motivo": "o Windows recusou o efeito de fundo"}
+        if not dwm.estender(hwnd, -1):
+            dwm.atributo(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, DWMSBT_NENHUM)
+            return {"ok": False, "motivo": "o Windows recusou estender o fundo"}
+    except Exception as e:
+        return {"ok": False, "motivo": f"DWM: {e}"}
+
+    erro = []
+    antes = {}
+
+    def no_form():
+        try:
+            antes["form"] = form.BackColor
+            antes["web"] = webview2.DefaultBackgroundColor
+            form.BackColor = Color.Black                          # o DWM mostra o efeito no preto
+            webview2.DefaultBackgroundColor = Color.Transparent   # a página deixa ver o fundo
+        except Exception as e:
+            erro.append(e)
+            try:                                                  # desfaz o que deu
+                if "form" in antes:
+                    form.BackColor = antes["form"]
+                if "web" in antes:
+                    webview2.DefaultBackgroundColor = antes["web"]
+            except Exception:
+                pass
+
+    try:
+        form.Invoke(Action(no_form))                              # na thread da janela
+    except Exception as e:
+        erro.append(e)
+    if erro:
+        try:
+            dwm.estender(hwnd, 0)
+            dwm.atributo(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, DWMSBT_NENHUM)
+        except Exception:
+            pass
+        return {"ok": False, "motivo": f"WebView2: {erro[0]}"}
+    return {"ok": True, "motivo": "Acrylic"}
 
 
 # ------------------------------------------------------------------------------ janelas do pywebview

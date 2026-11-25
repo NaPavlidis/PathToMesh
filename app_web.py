@@ -116,6 +116,7 @@ class Api:
         self._chaves_galeria = []          # as chaves da última lista mandada à tela (Copiar todas)
         self._area = None                  # testes: área de transferência falsa (area_transferencia.AreaWindows)
         self._dotnet = None                # testes: classes .NET falsas para o arrastar
+        self._fundo = tema_janela.fundo_translucido_pywebview   # testes trocam
         self._cache_miniaturas = galeria.Cache(48)
         self._cache_imagens = galeria.Cache(3)
         threading.Thread(target=self._enviar_fila, name="eventos-js", daemon=True).start()
@@ -372,6 +373,17 @@ class Api:
         e.salvar_configuracoes_disco()
         return {"ok": True, "titulo": "Sucesso", "mensagem": "Configurações salvas permanentemente!",
                 "resina": self.listar_resinas()}
+
+    # ------------------------------------------------------------ fundo translúcido (Windows 11)
+    def ativar_fundo_translucido(self):
+        """Liga o Acrylic do Windows 11 atrás da página (tema_janela.fundo_translucido_pywebview).
+        Só com ok=True a tela passa o fundo para translúcido; senão fica a cor sólida."""
+        if self._janela is None:
+            return {"ok": False, "motivo": "sem janela"}
+        try:
+            return self._fundo(self._janela)
+        except Exception as e:
+            return {"ok": False, "motivo": str(e)}
 
     # ------------------------------------------------------------ erros do JavaScript
     def registrar_erro(self, resumo, detalhes=""):

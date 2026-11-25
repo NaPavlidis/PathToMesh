@@ -109,6 +109,13 @@ Só na interface web, no Windows (`area_transferencia.py`):
 - **Arrastar** a miniatura ou a imagem ampliada para outro programa: o arrasto do HTML é cancelado e o Python começa um arrastar de **arquivo** nativo do Windows (OLE `DoDragDrop` com `CF_HDROP` do arquivo real), pelo WinForms da janela do pywebview (o pythonnet já vem com o pywebview no Windows; nenhuma dependência nova). Se o PC não tiver isso, ou se o arrasto não começar, a tela mostra um aviso para usar **Copiar imagem**.
 - A tela só pede essas ações pela chave de uma imagem listada na galeria, nunca por um caminho.
 
+## Fundo translúcido (Windows 11)
+
+Na janela web do app, o fundo da página e o cabeçalho (que têm a mesma cor) ficam levemente translúcidos sobre o efeito **Acrylic** do Windows 11 (o que está atrás da janela, desfocado e escurecido). A página fica com alfa 0.85, então a cor continua praticamente a mesma; cartões, campos e janelas continuam opacos e a legibilidade não muda. As janelas do app (configurações, imagem ampliada, avisos) desfocam de leve o app atrás delas (`backdrop-filter`).
+
+- Como é feito (`tema_janela.fundo_translucido_pywebview`): `DwmSetWindowAttribute(DWMWA_SYSTEMBACKDROP_TYPE = 38, Acrylic = 3)` e `DwmExtendFrameIntoClientArea(-1)` no HWND; no WinForms do pywebview, o Form com fundo preto e o WebView2 com `DefaultBackgroundColor` transparente. O `transparent=True` do pywebview não é usado: no Windows ele recorta a janela por cor, sem desfoque.
+- Só liga no Windows 11 22H2 (build 22621) ou mais novo e com **Efeitos de transparência** ligado (Personalização > Cores). No Windows 10, sem suporte ou se qualquer passo falhar, tudo é desfeito e fica a cor sólida de sempre. Para desligar à mão, defina a variável de ambiente `PTM_SEM_TRANSPARENCIA=1`.
+
 ## Desempenho
 
 - O `svgpathtools` (que puxa o numpy) não é importado ao abrir o app: ele carrega em segundo plano logo depois que a janela aparece, antes de o primeiro SVG ser analisado.
