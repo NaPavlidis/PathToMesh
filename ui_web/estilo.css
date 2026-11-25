@@ -2,23 +2,26 @@
    Os nomes das variáveis são os tokens do modelo (Tailwind), escritos em CSS simples, sem CDN.
    As cores são as mesmas do tema_janela.TEMA (o launcher e a interface Tkinter usam as mesmas). */
 
-/* Fontes do modelo, locais (licença SIL OFL 1.1): ficam em ui_web/fontes/. Se a fonte estiver
-   instalada no Windows, usa a instalada; se o arquivo faltar, cai na Segoe UI / Consolas. */
+/* Fontes do modelo, locais (licença SIL OFL 1.1, em ui_web/fontes/*-OFL.txt): arquivos .ttf
+   variáveis do Google Fonts, por isso o font-weight é uma faixa (a do eixo wght de cada uma).
+   Os colchetes dos nomes vão codificados na URL (%5B e %5D). Se a fonte estiver instalada no
+   Windows, usa a instalada; se o arquivo faltar, cai na Segoe UI / Consolas (veja --f-*). */
 @font-face {
   font-family: "Instrument Sans";
-  src: local("Instrument Sans"), url("fontes/InstrumentSans.ttf") format("truetype");
+  src: local("Instrument Sans"), url("fontes/InstrumentSans%5Bwdth,wght%5D.ttf") format("truetype");
   font-weight: 400 700;
+  font-stretch: 75% 100%;
   font-display: swap;
 }
 @font-face {
   font-family: "Red Hat Text";
-  src: local("Red Hat Text"), url("fontes/RedHatText.ttf") format("truetype");
+  src: local("Red Hat Text"), url("fontes/RedHatText%5Bwght%5D.ttf") format("truetype");
   font-weight: 300 700;
   font-display: swap;
 }
 @font-face {
   font-family: "Red Hat Mono";
-  src: local("Red Hat Mono"), url("fontes/RedHatMono.ttf") format("truetype");
+  src: local("Red Hat Mono"), url("fontes/RedHatMono%5Bwght%5D.ttf") format("truetype");
   font-weight: 300 700;
   font-display: swap;
 }
@@ -60,7 +63,7 @@
   /* raios */
   --r-sm: 6px; --r: 8px; --r-md: 12px; --r-lg: 16px;
 
-  /* fontes do modelo (se estiverem instaladas no Windows) e as do sistema */
+  /* fontes do modelo (ui_web/fontes/ ou instaladas no Windows) e, de reserva, as do sistema */
   --f-titulo: "Red Hat Text", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
   --f-corpo: "Instrument Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --f-mono: "Red Hat Mono", "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
