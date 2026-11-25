@@ -94,6 +94,13 @@ A barra da tela **Processing** mostra o trabalho real do Blender:
 - As miniaturas são reduzidas no Python quando o **Pillow** está instalado (`pip install pillow`, opcional). Sem ele, a tela recebe a imagem original e limita o tamanho dela. A tela só pede imagens da lista da galeria, nunca de outro caminho.
 - Na interface clássica (Tkinter), a tela **Download** mostra a lista com as miniaturas (PNG) e um botão **Abrir imagem** para cada uma.
 
+## Desempenho
+
+- O `svgpathtools` (que puxa o numpy) não é importado ao abrir o app: ele carrega em segundo plano logo depois que a janela aparece, antes de o primeiro SVG ser analisado.
+- As telas são seções da mesma página, só mostradas ou escondidas. A lista de etapas do Processing só é refeita quando uma etapa muda, e o relatório do Catálogo só é repintado quando o texto muda (a troca de tela não espera o mapeamento do catálogo).
+- Os eventos de progresso do Blender que chegam juntos viram um só (cada um já traz o estado inteiro), para a tela não ficar para trás quando o Cycles manda muitas linhas por segundo.
+- O logo do cabeçalho é lido do disco uma vez só.
+
 ## Logs de erro
 
 O app e o launcher gravam os erros (exceções, falhas do Blender e do pip) em `logs/erro-AAAAMMDD-HHMMSS.log`, com a versão (commit), o sistema e o traceback.

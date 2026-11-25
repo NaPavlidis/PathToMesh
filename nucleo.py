@@ -15,17 +15,49 @@ import re
 import json
 import subprocess
 import textwrap
+import threading
 import collections
 import traceback
 import xml.etree.ElementTree as ET
 
 import registro_erros
 
+# O svgpathtools (e o numpy/scipy que ele puxa) pesa para importar: só é carregado quando um SVG
+# precisa dele (ou em segundo plano, depois que a janela abriu: aquecer_svgpathtools). Aqui só se
+# confere se ele está instalado, sem importar.
 try:
-    from svgpathtools import parse_path
-    HAS_SVGPATH = True
-except ImportError:
+    import importlib.util as _importlib_util
+    HAS_SVGPATH = _importlib_util.find_spec("svgpathtools") is not None
+except (ImportError, ValueError):
     HAS_SVGPATH = False
+_PARSE_PATH = []
+_TRAVA_SVGPATH = threading.Lock()
+
+
+def carregar_parse_path():
+    """svgpathtools.parse_path (importado na 1ª chamada), ou None se ele não carregar."""
+    global HAS_SVGPATH
+    if not HAS_SVGPATH:
+        return None
+    with _TRAVA_SVGPATH:
+        if not _PARSE_PATH:
+            try:
+                from svgpathtools import parse_path
+                _PARSE_PATH.append(parse_path)
+            except Exception:
+                HAS_SVGPATH = False
+                return None
+    return _PARSE_PATH[0]
+
+
+def aquecer_svgpathtools(espera=1.5):
+    """Importa o svgpathtools numa thread, depois de 'espera' segundos (a janela já abriu), para a
+    1ª análise de SVG não esperar o import."""
+    def carregar():
+        threading.Event().wait(espera)
+        carregar_parse_path()
+    if HAS_SVGPATH and not _PARSE_PATH:
+        threading.Thread(target=carregar, name="aquecer-svgpathtools", daemon=True).start()
 
 # A configuração do usuário fica no config.local.json (no .gitignore, nunca vai para o GitHub).
 # Se ele não existir, é criado copiando o config.json antigo (se ainda houver) ou o
@@ -147,7 +179,8 @@ def extrair_informacoes_svg(caminho_svg):
         if mat_info and mat_info['tipo'] in TIPOS_CORPO_EXCLUSIVO and not eh_pagina:
             if tag == 'path':
                 d = elem.attrib.get('d', '')
-                if HAS_SVGPATH:
+                parse_path = carregar_parse_path() if HAS_SVGPATH else None
+                if parse_path is not None:
                     try:
                         path_obj = parse_path(d)
                         for sp in path_obj.continuous_subpaths():

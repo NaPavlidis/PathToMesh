@@ -561,7 +561,8 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
                               highlightbackground=TEMA['superficie'])
 
         if screen_key == "catalogo":
-            self._atualizar_relatorio_catalogo()
+            # mapear o catálogo (às vezes numa unidade de rede) numa thread: a troca de tela é imediata
+            self._atualizar_catalogo_em_thread()
         elif screen_key == "download":
             self._atualizar_galeria()
 
@@ -770,10 +771,30 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
 
     def _atualizar_relatorio_catalogo(self):
         modalidades, status = mapear_catalogo(self.catalogo_dir)
+        self._mostrar_relatorio_catalogo(nucleo.montar_relatorio_catalogo(modalidades, status, self.catalogo_dir))
+
+    def _mostrar_relatorio_catalogo(self, texto):
         self.txt_catalogo.configure(state="normal")
         self.txt_catalogo.delete("1.0", "end")
-        self.txt_catalogo.insert("1.0", nucleo.montar_relatorio_catalogo(modalidades, status, self.catalogo_dir))
+        self.txt_catalogo.insert("1.0", texto)
         self.txt_catalogo.configure(state="disabled")
+
+    def _atualizar_catalogo_em_thread(self):
+        """O mesmo relatório, montado numa thread; o texto entra na tela pelo after (thread do Tk)."""
+        if getattr(self, "_catalogo_rodando", False):
+            return
+        self._catalogo_rodando = True
+        pasta = self.catalogo_dir
+
+        def trabalho():
+            try:
+                modalidades, status = mapear_catalogo(pasta)
+                texto = nucleo.montar_relatorio_catalogo(modalidades, status, pasta)
+            finally:
+                self._catalogo_rodando = False
+            self.after(0, lambda: self._mostrar_relatorio_catalogo(texto))
+
+        threading.Thread(target=trabalho, name="catalogo", daemon=True).start()
 
     def _iniciar_processamento_background(self):
         threading.Thread(target=self._executar_blender_subprocess, daemon=True).start()
@@ -984,6 +1005,7 @@ def executar():
     """Abre a interface Tkinter (chamado aqui embaixo e pelo app.py, como reserva)."""
     app = VectorConvertProApp()
     app.report_callback_exception = registro_erros.gancho_tk("app_ui")
+    nucleo.aquecer_svgpathtools()          # import pesado em segundo plano, com a janela já aberta
     app.mainloop()
 
 

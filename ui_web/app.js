@@ -307,10 +307,17 @@
     $('proc-trilho').setAttribute('aria-valuenow', '0');
     $('proc-trilho').classList.add('trabalhando');
     $('proc-etapas').textContent = '';
+    etapasMostradas = null;
     prog.relogio = setInterval(function () { if (prog.real) mostrarTempos(); }, 1000);
   }
 
+  var etapasMostradas = null;
+
   function mostrarEtapas(etapas) {
+    // o progresso chega várias vezes por segundo: a lista só é refeita quando uma etapa muda
+    var assinatura = etapas.map(function (e) { return e.id + ':' + e.estado + ':' + e.titulo; }).join('|');
+    if (assinatura === etapasMostradas) return;
+    etapasMostradas = assinatura;
     var lista = $('proc-etapas');
     lista.textContent = '';
     etapas.forEach(function (e) {
@@ -382,16 +389,17 @@
   // ------------------------------------------------------------------ Galeria (imagens geradas)
   // A lista vem rápida do Python (sem ler as imagens); as miniaturas vêm depois, uma por vez, e
   // só quando uma galeria está na tela. A imagem ampliada abre num modal (anterior/próxima).
-  var gal = { itens: [], assinatura: null, mini: {}, falhou: {}, pedindo: false, imgs: {},
-              inicioRender: null, camsProntas: 0, lista: [], atual: -1, pedidoGrande: 0, listando: false, denovo: false };
+  // pedindo/listando: hora do pedido em andamento (0 = nenhum; depois de 30 s, libera de novo)
+  var gal = { itens: [], assinatura: null, mini: {}, falhou: {}, pedindo: 0, imgs: {},
+              inicioRender: null, camsProntas: 0, lista: [], atual: -1, pedidoGrande: 0, listando: 0, denovo: false };
 
   function galeriaVisivel() {
     return !$('tela-download').hidden || (!$('tela-processing').hidden && !$('galeria-processing').hidden);
   }
 
   function atualizarGaleria() {
-    if (gal.listando) { gal.denovo = true; return; }
-    gal.listando = true;
+    if (gal.listando && Date.now() - gal.listando < 30000) { gal.denovo = true; return; }
+    gal.listando = Date.now();
     chamar('listar_galeria').then(function (r) {
       gal.listando = false;
       gal.itens = r.itens || [];
@@ -469,10 +477,10 @@
   }
 
   function pedirMiniaturas() {
-    if (gal.pedindo || !galeriaVisivel()) return;
+    if ((gal.pedindo && Date.now() - gal.pedindo < 30000) || !galeriaVisivel()) return;
     var falta = gal.itens.filter(function (i) { return !gal.mini[i.chave] && !gal.falhou[i.chave]; })[0];
     if (!falta) return;
-    gal.pedindo = true;
+    gal.pedindo = Date.now();
     chamar('miniatura', falta.chave).then(function (r) {
       gal.pedindo = false;
       if (r && r.ok) {
@@ -559,8 +567,17 @@
     });
   }
 
+  var catalogo = { texto: null, pedindo: 0 };
+
   function atualizarCatalogo() {
+    // a tela troca na hora (o relatório anterior continua lá); o novo chega quando o Python
+    // terminar de mapear (às vezes numa unidade de rede) e só é repintado se mudou
+    if (catalogo.pedindo && Date.now() - catalogo.pedindo < 30000) return;   // já tem um pedido andando
+    catalogo.pedindo = Date.now();
     chamar('relatorio_catalogo').then(function (r) {
+      catalogo.pedindo = false;
+      if (r.texto === catalogo.texto) return;
+      catalogo.texto = r.texto;
       pintarRelatorio($('catalogo-texto'), r.texto);
     });
   }

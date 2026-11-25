@@ -80,6 +80,20 @@ def evento_para_js(evento):
     return {"tipo": tipo}
 
 
+def juntar_progresso(lote):
+    """Eventos 'progresso' seguidos viram só o último (cada um já traz o estado inteiro): a tela
+    não fica para trás quando o Cycles manda muitas linhas por segundo. A ordem dos outros
+    eventos não muda."""
+    saida = []
+    for dados in lote:
+        if (dados is not None and dados.get("tipo") == "progresso" and saida and saida[-1] is not None
+                and saida[-1].get("tipo") == "progresso"):
+            saida[-1] = dados
+        else:
+            saida.append(dados)
+    return saida
+
+
 class Api:
     """Métodos chamados pelo JavaScript (window.pywebview.api.<método>). Todos devolvem dados
     simples (dict, list, str). Os atributos com _ não são expostos ao JavaScript."""
@@ -111,18 +125,24 @@ class Api:
 
     def _enviar_fila(self):
         while True:
-            dados = self._fila.get()
-            if dados is None:
-                return
-            janela = self._janela
-            if janela is None:
-                self._eventos.append(dados)
-                continue
-            try:
-                janela.evaluate_js("window.ptm && window.ptm.evento(%s)" % json.dumps(dados, ensure_ascii=False))
-            except Exception as e:
-                registro_erros.gravar_log(f"{ORIGEM} (interface web)", f"Não deu para atualizar a tela: {e}",
-                                          traceback.format_exc())
+            lote = [self._fila.get()]
+            while True:                    # o que mais já chegou enquanto a tela estava ocupada
+                try:
+                    lote.append(self._fila.get_nowait())
+                except queue.Empty:
+                    break
+            for dados in juntar_progresso(lote):
+                if dados is None:
+                    return
+                janela = self._janela
+                if janela is None:
+                    self._eventos.append(dados)
+                    continue
+                try:
+                    janela.evaluate_js("window.ptm && window.ptm.evento(%s)" % json.dumps(dados, ensure_ascii=False))
+                except Exception as e:
+                    registro_erros.gravar_log(f"{ORIGEM} (interface web)", f"Não deu para atualizar a tela: {e}",
+                                              traceback.format_exc())
 
     def _esperar_eventos(self, timeout=10):
         """Testes: espera o Blender e a fila terminarem."""
@@ -341,6 +361,7 @@ def iniciar(api=None, webview=None):
             janela.destroy()
             return
         tema_janela.preparar_hwnd(_hwnd_da_janela(janela), "app")
+        nucleo.aquecer_svgpathtools()      # import pesado em segundo plano, com a janela já aberta
 
     janela.events.shown += ao_mostrar
     opcoes = {"gui": "edgechromium"} if tema_janela.eh_windows() else {}
