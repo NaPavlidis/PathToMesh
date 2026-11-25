@@ -3,9 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Launcher no visual do app (estilo.css): sem nada da internet, funciona offline -->
+  <!-- Launcher no visual do app: o MESMO tema.css (cores, fontes, botões, cabeçalho) e os cartões
+       e avisos do estilo.css; o launcher.css tem só o layout compacto dele. Funciona offline. -->
   <title>PathToMesh - Launcher</title>
+  <link rel="stylesheet" href="tema.css">
   <link rel="stylesheet" href="estilo.css">
+  <link rel="stylesheet" href="launcher.css">
 </head>
 <body class="launcher">
   <svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true">
@@ -28,47 +31,68 @@
         <span id="nome-app" class="nome-app" hidden>PathToMesh</span>
         <span class="selo">LAUNCHER</span>
       </div>
+      <!-- versão atual no canto do cabeçalho (economiza uma linha no cartão "Versão") -->
+      <p id="txt-versao" class="mono-sm suave versao-topo"></p>
     </header>
 
     <main class="area launcher-corpo">
-      <article class="cartao cartao-launcher">
-        <h2 class="label-lg destaque com-icone"><svg class="ic"><use href="#i-atualizar"/></svg><span>Versão</span></h2>
-        <p id="txt-versao" class="body-md"></p>
-        <p id="st-atualizacao" class="body-sm suave estado-launcher">Aguarde...</p>
-        <div class="linha-botoes">
-          <button id="btn-atualizar" type="button" class="botao botao-principal" disabled>Atualizar agora</button>
-          <button id="btn-procurar" type="button" class="botao botao-secundario">Procurar de novo</button>
+      <div class="lista-launcher">
+        <article class="cartao cartao-launcher">
+          <div class="texto-launcher">
+            <h2 class="label-lg destaque com-icone"><svg class="ic"><use href="#i-atualizar"/></svg><span>Versão</span></h2>
+            <p id="st-atualizacao" class="body-sm suave estado-launcher">Aguarde...</p>
+          </div>
+          <div class="linha-botoes">
+            <button id="btn-atualizar" type="button" class="botao botao-principal" disabled>Atualizar agora</button>
+            <button id="btn-procurar" type="button" class="botao botao-secundario">Procurar de novo</button>
+          </div>
+        </article>
+
+        <article class="cartao cartao-launcher">
+          <div class="texto-launcher">
+            <h2 class="label-lg destaque com-icone"><svg class="ic"><use href="#i-pacote"/></svg><span>Dependências</span></h2>
+            <p id="st-dependencias" class="body-sm suave estado-launcher">Aguarde...</p>
+          </div>
+          <div class="linha-botoes">
+            <button id="btn-instalar" type="button" class="botao botao-secundario">Instalar de novo</button>
+          </div>
+        </article>
+
+        <article class="cartao cartao-launcher">
+          <div class="texto-launcher">
+            <h2 class="label-lg destaque com-icone"><svg class="ic"><use href="#i-cubo"/></svg><span>Blender</span></h2>
+            <p id="st-blender" class="body-sm suave estado-launcher">Aguarde...</p>
+          </div>
+          <div class="linha-botoes">
+            <button id="btn-blender" type="button" class="botao botao-secundario">Conferir de novo</button>
+          </div>
+        </article>
+
+        <article class="cartao cartao-launcher">
+          <div class="texto-launcher">
+            <h2 class="label-lg destaque com-icone"><svg class="ic"><use href="#i-nota"/></svg><span>Logs de erro</span></h2>
+            <p id="st-logs" class="body-sm suave estado-launcher">Aguarde...</p>
+          </div>
+          <div class="linha-botoes">
+            <button id="btn-pasta-logs" type="button" class="botao botao-secundario">Abrir pasta de logs</button>
+            <button id="btn-enviar-logs" type="button" class="botao botao-secundario">Enviar agora</button>
+          </div>
+        </article>
+      </div>
+
+      <div class="acao-launcher">
+        <button id="btn-abrir" type="button" class="botao botao-principal botao-grande botao-abrir">▶  Abrir o app</button>
+      </div>
+
+      <!-- Detalhes (log de atualização/pip): aparece só enquanto o launcher trabalha e some depois.
+           Se a tarefa escreveu alguma mensagem (resultado ou erro), fica até clicar em "Ocultar". -->
+      <section id="bloco-detalhes" class="detalhes-launcher" hidden>
+        <div class="detalhes-cab">
+          <p id="txt-trabalhando" class="label-md suave com-icone"><span class="girando" aria-hidden="true"></span><span id="txt-tarefa">Trabalhando...</span></p>
+          <button id="btn-ocultar-detalhes" type="button" class="botao botao-secundario botao-mini">Ocultar</button>
         </div>
-      </article>
-
-      <article class="cartao cartao-launcher">
-        <h2 class="label-lg destaque com-icone"><svg class="ic"><use href="#i-pacote"/></svg><span>Dependências</span></h2>
-        <p id="st-dependencias" class="body-sm suave estado-launcher">Aguarde...</p>
-        <div class="linha-botoes">
-          <button id="btn-instalar" type="button" class="botao botao-secundario">Instalar de novo</button>
-        </div>
-      </article>
-
-      <article class="cartao cartao-launcher">
-        <h2 class="label-lg destaque com-icone"><svg class="ic"><use href="#i-cubo"/></svg><span>Blender</span></h2>
-        <p id="st-blender" class="body-sm suave estado-launcher">Aguarde...</p>
-        <div class="linha-botoes">
-          <button id="btn-blender" type="button" class="botao botao-secundario">Conferir de novo</button>
-        </div>
-      </article>
-
-      <article class="cartao cartao-launcher">
-        <h2 class="label-lg destaque com-icone"><svg class="ic"><use href="#i-nota"/></svg><span>Logs de erro</span></h2>
-        <p id="st-logs" class="body-sm suave estado-launcher">Aguarde...</p>
-        <div class="linha-botoes">
-          <button id="btn-pasta-logs" type="button" class="botao botao-secundario">Abrir pasta de logs</button>
-          <button id="btn-enviar-logs" type="button" class="botao botao-secundario">Enviar agora</button>
-        </div>
-      </article>
-
-      <button id="btn-abrir" type="button" class="botao botao-principal botao-grande botao-abrir">▶  Abrir o app</button>
-
-      <pre id="txt-mensagens" class="relatorio mono-sm mensagens-launcher" aria-live="polite"></pre>
+        <pre id="txt-mensagens" class="relatorio mono-sm mensagens-launcher" aria-live="polite" hidden></pre>
+      </section>
     </main>
   </div>
 

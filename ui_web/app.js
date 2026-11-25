@@ -131,8 +131,8 @@
       tela.hidden = tela.id !== 'tela-' + chave;
     });
     document.querySelector('.area').scrollTop = 0;
-    if (chave === 'download' && inicio) atualizarGaleria();   // lista rápida; miniaturas só das novas
-    else if (chave === 'processing') pedirMiniaturas();
+    // a galeria só existe no Download: lista rápida; miniaturas só das novas
+    if (chave === 'download' && inicio) atualizarGaleria();
   }
 
   // ------------------------------------------------------------------ logo do cabeçalho (1; 2 com a janela larga)
@@ -252,9 +252,8 @@
       $('proc-status').textContent = r.status;
       $('proc-samples').textContent = r.samples;
       iniciarProgresso();
-      gal.inicioRender = Date.now() / 1000;
       gal.camsProntas = 0;
-      desenharGalerias();
+      mostrarContagem(0, 0);
       mostrarTela('processing');
     });
   }
@@ -416,11 +415,16 @@
     if (estado === 'concluido' || estado === 'erro') terminarAnimacoes(estado);
     else if (!prog.fim) { estadoBarra(estado); atualizarDemora(); }
     if (d.concluido) pararRelogio();
-    var prontas = camerasProntas(d.etapas);
-    if (prontas > gal.camsProntas) {                 // uma câmera terminou: a imagem dela já está gravada
-      gal.camsProntas = prontas;
-      atualizarGaleria();
-    }
+    // na Processing só a contagem de imagens prontas (a galeria aparece no Download, no fim)
+    gal.camsProntas = camerasProntas(d.etapas);
+    mostrarContagem(gal.camsProntas, totalCameras(d.etapas));   // só mexe no DOM se o texto mudar
+  }
+
+  function mostrarContagem(prontas, total) {
+    var el = $('proc-imagens');
+    var txt = total ? 'Imagens prontas: ' + prontas + ' de ' + total : '';
+    if (el.textContent !== txt) el.textContent = txt;
+    el.hidden = !total;
   }
 
   window.ptm = {
@@ -463,13 +467,14 @@
 
   // ------------------------------------------------------------------ Galeria (imagens geradas)
   // A lista vem rápida do Python (sem ler as imagens); as miniaturas vêm depois, uma por vez, e
-  // só quando uma galeria está na tela. A imagem ampliada abre num modal (anterior/próxima).
+  // só com a galeria na tela. A galeria fica SÓ na tela de conclusão (Download); a Processing
+  // mostra apenas a contagem de imagens prontas. A imagem ampliada abre num modal (anterior/próxima).
   // pedindo/listando: hora do pedido em andamento (0 = nenhum; depois de 30 s, libera de novo)
   var gal = { itens: [], assinatura: null, mini: {}, falhou: {}, pedindo: 0, imgs: {},
-              inicioRender: null, camsProntas: 0, lista: [], atual: -1, pedidoGrande: 0, listando: 0, denovo: false };
+              camsProntas: 0, lista: [], atual: -1, pedidoGrande: 0, listando: 0, denovo: false };
 
   function galeriaVisivel() {
-    return !$('tela-download').hidden || (!$('tela-processing').hidden && !$('galeria-processing').hidden);
+    return !$('tela-download').hidden;
   }
 
   function atualizarGaleria() {
@@ -484,27 +489,18 @@
     });
   }
 
-  function itensDa(tipo) {
-    if (tipo !== 'render') return gal.itens;
-    if (gal.inicioRender === null) return [];
-    // só as imagens gravadas depois que este render começou
-    return gal.itens.filter(function (i) { return i.mtime >= gal.inicioRender - 2; });
-  }
-
   function desenharGalerias() {
-    var assinatura = gal.itens.map(function (i) { return i.chave; }).join('\n') + '|' + gal.inicioRender;
+    var assinatura = gal.itens.map(function (i) { return i.chave; }).join('\n');
     if (assinatura === gal.assinatura) return;      // nada mudou: o DOM fica como está
     gal.assinatura = assinatura;
     gal.imgs = {};
     document.querySelectorAll('[data-galeria]').forEach(function (cartao) {
-      var tipo = cartao.getAttribute('data-galeria');
-      var itens = itensDa(tipo);
+      var itens = gal.itens;
       var grade = cartao.querySelector('.galeria-grade');
       grade.textContent = '';
       itens.forEach(function (item, i) { grade.appendChild(montarItem(item, i, itens)); });
       var vazia = cartao.querySelector('.galeria-vazia');
       if (vazia) vazia.hidden = itens.length > 0;
-      if (tipo === 'render') cartao.hidden = itens.length === 0;
     });
     $('tela-download').classList.toggle('com-imagens', gal.itens.length > 0);
   }
@@ -618,6 +614,10 @@
 
   function camerasProntas(etapas) {
     return (etapas || []).filter(function (e) { return String(e.id).indexOf('camera:') === 0 && e.estado === 'concluida'; }).length;
+  }
+
+  function totalCameras(etapas) {
+    return (etapas || []).filter(function (e) { return String(e.id).indexOf('camera:') === 0 && e.estado !== 'pulada'; }).length;
   }
 
   // ------------------------------------------------------------------ Catálogo

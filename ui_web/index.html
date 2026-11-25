@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Sem nada da internet: CSS, JS e ícones (SVG abaixo) ficam nesta pasta; funciona offline -->
   <title>PathToMesh</title>
+  <link rel="stylesheet" href="tema.css">
   <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
@@ -222,7 +223,11 @@
               </div>
               <div class="progresso">
                 <div class="progresso-info">
-                  <span id="proc-samples" class="label-md suave">Aguardando início do Cycles...</span>
+                  <div class="progresso-dados">
+                    <span id="proc-samples" class="label-md suave">Aguardando início do Cycles...</span>
+                    <!-- só a contagem: as imagens aparecem na tela de conclusão (Download) -->
+                    <span id="proc-imagens" class="label-md suave" hidden></span>
+                  </div>
                   <span id="proc-porcentagem" class="title-md destaque">0%</span>
                 </div>
                 <div id="proc-trilho" class="trilho" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="proc-barra" class="barra"></div></div>
@@ -233,24 +238,13 @@
               </div>
             </div>
           </article>
-          <!-- Imagens deste render: aparecem conforme cada câmera termina -->
-          <article id="galeria-processing" class="cartao galeria-cartao" data-galeria="render" hidden>
-            <header class="cartao-cab">
-              <div class="com-icone">
-                <svg class="ic ic-titulo destaque"><use href="#i-imagem"/></svg>
-                <h2 class="headline-md destaque">Imagens prontas</h2>
-              </div>
-              <p class="body-sm suave">Clique numa imagem para ampliar.</p>
-            </header>
-            <ul class="galeria-grade"></ul>
-          </article>
         </section>
 
         <!-- ============================================================ DOWNLOAD -->
         <section id="tela-download" class="tela" data-etapa="3" hidden>
           <nav class="etapas" aria-label="Etapas de conversão"></nav>
           <article class="cartao cartao-cheio">
-            <div class="concluido">
+            <div class="bloco-concluido">
               <div class="circulo-ok"><svg class="ic"><use href="#i-check"/></svg></div>
               <h1 class="headline-lg sucesso">Processamento Concluído!</h1>
               <p class="body-md suave">Abra a pasta para ver as imagens e os arquivos gerados.</p>

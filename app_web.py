@@ -1,6 +1,6 @@
 """Interface web do PathToMesh (pywebview + WebView2), fiel ao docs/modelo-layout.html.
 
-- A tela fica em ui_web/ (index.html, estilo.css, app.js), sem nada da internet (funciona offline).
+- A tela fica em ui_web/ (index.html, tema.css + estilo.css, app.js), sem nada da internet (funciona offline).
 - O JavaScript chama os métodos da classe Api (js_api do pywebview); a lógica é a do nucleo.py,
   a mesma da interface Tkinter (app_ui.py), que continua como reserva.
 - O Blender roda numa thread; as etapas e o progresso chegam ao JavaScript por evaluate_js, por

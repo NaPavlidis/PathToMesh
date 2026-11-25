@@ -81,15 +81,54 @@
   function status(cartao, texto, ok) {
     var el = $(ROTULOS[cartao]);
     if (!el) return;
-    var icone = ok === null || ok === undefined ? '' : (ok ? '✅ ' : '⚠ ');
+    var andamento = ok === null || ok === undefined;
+    var icone = andamento ? '' : (ok ? '✅ ' : '⚠ ');
     el.textContent = icone + texto;
     el.classList.remove('suave', 'sucesso', 'aviso');
-    el.classList.add(ok === null || ok === undefined ? 'suave' : (ok ? 'sucesso' : 'aviso'));
+    el.classList.add(andamento ? 'suave' : (ok ? 'sucesso' : 'aviso'));
+    if (andamento && detalhes.trabalhando) $('txt-tarefa').textContent = texto;   // o que está fazendo agora
+  }
+
+  // ------------------------------------------------------------------ bloco de detalhes
+  // Aparece enquanto o launcher trabalha (evento 'ocupado') e some quando termina. Se a tarefa
+  // escreveu alguma mensagem (resultado da atualização, erro do pip...), ele fica na tela até o
+  // usuário clicar em "Ocultar", para dar tempo de ler.
+  var detalhes = { trabalhando: false, novas: false, sumir: null };
+  var ESPERA_SUMIR_MS = 1200;
+
+  function mostrarDetalhes() {
+    if (detalhes.sumir) { clearTimeout(detalhes.sumir); detalhes.sumir = null; }
+    $('bloco-detalhes').hidden = false;
+  }
+
+  function ocultarDetalhes() {
+    if (detalhes.sumir) { clearTimeout(detalhes.sumir); detalhes.sumir = null; }
+    detalhes.novas = false;
+    $('bloco-detalhes').hidden = true;
+  }
+
+  function ocupado(ativo) {
+    detalhes.trabalhando = !!ativo;
+    $('bloco-detalhes').classList.toggle('trabalhando', detalhes.trabalhando);
+    if (detalhes.trabalhando) {
+      detalhes.novas = false;
+      $('txt-tarefa').textContent = 'Trabalhando...';
+      mostrarDetalhes();
+      return;
+    }
+    $('txt-tarefa').textContent = 'Concluído.';
+    if (!detalhes.novas) {
+      detalhes.sumir = setTimeout(function () { detalhes.sumir = null; $('bloco-detalhes').hidden = true; }, ESPERA_SUMIR_MS);
+    }
   }
 
   function mensagem(texto) {
     var pre = $('txt-mensagens');
     pre.textContent += String(texto).replace(/\s+$/, '') + '\n';
+    pre.hidden = false;
+    detalhes.novas = true;
+    if (!detalhes.trabalhando) $('txt-tarefa').textContent = 'Detalhes';
+    mostrarDetalhes();
     pre.scrollTop = pre.scrollHeight;
   }
 
@@ -120,6 +159,8 @@
           }
         } else if (d.tipo === 'mensagem') {
           mensagem(d.texto);
+        } else if (d.tipo === 'ocupado') {
+          ocupado(d.ativo);
         } else if (d.tipo === 'erro') {
           modal(d.titulo, d.mensagem, 'erro');
         }
@@ -164,6 +205,7 @@
     ligar('btn-pasta-logs', function () { chamar('abrir_pasta_logs'); });
     ligar('btn-enviar-logs', function () { chamar('enviar_logs'); });
     ligar('btn-abrir', function () { $('btn-abrir').disabled = true; chamar('abrir_app'); });
+    ligar('btn-ocultar-detalhes', ocultarDetalhes);
     ligar('btn-aviso-ok', function () { fecharModal(true); });
     ligar('btn-aviso-nao', function () { fecharModal(false); });
     document.addEventListener('keydown', function (ev) {

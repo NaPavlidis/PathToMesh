@@ -38,7 +38,7 @@ ALTURA_LOGO = {"1": 46, "2": 34}
 # Nome no TEMA: valor do modelo  (token do modelo-layout.html)
 TEMA = {
     'fundo':          '#101418',  # dark-surface: fundo da janela e das telas
-    'barra':          '#181C20',  # dark-surface-container-low: barra superior e barra de título
+    'barra':          '#101418',  # dark-surface (= fundo): faixa do logo e barra de título, sem barra separada
     'superficie':     '#181C20',  # dark-surface-container-low: cartões, menu lateral, configurações
     'campo':          '#0A0F13',  # dark-surface-container-lowest: campos, áreas de texto, trilho da barra
     'container':      '#1C2024',  # dark-surface-container: grupo de câmeras, botões de ícone, menus
@@ -150,9 +150,11 @@ def pintar_barra_titulo_hwnd(hwnd, fundo=None, texto=None, borda=None, escuro=Tr
     pywebview, que não é do Tk). Fora do Windows, sem HWND ou com erro, não faz nada."""
     if not eh_windows() or not hwnd:
         return []
+    # barra de título com a cor do fundo da página (continuidade com o cabeçalho) e a borda da
+    # janela também da cor do fundo (sem contorno colorido)
     fundo = TEMA['barra'] if fundo is None else fundo
     texto = TEMA['texto'] if texto is None else texto
-    borda = TEMA['divisor'] if borda is None else borda
+    borda = TEMA['fundo'] if borda is None else borda
     aplicados = []
     try:
         import ctypes

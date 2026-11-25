@@ -1,0 +1,174 @@
+/* PathToMesh — tema compartilhado das telas web (app: index.html; launcher: launcher.html).
+   Fontes, cores (tokens do docs/modelo-layout.html, tema escuro), espaços, tipografia e o básico.
+   As duas páginas carregam ESTE arquivo primeiro: as cores ficam num lugar só e não divergem.
+   As cores são as mesmas do tema_janela.TEMA (a interface Tkinter e a barra de título usam as mesmas).
+
+   Contornos: cartões, campos, botões e divisórias não têm borda colorida. A separação vem do
+   espaçamento e da leve diferença de fundo (surface < container-low < container < high).
+   O anel de foco aparece só no :focus-visible (teclado), para acessibilidade. */
+
+/* Fontes do modelo, locais (licença SIL OFL 1.1, em ui_web/fontes/*-OFL.txt): arquivos .ttf
+   variáveis do Google Fonts, por isso o font-weight é uma faixa (a do eixo wght de cada uma).
+   Os colchetes dos nomes vão codificados na URL (%5B e %5D). Se a fonte estiver instalada no
+   Windows, usa a instalada; se o arquivo faltar, cai na Segoe UI / Consolas (veja --f-*). */
+@font-face {
+  font-family: "Instrument Sans";
+  src: local("Instrument Sans"), url("fontes/InstrumentSans%5Bwdth,wght%5D.ttf") format("truetype");
+  font-weight: 400 700;
+  font-stretch: 75% 100%;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Red Hat Text";
+  src: local("Red Hat Text"), url("fontes/RedHatText%5Bwght%5D.ttf") format("truetype");
+  font-weight: 300 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Red Hat Mono";
+  src: local("Red Hat Mono"), url("fontes/RedHatMono%5Bwght%5D.ttf") format("truetype");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+:root {
+  --success: #34D399;
+  --on-success: #00291B;
+  --success-container: #064E3B;
+  --on-success-container: #A7F3D0;
+  --warning: #FBBF24;
+  --on-warning: #291800;
+  --warning-container: #452700;
+  --on-warning-container: #FDE68A;
+  --primary: #93CCFF;
+  --on-primary: #003351;
+  --primary-container: #3198DC;
+  --on-primary-container: #001524;
+  --secondary: #ABCAE9;
+  --secondary-container: #2D4C66;
+  --on-secondary-container: #9DBCDA;
+  --tertiary: #FFB875;
+  --error: #FFB4AB;
+  --on-error: #690005;
+  --error-container: #93000A;
+  --on-error-container: #FFDAD6;
+  --surface: #101418;
+  --surface-container-lowest: #0A0F13;
+  --surface-container-low: #181C20;
+  --surface-container: #1C2024;
+  --surface-container-high: #262A2F;
+  --surface-container-highest: #31353A;
+  --on-surface: #DFE3E8;
+  --on-surface-variant: #BFC7D2;
+  --outline: #89929B;
+  --outline-variant: #3F4850;
+
+  /* espaços: xs 4, sm 8, md 12, lg 16, xl 24, 2xl 32, 3xl 48 */
+  --xs: 4px; --sm: 8px; --md: 12px; --lg: 16px; --xl: 24px; --x2: 32px; --x3: 48px;
+  /* raios */
+  --r-sm: 6px; --r: 8px; --r-md: 12px; --r-lg: 16px;
+
+  /* fontes do modelo (ui_web/fontes/ ou instaladas no Windows) e, de reserva, as do sistema */
+  --f-titulo: "Red Hat Text", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --f-corpo: "Instrument Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "Red Hat Mono", "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+
+  /* anel de foco (só no :focus-visible) */
+  --anel-foco: 0 0 0 2px var(--primary);
+
+  --t-estado: 120ms ease-out;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--f-corpo);
+  font-size: 14px; line-height: 21px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+::selection { background: var(--primary-container); color: var(--on-primary-container); }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; }
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* ---------------------------------------------------------------- tipografia (tokens do modelo) */
+.headline-lg { font-family: var(--f-titulo); font-size: 28px; line-height: 34px; letter-spacing: -0.3px; font-weight: 600; }
+.headline-md { font-family: var(--f-titulo); font-size: 20px; line-height: 28px; letter-spacing: -0.2px; font-weight: 600; }
+.title-md    { font-family: var(--f-titulo); font-size: 16px; line-height: 24px; font-weight: 600; }
+.body-md     { font-family: var(--f-corpo); font-size: 14px; line-height: 21px; font-weight: 400; }
+.body-sm     { font-family: var(--f-corpo); font-size: 13px; line-height: 19px; font-weight: 400; }
+.label-lg    { font-family: var(--f-corpo); font-size: 14px; line-height: 20px; letter-spacing: 0.1px; font-weight: 600; }
+.label-md    { font-family: var(--f-corpo); font-size: 12px; line-height: 16px; letter-spacing: 0.4px; font-weight: 600; }
+.mono-md     { font-family: var(--f-mono); font-size: 13px; line-height: 20px; font-weight: 500; }
+.mono-sm     { font-family: var(--f-mono); font-size: 12px; line-height: 18px; font-weight: 400; }
+.maiusc { text-transform: uppercase; }
+
+.suave { color: var(--on-surface-variant); }
+.apagado { color: var(--outline); }
+.destaque { color: var(--primary); }
+.sucesso { color: var(--success); }
+.aviso { color: var(--warning); }
+.sobre-aviso { color: var(--on-warning-container); }
+.erro { color: var(--error); }
+
+/* ---------------------------------------------------------------- ícones (SVG no lugar do Material Symbols) */
+.ic {
+  width: 16px; height: 16px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  vertical-align: middle;
+}
+.ic-peq { width: 14px; height: 14px; }
+.ic-titulo { width: 20px; height: 20px; }
+.com-icone { display: flex; align-items: center; gap: var(--sm); }
+
+/* ---------------------------------------------------------------- cabeçalho (mesma cor do fundo da página)
+   Sem barra separada: a faixa do logo tem o fundo da página e, embaixo, só um degradê suave que
+   some no meio (no centro ele tem exatamente a cor do fundo), sem corte duro. */
+.barra-topo {
+  position: relative; height: 56px; flex: none; padding: 0 var(--xl);
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--lg);
+}
+.barra-topo::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, var(--surface-container-high), var(--surface) 50%, var(--surface-container-high));
+}
+.marca { display: flex; align-items: center; gap: var(--md); }
+.logo { display: block; height: 46px; width: auto; }
+.logo.largo { height: 34px; }
+.nome-app { font-family: var(--f-titulo); font-size: 16px; line-height: 24px; font-weight: 600; color: var(--primary); }
+.selo {
+  font-family: var(--f-mono); font-size: 12px; line-height: 18px;
+  color: var(--on-surface-variant); background: var(--surface-container-high);
+  padding: var(--xs) var(--sm); border-radius: var(--r-sm);
+}
+
+/* ---------------------------------------------------------------- botões (iguais no app e no launcher) */
+.botao {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sm);
+  padding: var(--sm) var(--lg); border-radius: var(--r); border: 0; cursor: pointer;
+  font-family: var(--f-corpo); font-size: 14px; line-height: 20px; letter-spacing: 0.1px; font-weight: 600;
+  transition: background-color var(--t-estado), color var(--t-estado);
+  white-space: nowrap;
+}
+.botao:focus { outline: none; }
+.botao:focus-visible { outline: none; box-shadow: var(--anel-foco); }
+.botao:disabled { cursor: default; opacity: .6; }
+.botao-grande { padding: var(--md) var(--xl); }
+.botao-secundario { background: var(--surface-container-high); color: var(--on-surface); }
+.botao-secundario:hover:not(:disabled) { background: var(--surface-container-highest); }
+.botao-principal { background: var(--primary); color: var(--on-primary); }
+.botao-principal:hover:not(:disabled) { background: var(--primary-container); color: var(--on-primary-container); }
+.botao-sucesso { background: var(--success); color: var(--on-success); }
+.botao-sucesso:hover:not(:disabled) { background: var(--success-container); color: var(--on-success-container); }
+
+/* barras de rolagem no tom do tema (a "borda" do polegar é da cor do trilho: só dá a folga) */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--surface-container-lowest); }
+::-webkit-scrollbar-thumb { background: var(--surface-container-highest); border-radius: 9999px; border: 3px solid var(--surface-container-lowest); }
+::-webkit-scrollbar-thumb:hover { background: var(--outline-variant); }

@@ -9,7 +9,7 @@ Faz o mesmo que a janela Tkinter do launcher.py, com as mesmas funções de lá:
 e "Abrir o app" abre o app como um processo independente e fecha o launcher sozinho (se o app
 não abrir, o launcher fica aberto, mostra o erro e grava o log).
 
-A tela fica em ui_web/launcher.html (+ launcher.js e o estilo.css do app). O pywebview só é
+A tela fica em ui_web/launcher.html (+ launcher.js, launcher.css e o tema.css/estilo.css do app). O pywebview só é
 importado dentro de iniciar(): a ApiLauncher pode ser usada (e testada) sem janela. Se o pywebview
 faltar ou a janela falhar, o launcher.py abre a janela Tkinter (reserva obrigatória: é o launcher
 que instala o pywebview).
@@ -32,6 +32,10 @@ TEXTO_ABRIR = launcher.Launcher.TEXTO_ABRIR
 TEXTO_ABRINDO = "Abrindo o app..."
 PERGUNTA_ATUALIZAR = ("Baixar a versão nova do GitHub agora?\n"
                       "A sua configuração (config.local.json) não será mudada.")
+# Janela do tamanho do conteúdo (cabeçalho, 4 cartões compactos e o botão); o bloco de detalhes
+# só aparece enquanto o launcher trabalha. A tela é responsiva: pode aumentar ou diminuir.
+TAMANHO_JANELA = (560, 440)
+TAMANHO_MINIMO = (420, 360)
 
 
 class ApiLauncher:
@@ -116,6 +120,8 @@ class ApiLauncher:
             self._mostrar("Aguarde: ainda estou terminando a tarefa anterior.")
             return {"ok": False, "ocupado": True}
         self._ocupado = True
+        # a tela mostra o bloco de detalhes só enquanto há uma tarefa rodando (evento "ocupado")
+        self._enviar({"tipo": "ocupado", "ativo": True})
 
         def rodar():
             try:
@@ -124,6 +130,7 @@ class ApiLauncher:
                 caminho = reg.gravar_excecao(ORIGEM, type(e), e, e.__traceback__)
                 self._mostrar(f"Erro inesperado: {e}" + (f"\nDetalhes em {caminho}" if caminho else ""))
             finally:
+                self._enviar({"tipo": "ocupado", "ativo": False})   # antes de liberar: o "fechar" vem depois
                 self._ocupado = False
 
         t = threading.Thread(target=rodar, name="tarefa-launcher", daemon=True)
@@ -299,8 +306,9 @@ def iniciar(api=None, webview=None):
     if not os.path.isfile(PAGINA):
         raise InterfaceIndisponivel(f"não achei a tela do launcher ({os.path.relpath(PAGINA, reg.PASTA_PROJETO)})")
     api = api or ApiLauncher()
+    largura, altura = TAMANHO_JANELA
     janela = webview.create_window(f"{tema_janela.NOME_APP} - Launcher", url=PAGINA, js_api=api,
-                                   width=620, height=680, min_size=(560, 600),
+                                   width=largura, height=altura, min_size=TAMANHO_MINIMO,
                                    background_color=tema_janela.TEMA["fundo"])
     api._ligar_janela(janela)
     problema = []

@@ -83,6 +83,14 @@ COR_BORDA = TEMA['borda']
 COR_LINHA = TEMA['divisor']
 
 
+def misturar(cor_a, cor_b, t):
+    """Cor entre cor_a (t=0) e cor_b (t=1), em '#RRGGBB' (para o degradê embaixo do cabeçalho)."""
+    t = max(0.0, min(1.0, float(t)))
+    a = [int(cor_a.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)]
+    b = [int(cor_b.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)]
+    return "#" + "".join(f"{round(x + (y - x) * t):02X}" for x, y in zip(a, b))
+
+
 # ---------------------------------------------------------------- versões
 
 def comparar_shas(local, remoto):
@@ -567,12 +575,16 @@ def abrir_pasta(caminho):
 
 class Launcher(tk.Tk if tk else object):
     TEXTO_ABRIR = "▶  Abrir o app"
+    TAMANHO = (560, 400)            # área da janela (o Tk não conta a barra de título)
+    TAMANHO_MINIMO = (420, 320)
+    ESPERA_SUMIR_MS = 1200          # depois de terminar sem mensagem, o bloco de detalhes some
 
     def __init__(self):
         super().__init__()
         self.title(f"{tema_janela.NOME_APP} - Launcher")
-        self.geometry("620x680")
-        self.minsize(560, 600)
+        # do tamanho do conteúdo (como o launcher web); o bloco de detalhes só aparece trabalhando
+        self.geometry(f"{self.TAMANHO[0]}x{self.TAMANHO[1]}")
+        self.minsize(*self.TAMANHO_MINIMO)
         self.configure(bg=COR_FUNDO)
         self.report_callback_exception = reg.gancho_tk("launcher")
         titulo, corpo, mono = tema_janela.familias_fontes(self)
@@ -587,6 +599,10 @@ class Launcher(tk.Tk if tk else object):
         self.info_atualizacao = None
         self.ocupado = False
         self.abrindo = False
+        self._msgs_na_tarefa = False      # a tarefa atual escreveu mensagem: o bloco fica na tela
+        self._sumir = None
+        self._detalhes_visiveis = False
+        self._txt_visivel = False         # a caixa de texto só entra no bloco com a 1ª mensagem
         self._montar()
         self.after(100, self._ler_fila)
         self._em_segundo_plano(self._verificar_tudo)
@@ -594,78 +610,122 @@ class Launcher(tk.Tk if tk else object):
     # ---- montagem
     def _montar(self):
         f = self.fontes
-        # Barra de 56 px igual à do app: logo (ícone 1; 2 com a janela larga), selo e linha embaixo
-        barra = tk.Frame(self, bg=COR_BARRA, height=56, padx=24)
+        # Faixa de 56 px igual à do app, com a cor do fundo da página (sem barra separada): logo
+        # (ícone 1; 2 com a janela larga), selo e a versão à direita
+        barra = tk.Frame(self, bg=COR_BARRA, height=56, padx=20)
         barra.pack(fill="x")
         barra.pack_propagate(False)
         tema_janela.criar_logo_cabecalho(barra, self, COR_BARRA, COR_DESTAQUE, f["marca"]).pack(side="left")
-        selo = tk.Frame(barra, bg=COR_LINHA, padx=1, pady=1)
-        selo.pack(side="left", padx=(12, 0))
-        tk.Label(selo, text="LAUNCHER", fg=COR_SUAVE, bg=COR_BOTAO, font=f["selo"], padx=8, pady=2).pack()
-        tk.Frame(self, bg=COR_BORDA, height=1).pack(fill="x")
+        tk.Label(barra, text="LAUNCHER", fg=COR_SUAVE, bg=COR_BOTAO, font=f["selo"], padx=8, pady=2).pack(side="left", padx=(12, 0))
+        self.lbl_versao = tk.Label(barra, text="", fg=COR_SUAVE, bg=COR_BARRA, font=f["mono"], anchor="e")
+        self.lbl_versao.pack(side="right")
+        # linha embaixo da faixa: degradê que some no meio (no centro tem a cor do fundo)
+        self.linha_topo = tk.Canvas(self, height=1, bg=COR_FUNDO, bd=0, highlightthickness=0)
+        self.linha_topo.pack(fill="x")
+        self.linha_topo.bind("<Configure>", self._desenhar_linha_topo)
 
-        corpo = tk.Frame(self, bg=COR_FUNDO, padx=24, pady=16)
+        corpo = tk.Frame(self, bg=COR_FUNDO, padx=20, pady=12)
         corpo.pack(fill="both", expand=True)
+        self.corpo = corpo
 
-        self.lbl_versao, self.lbl_atualizacao, linha = self._cartao(corpo, "⬆ Versão")
+        self.lbl_atualizacao, linha = self._cartao(corpo, "⬆ Versão")
         self.btn_atualizar = self._botao(linha, "Atualizar agora", self._clicar_atualizar, destaque=True)
         self.btn_atualizar.configure(state="disabled")
         self._botao(linha, "Procurar de novo", lambda: self._em_segundo_plano(self._verificar_versao))
 
-        _, self.lbl_dependencias, linha = self._cartao(corpo, "📦 Dependências", sem_primeira=True)
+        self.lbl_dependencias, linha = self._cartao(corpo, "📦 Dependências")
         self._botao(linha, "Instalar de novo", lambda: self._em_segundo_plano(self._verificar_dependencias))
 
-        _, self.lbl_blender, linha = self._cartao(corpo, "🧊 Blender", sem_primeira=True)
+        self.lbl_blender, linha = self._cartao(corpo, "🧊 Blender")
         self._botao(linha, "Conferir de novo", lambda: self._em_segundo_plano(self._verificar_blender))
 
-        _, self.lbl_logs, linha = self._cartao(corpo, "📝 Logs de erro", sem_primeira=True)
+        self.lbl_logs, linha = self._cartao(corpo, "📝 Logs de erro")
         self._botao(linha, "Abrir pasta de logs", lambda: abrir_pasta(reg.PASTA_LOGS))
         self._botao(linha, "Enviar agora", lambda: self._em_segundo_plano(self._enviar_logs))
 
-        # Ação principal: botão azul (primary) que escurece no hover, como o "Próximo" do app
-        self.btn_abrir = tk.Button(corpo, text=self.TEXTO_ABRIR, bg=COR_DESTAQUE, fg=COR_SOBRE_DESTAQUE,
+        # Ação principal: botão azul (primary) que escurece no hover, como o "Próximo" do app.
+        # Responsivo: largura proporcional à janela (com mínimo e máximo) e fonte que acompanha.
+        self.acao = tk.Frame(corpo, bg=COR_FUNDO, height=48)
+        self.acao.pack(fill="x", pady=(6, 0))
+        self.acao.pack_propagate(False)
+        self.btn_abrir = tk.Button(self.acao, text=self.TEXTO_ABRIR, bg=COR_DESTAQUE, fg=COR_SOBRE_DESTAQUE,
                                    activebackground=COR_TITULO, activeforeground=COR_SOBRE_TITULO,
                                    disabledforeground=COR_APAGADO, bd=0, relief="flat", cursor="hand2",
-                                   highlightthickness=1, highlightbackground=COR_DESTAQUE, highlightcolor=COR_TEXTO,
-                                   font=f["abrir"], pady=12, command=self._clicar_abrir)
-        self.btn_abrir.pack(fill="x", pady=(12, 12))
+                                   highlightthickness=0, font=f["abrir"], command=self._clicar_abrir)
+        self.btn_abrir.place(relx=0.5, rely=0, anchor="n", relheight=1, width=self.medidas_abrir(self.TAMANHO[0])[0])
         self._hover(self.btn_abrir, (COR_DESTAQUE, COR_SOBRE_DESTAQUE), (COR_TITULO, COR_SOBRE_TITULO))
+        corpo.bind("<Configure>", self._ajustar_layout)
 
-        moldura = tk.Frame(corpo, bg=COR_CAMPO, highlightthickness=1, highlightbackground=COR_BORDA)
-        moldura.pack(fill="both", expand=True)
-        self.txt = tk.Text(moldura, height=6, bg=COR_CAMPO, fg=COR_SUAVE, font=f["mono"], bd=0,
-                           padx=12, pady=8, wrap="word", highlightthickness=0,
+        # Detalhes (log de atualização/pip): só aparece enquanto o launcher trabalha (pack/pack_forget)
+        self.detalhes = tk.Frame(corpo, bg=COR_CAMPO, padx=12, pady=8)
+        cab = tk.Frame(self.detalhes, bg=COR_CAMPO)
+        cab.pack(fill="x")
+        self.lbl_tarefa = tk.Label(cab, text="Trabalhando...", fg=COR_SUAVE, bg=COR_CAMPO, font=f["cartao"], anchor="w")
+        self.lbl_tarefa.pack(side="left", fill="x", expand=True)
+        self.btn_ocultar = tk.Label(cab, text="Ocultar", fg=COR_TEXTO, bg=COR_BOTAO, font=f["selo"], padx=10, pady=1,
+                                    cursor="hand2")
+        self.btn_ocultar.bind("<Button-1>", lambda _e: self._ocultar_detalhes())
+        self.txt = tk.Text(self.detalhes, height=5, bg=COR_CAMPO, fg=COR_SUAVE, font=f["mono"], bd=0,
+                           padx=0, pady=4, wrap="word", highlightthickness=0,
                            selectbackground=COR_TITULO, selectforeground=COR_SOBRE_TITULO)
-        self.txt.pack(fill="both", expand=True)
         self.txt.configure(state="disabled")
 
-    def _cartao(self, pai, titulo, sem_primeira=False):
-        # Cartão igual aos do app: fundo surface-container-low, borda de 1 px, título em azul
+    @staticmethod
+    def medidas_abrir(largura):
+        """(largura do botão, tamanho da fonte em px) para a janela com 'largura' px: 70% da
+        largura, entre 220 e 560 px; a fonte vai de 16 a 22 px (como o clamp() do launcher.css)."""
+        botao = int(max(220, min(560, largura * 0.7)))
+        fonte = int(round(max(16, min(22, 12 + largura * 0.014))))
+        return botao, fonte
+
+    def _ajustar_layout(self, evento=None):
+        largura = getattr(evento, "width", 0) or self.TAMANHO[0]
+        botao, fonte = self.medidas_abrir(largura)
+        self.btn_abrir.place_configure(width=min(botao, max(1, largura - 40)))
+        titulo = self.fontes["abrir"][0]
+        self.btn_abrir.configure(font=(titulo, -fonte, "bold"))
+        self.acao.configure(height=fonte + 26)
+        for rotulo in (self.lbl_atualizacao, self.lbl_dependencias, self.lbl_blender, self.lbl_logs):
+            rotulo.configure(wraplength=max(160, largura - 300))
+
+    def _desenhar_linha_topo(self, evento=None):
+        """Degradê de 1 px: surface-container-high nas pontas e a cor do fundo no centro."""
+        c = self.linha_topo
+        largura = getattr(evento, "width", 0) or 0
+        c.delete("all")
+        if largura <= 0:
+            return
+        passos = 48
+        for i in range(passos):
+            t = abs((i + 0.5) / passos - 0.5) * 2          # 1 nas pontas, 0 no meio
+            c.create_rectangle(largura * i / passos, 0, largura * (i + 1) / passos + 1, 1,
+                               fill=misturar(COR_FUNDO, COR_BOTAO, t), width=0)
+
+    def _cartao(self, pai, titulo):
+        # Cartão compacto como o do launcher web: fundo surface-container-low, sem contorno;
+        # título e estado à esquerda, botões à direita
         f = self.fontes
-        cartao = tk.Frame(pai, bg=COR_CARTAO, padx=16, pady=12, highlightbackground=COR_BORDA, highlightthickness=1)
-        cartao.pack(fill="x", pady=(0, 12))
-        tk.Label(cartao, text=titulo, fg=COR_DESTAQUE, bg=COR_CARTAO, font=f["cartao"]).pack(anchor="w")
-        primeira = None
-        if not sem_primeira:
-            primeira = tk.Label(cartao, text="", fg=COR_TEXTO, bg=COR_CARTAO, font=f["texto"], anchor="w", justify="left")
-            primeira.pack(fill="x", pady=(4, 0))
-        segunda = tk.Label(cartao, text="Aguarde...", fg=COR_SUAVE, bg=COR_CARTAO, font=f["suave"],
-                           anchor="w", justify="left", wraplength=540)
-        segunda.pack(fill="x", pady=(2, 8))
+        cartao = tk.Frame(pai, bg=COR_CARTAO, padx=14, pady=8, highlightthickness=0)
+        cartao.pack(fill="x", pady=(0, 6))
         linha = tk.Frame(cartao, bg=COR_CARTAO)
-        linha.pack(fill="x")
-        return primeira, segunda, linha
+        linha.pack(side="right", padx=(12, 0))
+        textos = tk.Frame(cartao, bg=COR_CARTAO)
+        textos.pack(side="left", fill="x", expand=True)
+        tk.Label(textos, text=titulo, fg=COR_DESTAQUE, bg=COR_CARTAO, font=f["cartao"]).pack(anchor="w")
+        estado = tk.Label(textos, text="Aguarde...", fg=COR_SUAVE, bg=COR_CARTAO, font=f["suave"],
+                          anchor="w", justify="left", wraplength=260)
+        estado.pack(fill="x", pady=(2, 0))
+        return estado, linha
 
     def _botao(self, pai, texto, comando, destaque=False):
-        # destaque: botão principal (primary); senão, secundário (surface-container-high com borda)
+        # destaque: botão principal (primary); senão, secundário (surface-container-high), sem contorno
         normal = (COR_DESTAQUE, COR_SOBRE_DESTAQUE) if destaque else (COR_BOTAO, COR_TEXTO)
         hover = (COR_TITULO, COR_SOBRE_TITULO) if destaque else (COR_BOTAO_HOVER, COR_TEXTO)
         b = tk.Button(pai, text=texto, bg=normal[0], fg=normal[1],
                       activebackground=hover[0], activeforeground=hover[1],
-                      disabledforeground=COR_APAGADO, bd=0, relief="flat", cursor="hand2", padx=16, pady=6,
-                      highlightthickness=1, highlightbackground=COR_DESTAQUE if destaque else COR_BORDA,
-                      highlightcolor=COR_DESTAQUE, font=self.fontes["botao"], command=comando)
-        b.pack(side="left", padx=(0, 8))
+                      disabledforeground=COR_APAGADO, bd=0, relief="flat", cursor="hand2", padx=12, pady=4,
+                      highlightthickness=0, font=self.fontes["botao"], command=comando)
+        b.pack(side="left", padx=(6, 0))
         self._hover(b, normal, hover)
         return b
 
@@ -700,6 +760,7 @@ class Launcher(tk.Tk if tk else object):
             self._mostrar("Aguarde: ainda estou terminando a tarefa anterior.")
             return
         self.ocupado = True
+        self._inicio_tarefa()           # chamado na thread do Tk (botões e começo)
 
         def rodar():
             try:
@@ -708,11 +769,49 @@ class Launcher(tk.Tk if tk else object):
                 caminho = reg.gravar_excecao("launcher", type(e), e, e.__traceback__)
                 self._ui(self._mostrar, f"Erro inesperado: {e}" + (f"\nDetalhes em {caminho}" if caminho else ""))
             finally:
+                self._ui(self._fim_tarefa)
                 self.ocupado = False
 
         threading.Thread(target=rodar, daemon=True).start()
 
+    # ---- bloco de detalhes: aparece enquanto trabalha; com mensagem nova, fica até "Ocultar"
+    def _mostrar_detalhes(self):
+        if self._sumir is not None:
+            try:
+                self.after_cancel(self._sumir)
+            except Exception:
+                pass
+            self._sumir = None
+        if not self._detalhes_visiveis:
+            self.detalhes.pack(fill="x", pady=(10, 0))
+            self._detalhes_visiveis = True
+
+    def _ocultar_detalhes(self):
+        self._sumir = None
+        if self._detalhes_visiveis:
+            self.detalhes.pack_forget()
+            self._detalhes_visiveis = False
+
+    def _inicio_tarefa(self):
+        self._msgs_na_tarefa = False
+        self.lbl_tarefa.configure(text="Trabalhando...")
+        self.btn_ocultar.pack_forget()
+        self._mostrar_detalhes()
+
+    def _fim_tarefa(self):
+        self.lbl_tarefa.configure(text="Concluído." if not self._msgs_na_tarefa else "Detalhes")
+        self.btn_ocultar.pack(side="right")
+        if not self._msgs_na_tarefa:
+            self._sumir = self.after(self.ESPERA_SUMIR_MS, self._ocultar_detalhes)
+
     def _mostrar(self, texto):
+        self._msgs_na_tarefa = True
+        if not self._txt_visivel:
+            self.txt.pack(fill="both", expand=True)
+            self._txt_visivel = True
+        self._mostrar_detalhes()
+        if not self.ocupado:
+            self.btn_ocultar.pack(side="right")
         self.txt.configure(state="normal")
         self.txt.insert("end", texto.rstrip() + "\n")
         self.txt.see("end")
@@ -722,6 +821,8 @@ class Launcher(tk.Tk if tk else object):
         cor = COR_SUAVE if ok is None else (COR_OK if ok else COR_AVISO)
         icone = "" if ok is None else ("✅ " if ok else "⚠ ")
         rotulo.configure(text=icone + texto, fg=cor)
+        if ok is None and self.ocupado:
+            self.lbl_tarefa.configure(text=texto)          # o que está fazendo agora
 
     # ---- tarefas
     def _verificar_tudo(self):
