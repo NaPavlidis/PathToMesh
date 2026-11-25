@@ -11,7 +11,6 @@
 O pywebview só é importado dentro de iniciar() e dos diálogos: a Api pode ser usada (e testada)
 direto do Python, sem janela.
 """
-import base64
 import json
 import os
 import queue
@@ -31,17 +30,8 @@ TIPOS_SVG = ("Arquivos SVG (*.svg)", "Todos (*.*)")
 TIPOS_BLENDER = ("Executável do Blender (*.exe)", "Todos (*.*)")
 
 
-def logo_data_uri(numero):
-    """Logo <numero> (assets/icones) como data URI, para o <img> do cabeçalho. O .png grande
-    fica nítido em telas com zoom; se faltar, o <numero>_cabecalho.png. '' se nenhum existir."""
-    for nome in (f"{numero}.png", f"{numero}_cabecalho.png"):
-        caminho = os.path.join(tema_janela.PASTA_ICONES, nome)
-        try:
-            with open(caminho, "rb") as f:
-                return "data:image/png;base64," + base64.b64encode(f.read()).decode("ascii")
-        except OSError:
-            continue
-    return ""
+# Logo <numero> como data URI (o mesmo do launcher web; lido do disco uma vez só)
+logo_data_uri = tema_janela.logo_data_uri
 
 
 def _info_para_js(info):
@@ -268,17 +258,8 @@ class Api:
 
 
 # ---------------------------------------------------------------- janela
-def _hwnd_da_janela(janela):
-    """HWND da janela do pywebview no Windows (Form do WinForms), ou 0."""
-    try:
-        return int(janela.native.Handle.ToInt64())
-    except Exception:
-        pass
-    try:
-        import ctypes
-        return ctypes.windll.user32.FindWindowW(None, janela.title) or 0
-    except Exception:
-        return 0
+# HWND da janela do pywebview no Windows (Form do WinForms), ou 0
+_hwnd_da_janela = tema_janela.hwnd_pywebview
 
 
 class InterfaceIndisponivel(RuntimeError):

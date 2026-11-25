@@ -420,6 +420,15 @@ select.campo option { background: var(--surface-container); color: var(--on-surf
 .modal-aviso.tipo-erro .botao-principal { background: var(--error); color: var(--on-error); }
 .modal-aviso.tipo-erro .botao-principal:hover { background: var(--error-container); color: var(--on-error-container); }
 
+/* ---------------------------------------------------------------- launcher (ui_web/launcher.html) */
+.launcher-corpo { padding: var(--lg) var(--xl); display: flex; flex-direction: column; gap: var(--md); }
+.cartao-launcher { padding: var(--md) var(--lg); gap: var(--xs); border-color: var(--outline); }
+.estado-launcher { white-space: pre-line; overflow-wrap: anywhere; margin-bottom: var(--xs); }
+.linha-botoes { display: flex; flex-wrap: wrap; gap: var(--sm); }
+.linha-botoes .botao { padding: 6px var(--lg); }
+.botao-abrir { width: 100%; font-family: var(--f-titulo); font-size: 16px; line-height: 24px; }
+.mensagens-launcher { flex: 1 0 96px; min-height: 96px; margin: 0; color: var(--on-surface-variant); }
+
 /* barras de rolagem no tom do tema */
 ::-webkit-scrollbar { width: 12px; height: 12px; }
 ::-webkit-scrollbar-track { background: var(--surface-container-lowest); }

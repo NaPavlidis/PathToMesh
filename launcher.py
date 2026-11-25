@@ -10,6 +10,10 @@ Ao abrir:
 Depois é só clicar em "Abrir o app": o app abre como um processo independente e o launcher se
 fecha sozinho. Se o app não abrir, o launcher fica aberto, mostra o erro e grava o log.
 
+Janela: o visual novo (launcher_web.py, pywebview, o mesmo estilo do app); se o pywebview não
+estiver instalado (a 1ª vez: é o próprio launcher que o instala) ou a janela web falhar, a janela
+Tkinter daqui, com as mesmas funções. Com --tk, abre direto a Tkinter.
+
 A lógica fica em funções sem Tkinter, para poder ser testada sem janela.
 """
 import glob
@@ -806,18 +810,61 @@ class Launcher(tk.Tk if tk else object):
         self.destroy()
 
 
-def main():
-    if "--preparar-config" in sys.argv[1:]:
-        # Chamado pelo instalador (instalar.ps1): resposta em JSON só com ASCII, para o
-        # PowerShell ler sem problema de acentos
-        print(json.dumps(preparar_config(), ensure_ascii=True))
-        return
-    reg.instalar_ganchos("launcher")
+def abrir_launcher_web():
+    """Janela no visual novo (launcher_web.py, pywebview). Levanta exceção se não der."""
+    import launcher_web
+    launcher_web.iniciar()
+
+
+def abrir_launcher_tk():
+    """Janela Tkinter (a de sempre): reserva obrigatória, porque é o launcher que instala o pywebview."""
     if tk is None:
         print("O Tkinter não está instalado neste Python.")
         sys.exit(1)
-    os.chdir(PASTA)
     Launcher().mainloop()
+
+
+def motivo_sem_web(importar=None, webview2_instalado=None):
+    """None se a janela web pode ser tentada; senão, (motivo, detalhes) para o log."""
+    importar = importar or __import__
+    try:
+        importar("webview")
+    except Exception as e:
+        return (f"o pywebview não está instalado ou não carregou ({type(e).__name__}: {e})", traceback.format_exc())
+    if webview2_instalado is None:
+        import app
+        webview2_instalado = app.webview2_instalado
+    if not webview2_instalado():
+        return ("o WebView2 (motor do Edge usado pela janela) não está instalado neste Windows",
+                "Instale o 'Microsoft Edge WebView2 Runtime' (gratuito, da Microsoft).")
+    return None
+
+
+def main(argv=None, abrir_web=abrir_launcher_web, abrir_tk=abrir_launcher_tk, sem_web=motivo_sem_web):
+    """Abre o launcher: o visual novo (pywebview) ou, se ele faltar ou falhar, a janela Tkinter.
+    Devolve 'web', 'tk' ou 'config' (--preparar-config)."""
+    argv = sys.argv[1:] if argv is None else argv
+    if "--preparar-config" in argv:
+        # Chamado pelo instalador (instalar.ps1): resposta em JSON só com ASCII, para o
+        # PowerShell ler sem problema de acentos
+        print(json.dumps(preparar_config(), ensure_ascii=True))
+        return "config"
+    reg.instalar_ganchos("launcher")
+    os.chdir(PASTA)
+    if "--tk" not in argv:
+        problema = sem_web()
+        if problema is None:
+            try:
+                abrir_web()
+                return "web"
+            except Exception as e:
+                problema = (f"a janela web do launcher não abriu ({type(e).__name__}: {e})", traceback.format_exc())
+        # Sem o pywebview (ainda não instalado) é o caminho normal da 1ª vez: sem log de erro
+        if not problema[0].startswith("o pywebview não está instalado"):
+            reg.gravar_log("launcher", "Launcher web indisponível: " + problema[0],
+                           "O launcher abriu a janela Tkinter (reserva).\n\n" + problema[1])
+    abrir_tk()
+    return "tk"
 
 
 if __name__ == "__main__":

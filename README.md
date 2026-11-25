@@ -22,7 +22,8 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 | `blender_engine.py` | Roda dentro do Blender (`bpy`): importa o SVG, aplica materiais e extrusão, configura câmeras e renderiza |
 | `mapear_catalogo.py` | Mapeia o catálogo (`CATALOGO/<MODALIDADE>/<MODELO>/SVG/*.svg`) e mostra quais modelos estão prontos |
 | `infos_svg.py` | Analisa um SVG e lista as peças e os materiais encontrados |
-| `launcher.py` | Launcher (Tkinter): procura atualização, instala as dependências, confere o Blender, envia os logs de erro e abre o app |
+| `launcher.py` | Launcher: procura atualização, instala as dependências, confere o Blender, envia os logs de erro e abre o app. Abre no visual novo (`launcher_web.py`); se o `pywebview` ainda não estiver instalado (é o próprio launcher que o instala) ou a janela web falhar, abre a janela Tkinter, com as mesmas funções. `python launcher.py --tk` abre direto a Tkinter |
+| `launcher_web.py` | Janela do launcher no visual do app (pywebview): a tela fica em `ui_web/launcher.html` e `ui_web/launcher.js`, com o mesmo `estilo.css`, o ícone principal e o logo 1/2 |
 | `launcher.bat` / `launcher.pyw` | Atalhos para abrir o launcher no Windows (com console / sem console) |
 | `instalar.bat` / `instalar.ps1` | Instalador para Windows (veja **Instalação**). O `.bat` é o que você baixa e roda; ele chama o `.ps1` |
 | `registro_erros.py` | Grava os logs de erro em `logs/` (sem dados do PC) e envia para a branch `logs` |
@@ -56,7 +57,7 @@ Depois é só abrir o atalho **PathToMesh** na Área de Trabalho. Para atualizar
 
 ## Launcher
 
-Dê dois cliques em `launcher.pyw` (abre sem a janela preta) ou em `launcher.bat` (abre com o console, bom para ver mensagens de erro). Ao abrir, o launcher faz sozinho:
+Dê dois cliques em `launcher.pyw` (abre sem a janela preta) ou em `launcher.bat` (abre com o console, bom para ver mensagens de erro). O launcher abre no mesmo visual do app (pywebview). Na primeira vez, antes de o `pywebview` ser instalado, ou se a janela web não abrir, ele abre na janela clássica (Tkinter), que faz exatamente as mesmas coisas. Ao abrir, o launcher faz sozinho:
 
 1. **Atualização**: mostra a versão atual (o commit) e se há uma versão nova na `main` do GitHub.
    - Se o git estiver instalado e a pasta for um clone, usa `git fetch`/`git pull`. Só atualiza na branch `main`; em outra branch, ele só avisa.

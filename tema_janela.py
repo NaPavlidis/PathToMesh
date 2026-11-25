@@ -6,6 +6,7 @@
 - criar_logo_cabecalho(): logo do canto esquerdo do cabeçalho (1, ou 2 com a janela larga).
 - pintar_barra_titulo(): pinta a barra de título nativa do Windows (DWM) com as cores do TEMA.
 - preparar_janela(): as duas coisas de uma vez.
+- logo_data_uri() e hwnd_pywebview(): o logo e o HWND das janelas web (app e launcher).
 
 Nada aqui importa o tkinter no topo do arquivo (os testes do launcher rodam sem ele), e tudo o
 que mexe no sistema fica dentro de try/except: se não der, a janela só fica com o visual padrão.
@@ -257,6 +258,43 @@ def preparar_hwnd(hwnd, icone="app"):
     except Exception:
         pass
     return resultado
+
+
+# ------------------------------------------------------------------------------ janelas do pywebview
+_CACHE_LOGOS = {}
+
+
+def logo_data_uri(numero):
+    """Logo <numero> (assets/icones) como data URI, para o <img> do cabeçalho das telas web. O
+    .png grande fica nítido em telas com zoom; se faltar, o <numero>_cabecalho.png. '' se nenhum
+    existir. Lido do disco uma vez só (fica guardado)."""
+    if numero in _CACHE_LOGOS:
+        return _CACHE_LOGOS[numero]
+    import base64
+    uri = ""
+    for nome in (f"{numero}.png", f"{numero}_cabecalho.png"):
+        try:
+            with open(os.path.join(PASTA_ICONES, nome), "rb") as f:
+                uri = "data:image/png;base64," + base64.b64encode(f.read()).decode("ascii")
+            break
+        except OSError:
+            continue
+    if uri:
+        _CACHE_LOGOS[numero] = uri
+    return uri
+
+
+def hwnd_pywebview(janela):
+    """HWND da janela do pywebview no Windows (Form do WinForms), ou 0."""
+    try:
+        return int(janela.native.Handle.ToInt64())
+    except Exception:
+        pass
+    try:
+        import ctypes
+        return ctypes.windll.user32.FindWindowW(None, janela.title) or 0
+    except Exception:
+        return 0
 
 
 # ------------------------------------------------------------------------------ logo do cabeçalho
