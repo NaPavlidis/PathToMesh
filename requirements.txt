@@ -1,2 +1,2 @@
-svgpathtools
+-r requirements-base.txt
 pywebview

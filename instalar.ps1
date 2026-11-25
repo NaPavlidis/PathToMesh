@@ -7,8 +7,9 @@
 #   2. pergunta a pasta (padrão %LOCALAPPDATA%\PathToMesh; se o programa já estiver instalado na
 #      pasta do nome antigo, %LOCALAPPDATA%\Phy-2d-by-3d, o padrão é ela) e clona o repositório
 #      público, ou só atualiza se a pasta já existir (o config.local.json nunca é apagado);
-#   3. instala as dependências (pip install -r requirements.txt: svgpathtools e pywebview, a
-#      janela do app; sem o pywebview ou o WebView2, o app abre na interface Tkinter de reserva);
+#   3. instala as dependências: primeiro as essenciais (requirements-base.txt: svgpathtools), depois
+#      o requirements.txt (acrescenta o pywebview, a janela do app). Se o pywebview falhar, avisa e
+#      segue; sem ele ou sem o WebView2, o app abre na interface Tkinter de reserva;
 #   4. cria o config.local.json a partir do config.exemplo.json, se faltar, e procura o Blender;
 #   5. cria os atalhos do launcher na Área de Trabalho e no Menu Iniciar (com o ícone do
 #      PathToMesh; os atalhos com o nome antigo que apontam para a mesma pasta são trocados)
@@ -295,17 +296,38 @@ try {
 
     # 4. Dependências
     Titulo '4/6  Dependências (pip)'
+    # Primeiro as essenciais (requirements-base.txt), depois o requirements.txt (acrescenta o
+    # pywebview, da interface nova). Se só o pywebview falhar, o app abre na interface clássica.
+    $requisitosBase = Join-Path $pasta 'requirements-base.txt'
     $requisitos = Join-Path $pasta 'requirements.txt'
-    if (Test-Path -LiteralPath $requisitos) {
+    $baseOk = $true
+    $temBase = Test-Path -LiteralPath $requisitosBase
+    if ($temBase) {
+        & $py.Exe @pyArgs -m pip install --disable-pip-version-check -r $requisitosBase
+        if ($LASTEXITCODE -ne 0) {
+            $baseOk = $false
+            Avisar 'O pip não conseguiu instalar as dependências essenciais (veja a mensagem acima). O launcher tenta de novo quando abrir.'
+            $Resumo.Add('Dependências: com problema (o launcher tenta de novo)')
+        }
+    }
+    if ($baseOk -and (Test-Path -LiteralPath $requisitos)) {
         & $py.Exe @pyArgs -m pip install --disable-pip-version-check -r $requisitos
         if ($LASTEXITCODE -ne 0) {
-            Avisar 'O pip não conseguiu instalar as dependências (veja a mensagem acima). O launcher tenta de novo quando abrir.'
-            $Resumo.Add('Dependências: com problema (o launcher tenta de novo)')
+            if ($temBase) {
+                Avisar 'A interface nova não pôde ser instalada; o app abre na versão clássica. (As dependências essenciais foram instaladas; o launcher tenta o pywebview de novo quando abrir.)'
+                $Resumo.Add('Dependências: essenciais instaladas; interface nova não (o app abre na versão clássica)')
+            } else {
+                Avisar 'O pip não conseguiu instalar as dependências (veja a mensagem acima). O launcher tenta de novo quando abrir.'
+                $Resumo.Add('Dependências: com problema (o launcher tenta de novo)')
+            }
         } else {
             Certo 'Dependências instaladas.'
             $Resumo.Add('Dependências: instaladas')
         }
-    } else {
+    } elseif ($baseOk -and $temBase) {
+        Certo 'Dependências instaladas.'
+        $Resumo.Add('Dependências: instaladas')
+    } elseif ($baseOk) {
         Certo 'Sem requirements.txt: nada para instalar.'
     }
 

@@ -2,7 +2,8 @@
 
 Ao abrir:
   1. procura atualização no GitHub (git, se a pasta for um clone; senão a API pública e o zip da main);
-  2. instala as dependências (pip install -r requirements.txt);
+  2. instala as dependências (pip: primeiro o requirements-base.txt, depois o requirements.txt,
+     que acrescenta o pywebview; se só o pywebview falhar, avisa e o app abre na Tkinter);
   3. confere se o blender_path do config.local.json existe (criado, se faltar, a partir do
      config.json antigo ou do config.exemplo.json);
   4. envia os logs de erro novos para a branch 'logs' (se houver git com credencial).
@@ -316,18 +317,42 @@ def python_console():
     return exe
 
 
-def instalar_dependencias(pasta=PASTA):
-    requisitos = os.path.join(pasta, "requirements.txt")
-    if not os.path.isfile(requisitos):
-        return True, "Sem requirements.txt: nada para instalar."
+AVISO_INTERFACE = "A interface nova não pôde ser instalada; o app abre na versão clássica."
+
+
+def _pip(requisitos, pasta, executar):
+    """Roda 'pip install -r <requisitos>'. Devolve None se deu certo, ou o texto do erro."""
     comando = [python_console(), "-m", "pip", "install", "--disable-pip-version-check", "-r", requisitos]
     try:
-        r = subprocess.run(comando, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                           timeout=600, cwd=pasta, creationflags=reg.SEM_JANELA)
+        r = executar(comando, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                     timeout=600, cwd=pasta, creationflags=reg.SEM_JANELA)
     except (OSError, subprocess.SubprocessError) as e:
-        return False, f"Não deu para rodar o pip: {e}"
+        return f"Não deu para rodar o pip: {e}"
     if r.returncode != 0:
-        return False, "O pip falhou:\n" + (r.stderr or r.stdout)[-3000:]
+        return (r.stderr or r.stdout or "")[-3000:]
+    return None
+
+
+def instalar_dependencias(pasta=PASTA, executar=subprocess.run):
+    """Instala primeiro as dependências essenciais (requirements-base.txt) e depois o resto do
+    requirements.txt (o pywebview, da interface nova). Se só a segunda parte falhar (ex.: o
+    pythonnet sem pacote para a versão do Python), avisa e segue: o app.py abre a Tkinter."""
+    base = os.path.join(pasta, "requirements-base.txt")
+    completo = os.path.join(pasta, "requirements.txt")
+    if os.path.isfile(base):
+        erro = _pip(base, pasta, executar)
+        if erro is not None:
+            return False, "O pip não instalou as dependências essenciais:\n" + erro
+    if not os.path.isfile(completo):
+        if os.path.isfile(base):
+            return True, "Dependências instaladas."
+        return True, "Sem requirements.txt: nada para instalar."
+    erro = _pip(completo, pasta, executar)
+    if erro is not None:
+        if os.path.isfile(base):
+            return False, (AVISO_INTERFACE + "\nAs dependências essenciais foram instaladas. "
+                           "Erro do pip na interface nova (pywebview):\n" + erro)
+        return False, "O pip falhou:\n" + erro
     return True, "Dependências instaladas."
 
 

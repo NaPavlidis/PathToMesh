@@ -12,7 +12,8 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 | --- | --- |
 | `app.py` | **Entrada do app** (é o que o launcher abre). Abre a janela web (`app_web.py`); se o pywebview ou o WebView2 não funcionarem, grava um log de erro e abre a interface Tkinter (`app_ui.py`). Com `python app.py --tk`, abre direto a Tkinter |
 | `app_web.py` | Janela do app com **pywebview** (WebView2 do Windows): mostra a tela de `ui_web/` e liga os botões à lógica pela classe `Api` (`js_api`). Diálogos de arquivo e pasta nativos; o Blender roda numa thread e as etapas e o progresso chegam à tela por `evaluate_js`; avisos e erros aparecem em janelas (modais) na própria tela |
-| `ui_web/` | A tela do app: `index.html`, `estilo.css` e `app.js`, feitos a partir do `docs/modelo-layout.html`. Funciona offline: sem CDN, ícones em SVG dentro da página e fontes do modelo em `ui_web/fontes/` (se faltarem, usa a Segoe UI) |
+| `ui_web/` | A tela do app: `index.html`, `estilo.css` e `app.js`, feitos a partir do `docs/modelo-layout.html`. Funciona offline: sem CDN, ícones em SVG dentro da página e fontes do modelo em `ui_web/fontes/` (Instrument Sans, Red Hat Text e Red Hat Mono, `.ttf` variáveis com a licença SIL OFL nos `*-OFL.txt`; se faltarem, usa a Segoe UI) |
+| `requirements-base.txt` / `requirements.txt` | Dependências do Python: o `requirements-base.txt` tem as essenciais (`svgpathtools`); o `requirements.txt` inclui o base e acrescenta o `pywebview` (a janela do app) |
 | `nucleo.py` | A lógica do app, sem interface: análise do SVG e das cores (`MAPA_MATERIAIS`), configuração (`config.local.json`), mapa do catálogo e a chamada do Blender com o progresso. Usada pelas duas interfaces |
 | `app_ui.py` | Interface Tkinter do app (a de reserva): escolhe o catálogo, a cena `.blend` e os modelos, e chama o Blender (pelo `nucleo.py`). Usa o `TEMA`/`ESPACO` do `tema_janela.py` e as fontes de `FONTES`, aplicados por `aplicar_estilo` |
 | `tema_janela.py` | Visual compartilhado pelo app e pelo launcher: a paleta `TEMA` e os espaços `ESPACO` (tirados do `docs/modelo-layout.html`), a escolha das fontes, os ícones das janelas, o logo do cabeçalho (que muda com a largura da janela) e a barra de título do Windows pintada nas cores do tema (DWM; no Windows 10 fica só o modo escuro) |
@@ -39,7 +40,7 @@ O instalador (`instalar.bat`, que roda o `instalar.ps1`) faz sozinho:
 
 - confere se há o **Python 3** (comando `py` ou `python`) e o **Git**. Se faltar algum, instala com o `winget` (`Python.Python.3.14` e `Git.Git`), avisando antes;
 - pergunta a pasta de instalação (padrão: `%LOCALAPPDATA%\PathToMesh`) e baixa o programa do GitHub (`git clone`). Se o programa já estiver nessa pasta, só atualiza, sem apagar o seu `config.local.json`. Quem instalou antes da troca de nome tem o programa em `%LOCALAPPDATA%\Phy-2d-by-3d`: nesse caso, o padrão continua sendo essa pasta (só atualiza);
-- instala as dependências (`py -m pip install -r requirements.txt`: o `svgpathtools` e o `pywebview`, a janela do app);
+- instala as dependências em duas partes: primeiro as essenciais (`py -m pip install -r requirements-base.txt`: o `svgpathtools`) e depois o `requirements.txt` (acrescenta o `pywebview`, a janela do app). Se só o `pywebview` falhar (por exemplo, o `pythonnet`, de que ele depende no Windows, ainda sem pacote para a versão do Python), avisa que a interface nova não pôde ser instalada e segue: o app abre na versão clássica (Tkinter);
 - cria o `config.local.json` a partir do `config.exemplo.json`, se ele ainda não existir, e procura o Blender instalado (em `C:\Program Files\Blender Foundation\Blender *\blender.exe`, usando a versão mais nova). Um `blender_path` que já existe nunca é trocado;
 - cria o atalho **PathToMesh** (abre o launcher, com o ícone do programa) na Área de Trabalho e no Menu Iniciar. Os atalhos antigos **Phy-2d-by-3d** que abrem a mesma pasta são trocados pelo novo;
 - mostra um resumo do que fez e dos avisos (por exemplo, se não achou o Blender).
@@ -49,7 +50,7 @@ Depois é só abrir o atalho **PathToMesh** na Área de Trabalho. Para atualizar
 ## Como rodar sem o instalador (Windows)
 
 1. Instale o [Blender](https://www.blender.org/) e o Python 3.
-2. Instale as dependências: `pip install -r requirements.txt` (o `pywebview`, para a janela do app, e o `svgpathtools`, que melhora a leitura dos caminhos do SVG). A janela usa o **WebView2**, que já vem no Windows 10 e 11; sem ele (ou sem o `pywebview`), o app abre na interface Tkinter de reserva.
+2. Instale as dependências: `pip install -r requirements.txt` (o `pywebview`, para a janela do app, e o `svgpathtools`, que melhora a leitura dos caminhos do SVG). A janela usa o **WebView2**, que já vem no Windows 10 e 11; sem ele (ou sem o `pywebview`), o app abre na interface Tkinter de reserva. Se o `pywebview` não instalar, rode `pip install -r requirements-base.txt` para ter ao menos as essenciais.
 3. Ajuste os caminhos nas configurações do app (⚙) ou direto no `config.local.json` (veja abaixo).
 4. Abra o **launcher** (veja abaixo) e clique em **Abrir o app**. Também dá para abrir direto com `python app.py`, na pasta do projeto (ou `python app.py --tk` para a interface Tkinter).
 
@@ -61,7 +62,7 @@ Dê dois cliques em `launcher.pyw` (abre sem a janela preta) ou em `launcher.bat
    - Se o git estiver instalado e a pasta for um clone, usa `git fetch`/`git pull`. Só atualiza na branch `main`; em outra branch, ele só avisa.
    - Sem git, compara com o último commit pela API pública do GitHub e baixa o zip da `main`. A versão instalada fica guardada no arquivo `.versao`.
    - Para atualizar, clique em **Atualizar agora**. O seu `config.local.json` nunca é sobrescrito (veja **Configuração**). Depois de atualizar, feche e abra o launcher de novo.
-2. **Dependências**: roda `pip install -r requirements.txt`.
+2. **Dependências**: roda o `pip install` em duas partes, como o instalador: primeiro o `requirements-base.txt` (essenciais) e depois o `requirements.txt` (o `pywebview`). Se só o `pywebview` falhar, mostra "A interface nova não pôde ser instalada; o app abre na versão clássica", grava o log de erro e segue; o app abre na interface Tkinter.
 3. **Blender**: confere se o `blender_path` do `config.local.json` existe. Se não existir, ajuste nas configurações do app (⚙).
 4. **Logs de erro**: envia os logs novos para o GitHub (veja abaixo).
 
