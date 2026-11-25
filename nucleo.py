@@ -1016,6 +1016,13 @@ def _gravar_log_render(comando, progresso, linhas_log, total_linhas, inicio_data
         return None
 
 
+def opcoes_blender(comando, sistema=None, modulo=None):
+    """Sem a janela de cmd no Windows: CREATE_NO_WINDOW sempre (a saída já vem pelo stdout, para o
+    progresso e o log). No render automático (--background) também o startupinfo com SW_HIDE; no
+    modo interativo não, porque esconderia a janela do próprio Blender."""
+    return registro_erros.opcoes_sem_janela(esconder="--background" in list(comando), sistema=sistema, modulo=modulo)
+
+
 def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None, relogio=None, pasta_logs=None):
     """Roda o Blender e chama ao_evento(evento) para cada mudança da tela (veja
     interpretar_linha_blender) e ao_evento(('progresso', estado)) com o progresso real
@@ -1036,7 +1043,8 @@ def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None, 
     t0 = relogio()
     codigo = None
     try:
-        processo = popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='ignore')
+        processo = popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8',
+                         errors='ignore', stdin=subprocess.DEVNULL, **opcoes_blender(comando))
         ultimas_linhas = collections.deque(maxlen=200)   # para o log de erro
         teve_traceback = False
         for linha in processo.stdout:

@@ -101,6 +101,10 @@ A barra da tela **Processing** mostra o trabalho real do Blender:
 - Os eventos de progresso do Blender que chegam juntos viram um só (cada um já traz o estado inteiro), para a tela não ficar para trás quando o Cycles manda muitas linhas por segundo.
 - O logo do cabeçalho é lido do disco uma vez só.
 
+## Sem janelas de cmd
+
+O Blender, o `pip` (no launcher) e o `git` rodam sem abrir a janela preta do cmd no Windows (`CREATE_NO_WINDOW` e, quando o programa não tem janela própria, `startupinfo` com `SW_HIDE`; veja `registro_erros.opcoes_sem_janela`). A saída deles continua capturada para o progresso e os logs. O render automático usa o Blender em `--background`; no modo interativo (sem **Renderizar automaticamente**) a janela do próprio Blender continua abrindo.
+
 ## Logs de erro
 
 O app e o launcher gravam os erros (exceções, falhas do Blender e do pip) em `logs/erro-AAAAMMDD-HHMMSS.log`, com a versão (commit), o sistema e o traceback.

@@ -49,7 +49,31 @@ _AUTOR_LOGS = {
 # Sem janelas de senha: se não houver credencial salva, o push só falha
 _SEM_PERGUNTA = {"GIT_TERMINAL_PROMPT": "0", "GCM_INTERACTIVE": "never"}
 
-SEM_JANELA = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+CREATE_NO_WINDOW = 0x08000000      # processo de console sem janela de console (Windows)
+SW_HIDE = 0
+SEM_JANELA = getattr(subprocess, "CREATE_NO_WINDOW", CREATE_NO_WINDOW) if os.name == "nt" else 0
+
+
+def opcoes_sem_janela(esconder=True, sistema=None, modulo=None):
+    """Argumentos do subprocess para não abrir a janela preta do cmd no Windows:
+    creationflags=CREATE_NO_WINDOW e, com esconder=True, startupinfo com SW_HIDE (para programas
+    que criariam uma janela própria de console). Fora do Windows, {}.
+    Use esconder=False para quem precisa mostrar a própria janela (o Blender no modo interativo):
+    o SW_HIDE do startupinfo esconderia a janela principal dele."""
+    sistema = os.name if sistema is None else sistema
+    modulo = modulo or subprocess
+    if sistema != "nt":
+        return {}
+    opcoes = {"creationflags": getattr(modulo, "CREATE_NO_WINDOW", CREATE_NO_WINDOW)}
+    if esconder:
+        try:
+            info = modulo.STARTUPINFO()
+            info.dwFlags |= getattr(modulo, "STARTF_USESHOWWINDOW", 1)
+            info.wShowWindow = SW_HIDE
+            opcoes["startupinfo"] = info
+        except (AttributeError, TypeError):
+            pass
+    return opcoes
 
 
 # ---------------------------------------------------------------- git
@@ -66,7 +90,7 @@ def git(pasta, *args, entrada=None, env_extra=None, timeout=60):
         env.update(env_extra)
     try:
         r = subprocess.run(["git", "-C", pasta] + list(args), input=entrada, capture_output=True,
-                           timeout=timeout, env=env, creationflags=SEM_JANELA)
+                           timeout=timeout, env=env, **opcoes_sem_janela())
     except (OSError, subprocess.SubprocessError) as e:
         return 1, "", str(e)
     return (r.returncode, r.stdout.decode("utf-8", "replace").strip(),

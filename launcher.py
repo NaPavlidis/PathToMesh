@@ -329,7 +329,7 @@ def _pip(requisitos, pasta, executar):
     comando = [python_console(), "-m", "pip", "install", "--disable-pip-version-check", "-r", requisitos]
     try:
         r = executar(comando, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                     timeout=600, cwd=pasta, creationflags=reg.SEM_JANELA)
+                     timeout=600, cwd=pasta, **reg.opcoes_sem_janela())
     except (OSError, subprocess.SubprocessError) as e:
         return f"Não deu para rodar o pip: {e}"
     if r.returncode != 0:
