@@ -569,20 +569,39 @@ def interpretar_linha_blender(linha_limpa):
 # ------------------------------------------------------------------------------
 # Progresso real da renderização (barra composta e etapas)
 # ------------------------------------------------------------------------------
-# Pesos de cada parte na barra (somam 1). A preparação é rápida; o render das câmeras é quase todo
-# o tempo; a finalização (gravar e fechar o Blender) é curta. Calibrado com os logs render-*.log
-# de 2026-11-25 (Blender 5.3, 1 câmera, 64 samples): abrir o Blender + preparar = 1,6 a 5,8 s
-# (5-15% do total), render da câmera = 31,5 a 32,2 s (85-95%), PTM_FIM até fechar = 0,2-0,3 s (<1%).
-PESO_PREPARACAO = 0.10
-PESO_RENDER = 0.89
-PESO_FINAL = 0.01
-# Dentro de cada câmera: as samples valem esta fração; o resto (denoise e gravação da imagem) só
-# conta quando a câmera termina (PTM_CAMERA_FIM), sem inventar progresso no meio.
-FRACAO_SAMPLES_CAMERA = 0.90
-TETO_ANTES_DO_FIM = 99.0      # a barra só chega a 100% quando o Blender termina com sucesso
-# Estimativa de tempo restante: só depois de dados suficientes
-ETA_MIN_SAMPLES = 3           # samples vistas na câmera atual
-ETA_MIN_SEGUNDOS = 2.0        # tempo entre a 1ª e a última sample vista
+# O que os logs render-*.log reais mostraram (12 logs de 2026-11-25, Blender 5.3, CPU, 64 samples,
+# 1 e 3 câmeras, Freestyle ligado no estúdio):
+# - O Cycles em --background não imprime "Sample N/M" no stdout, e o handler render_stats só é
+#   chamado com "Sample 0/64", "Sample 1/64" (com "Remaining: 00:22.76") e "Sample 64/64": nada
+#   entre a sample 1 e a última (~26 s). Por isso, entre uma sample real e a próxima, a barra avança
+#   pelo tempo estimado da passada (veja ProgressoRender._estimar), sem nunca chegar ao fim da
+#   passada antes de o Cycles confirmar.
+# - Cada câmera renderiza 2 passadas: a principal e, depois de "Freestyle: Mesh loading", a do
+#   Freestyle (os contornos), que roda as 64 samples de novo.
+# - As linhas do Python (print com flush) chegam na hora; o que o Blender imprime pelo C (a linha
+#   "Blender 5.3.0 (hash ...)", "Warning: ...") chega atrasado, em bloco.
+#
+# Tempos de referência (segundos), dos mesmos logs. Os pesos da barra saem deles (proporcionais ao
+# tempo de cada parte), conforme o número de câmeras, as samples e o Freestyle:
+SEG_PREPARACAO = 2.0            # abrir o Blender até a 1ª câmera: 1,6-2,1 s (5,5-5,8 s na 1ª vez)
+SEG_FINAL = 0.25                # PTM_FIM até o Blender fechar: 0,14-0,30 s
+SEG_CAMERA_PREPARO = 0.9        # PTM_CAMERA até a sample 1 (sincronizar, kernels, BVH, imagens): 0,8-1,0 s
+SEG_CAMERA_GRAVAR = 0.3         # fim da última passada até a imagem gravada: 0,2-0,4 s
+SEG_POR_SAMPLE = 0.43           # passada principal: 25,4-28,2 s da sample 1 à 64
+SEG_POR_SAMPLE_FREESTYLE = 0.10  # passada do Freestyle: 6,0-7,8 s para as 64 samples
+# O "Remaining" que o Cycles dá na sample 1 é curto: a passada principal levou 1,00-1,24× (média
+# 1,14×) e a do Freestyle 2,3-3,2× (média 2,7×) o que ele disse.
+CORRECAO_RESTANTE_CYCLES = {"principal": 1.15, "freestyle": 2.7}
+FREESTYLE_SOBRE_PRINCIPAL = 0.25  # duração do Freestyle / da passada principal: 0,23-0,28
+TETO_ANTES_DO_FIM = 99.0        # a barra só chega a 100% quando o Blender termina com sucesso
+# Estimativa pelo tempo: anda em linha reta até 90% da passada e depois vai freando (até 99%)
+LINEAR_ATE = 0.90
+TETO_ESTIMADO = 0.99
+# Ritmo medido (Blender que manda as samples uma a uma): só depois de dados suficientes
+ETA_MIN_SAMPLES = 3             # samples vistas na passada atual
+ETA_MIN_SEGUNDOS = 2.0          # tempo entre a 1ª e a última sample vista
+# Enquanto a barra anda pela estimativa, o estado vai para a tela a cada INTERVALO_TIQUE segundos
+INTERVALO_TIQUE = 0.25
 
 ETAPAS_PREPARACAO = [
     ("estudio", "Abrir o estúdio base"),
@@ -599,8 +618,10 @@ TEXTOS_ETAPA_ATUAL = {
     "cameras": "Posicionando as câmeras...",
 }
 
-_RE_PTM = re.compile(r"^PTM_(ETAPA|PLANO|CAMERA_FIM|CAMERA|FIM)\b\s*(.*)$")
+_RE_PTM = re.compile(r"^PTM_(ETAPA|PLANO|CAMERA_FIM|CAMERA|FIM|SAMPLES|PASSADAS|PASSADA|RENDER_INICIO|RENDER_POS|RENDER_FIM)\b\s*(.*)$")
 _RE_SAMPLE = re.compile(r"\bSample (\d+)\s*/\s*(\d+)")
+_RE_RESTANTE = re.compile(r"Remaining:\s*(?:(\d+):)?(\d+):(\d+(?:\.\d+)?)")
+_RE_FREESTYLE = re.compile(r"\bFreestyle\b")
 _RE_RENDERED = re.compile(r"\bRendered (\d+)\s*/\s*(\d+) samples", re.IGNORECASE)
 _RE_TILE = re.compile(r"\bTile (\d+)\s*/\s*(\d+)|\b(\d+)\s*/\s*(\d+) Tiles", re.IGNORECASE)
 _RE_FRACAO = re.compile(r"^(\d+)\s*/\s*(\d+)\s*(.*)$")
@@ -634,13 +655,34 @@ def formatar_duracao(segundos):
     return f"{s // 3600} h {(s % 3600) // 60:02d} min"
 
 
+def segundos_restante(texto):
+    """Segundos do 'Remaining: 00:22.76' (ou '1:02:03.50') do Cycles, ou None."""
+    m = _RE_RESTANTE.search(texto or "")
+    if not m:
+        return None
+    return int(m.group(1) or 0) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
+
+
+def _curva_estimada(x):
+    """Fração da passada estimada pelo tempo (x = tempo passado / tempo estimado): reta até
+    LINEAR_ATE e depois freia, sem passar de TETO_ESTIMADO (o fim só com a sample real)."""
+    import math
+    x = max(0.0, x)
+    if x <= LINEAR_ATE:
+        return x
+    folga = TETO_ESTIMADO - LINEAR_ATE
+    return LINEAR_ATE + folga * (1.0 - math.exp(-(x - LINEAR_ATE) / folga))
+
+
 class ProgressoRender:
     """Progresso real de uma execução do Blender, a partir das linhas da saída dele.
 
     Etapas: preparação (estúdio, SVG, materiais, montagem, câmeras), uma etapa por câmera e a
     finalização. Cada etapa tem estado 'pendente', 'andamento', 'concluida', 'pulada' ou 'erro'.
-    A porcentagem é composta (pesos acima), nunca diminui e fica no máximo em 99% até
-    concluir(True). Sem informação nova do Blender, 'trabalhando' fica True e a barra não anda.
+    A porcentagem é composta (pesos proporcionais aos tempos SEG_*), nunca diminui e fica no
+    máximo em 99% até concluir(True). Nas passadas do Cycles, entre uma sample real e a próxima, a
+    barra anda pelo tempo estimado da passada (estimando() = True); sem estimativa e sem
+    informação nova do Blender, 'trabalhando' fica True e a barra não anda.
     """
 
     def __init__(self, render_auto=True, samples=128, cameras=None, relogio=None):
@@ -649,6 +691,9 @@ class ProgressoRender:
         self.inicio = self._relogio()
         self.render_auto = render_auto
         self.samples = int(samples or 0)
+        self.freestyle = None          # PTM_PASSADAS diz se há a passada do Freestyle (None: não disse)
+        self._ptm_samples = False      # o motor manda PTM_SAMPLES: os PTM_STATS repetidos são ignorados
+        self._hist = {"principal": [], "freestyle": []}   # duração de cada passada nas câmeras feitas
         self.etapas = []
         for id_e, titulo in ETAPAS_PREPARACAO:
             self.etapas.append(self._nova_etapa(id_e, titulo, "preparacao"))
@@ -663,9 +708,19 @@ class ProgressoRender:
     # ---------------------------------------------------------------- estrutura
     @staticmethod
     def _nova_etapa(id_e, titulo, grupo, nome_cam=None):
+        # s/m/t_s1/s1/t_su/su: samples da passada principal; passadas: {nome: dados da passada}
+        # (veja _nova_passada); t_ultima: hora da última sample real (de qualquer passada)
         return {"id": id_e, "titulo": titulo, "grupo": grupo, "estado": "pendente", "camera": nome_cam,
                 "fase": None, "s": 0, "m": 0, "frac": 0.0, "t_ini": None, "t_fim": None,
-                "t_s1": None, "s1": None, "t_su": None, "su": None}
+                "t_s1": None, "s1": None, "t_su": None, "su": None,
+                "passada": None, "passadas": {}, "t_ultima": None}
+
+    @staticmethod
+    def _nova_passada(agora):
+        # t0: 1ª sample (0/M); t_ref/frac_ref: última sample real; t_rit/frac_rit: 1ª sample para o
+        # ritmo; est: segundos de t_ref até o fim da passada (None sem estimativa); t_fim: fim real
+        return {"s": 0, "m": 0, "frac": 0.0, "t0": agora, "t_ref": agora, "frac_ref": 0.0,
+                "t_rit": None, "frac_rit": None, "s_rit": None, "est": None, "t_fim": None}
 
     def _definir_cameras(self, nomes):
         antigas = {e["camera"]: e for e in self.etapas if e["grupo"] == "camera"}
@@ -684,14 +739,30 @@ class ProgressoRender:
     def _cameras(self):
         return [e for e in self.etapas if e["grupo"] == "camera"]
 
+    def _segundos_partes_camera(self):
+        """Tempo esperado de cada parte de uma câmera (SEG_*), pelas samples e pelo Freestyle."""
+        s = self.samples or 64
+        return {"preparo": SEG_CAMERA_PREPARO, "principal": SEG_POR_SAMPLE * s,
+                "freestyle": SEG_POR_SAMPLE_FREESTYLE * s if self.freestyle else 0.0,
+                "gravar": SEG_CAMERA_GRAVAR}
+
+    def sub_pesos(self):
+        """Fração de cada parte dentro de uma câmera (soma 1): preparo, principal, freestyle, gravar."""
+        partes = self._segundos_partes_camera()
+        total = sum(partes.values())
+        return {k: v / total for k, v in partes.items()}
+
+    def pesos_globais(self):
+        """(preparação, render das câmeras, finalização), somando 1, proporcionais aos tempos."""
+        n = len(self._cameras())
+        t_cams = n * sum(self._segundos_partes_camera().values())
+        total = SEG_PREPARACAO + t_cams + SEG_FINAL
+        return SEG_PREPARACAO / total, t_cams / total, SEG_FINAL / total
+
     def _pesos(self):
         cams = self._cameras()
         prep = [e for e in self.etapas if e["grupo"] == "preparacao"]
-        if cams:
-            p_prep, p_render, p_final = PESO_PREPARACAO, PESO_RENDER, PESO_FINAL
-        else:
-            total = PESO_PREPARACAO + PESO_FINAL
-            p_prep, p_render, p_final = PESO_PREPARACAO / total, 0.0, PESO_FINAL / total
+        p_prep, p_render, p_final = self.pesos_globais()
         pesos = {}
         for e in prep:
             pesos[id(e)] = p_prep / len(prep)
@@ -799,10 +870,139 @@ class ProgressoRender:
             final = next(e for e in self.etapas if e["grupo"] == "final")
             self._ativar(final)
             return True
-        return False
+        if tipo == "PASSADAS":
+            # "PTM_PASSADAS principal,freestyle": as passadas de cada câmera (antes da 1ª câmera)
+            self.freestyle = "freestyle" in [p.strip() for p in resto.split(",")]
+            return True
+        atual = self._atual()
+        if not atual or atual["grupo"] != "camera":
+            return False
+        if tipo == "PASSADA":
+            # "PTM_PASSADA freestyle": o Cycles passou para a passada do Freestyle (contornos)
+            return self._mudar_passada(atual, (resto.split() or ["principal"])[0])
+        if tipo == "SAMPLES":
+            # "PTM_SAMPLES <s> <m> <passada> [<restante em s>]" (handler render_stats do motor)
+            partes = resto.split()
+            try:
+                s, m = int(partes[0]), int(partes[1])
+            except (IndexError, ValueError):
+                return False
+            nome = partes[2] if len(partes) > 2 else (atual["passada"] or "principal")
+            try:
+                restante = float(partes[3]) if len(partes) > 3 else None
+            except ValueError:
+                restante = None
+            self._ptm_samples = True
+            if m <= 0:
+                return False
+            return self._amostra(atual, nome, s, m, min(1.0, s / m), restante)
+        return False        # RENDER_INICIO / RENDER_POS / RENDER_FIM: só para o log
+
+    def _mudar_passada(self, e, nome):
+        if nome not in ("principal", "freestyle") or e["passada"] == nome:
+            return False
+        if nome == "freestyle" and self.freestyle is None:
+            self.freestyle = True       # o motor antigo não manda PTM_PASSADAS: aprende com a 1ª câmera
+        e["passada"] = nome
+        e["fase"] = "freestyle" if nome == "freestyle" else "samples"
+        return True
+
+    def _amostra(self, e, nome, s, m, frac, restante):
+        """Uma sample real ('Sample s/m', com o 'Remaining' do Cycles, se veio) da passada 'nome'."""
+        agora = self._relogio()
+        principal = e["passadas"].get("principal")
+        if (nome == "principal" and principal is not None and principal["t_fim"] is not None
+                and frac < 1.0 and self.freestyle is not False):
+            nome = "freestyle"          # samples recomeçando depois do fim da principal: é o Freestyle
+        if nome != e["passada"]:
+            self._mudar_passada(e, nome)
+        p = e["passadas"].get(nome)
+        if p is None:
+            p = e["passadas"][nome] = self._nova_passada(agora)
+        if p["t_fim"] is not None or frac < p["frac"] or (frac == p["frac"] and p["t_rit"] is not None):
+            return False            # sample velha ou repetida: não reinicia a estimativa
+        p["s"], p["m"], p["frac"] = s, m, frac
+        p["t_ref"], p["frac_ref"] = agora, frac
+        if p["t_rit"] is None:
+            p["t_rit"], p["frac_rit"], p["s_rit"] = agora, frac, s
+        e["t_ultima"] = agora
+        e["fase"] = "freestyle" if nome == "freestyle" else "samples"
+        if nome == "principal":
+            e["frac"] = frac
+            e["s"], e["m"] = s, m
+            if e["t_s1"] is None:
+                e["t_s1"], e["s1"] = agora, s
+            e["t_su"], e["su"] = agora, s
+        if frac >= 1.0:
+            p["t_fim"] = agora
+            p["est"] = 0.0
+            self._hist[nome].append(agora - p["t0"])
+        else:
+            p["est"] = self._estimar(e, nome, p, restante)
+        return True
+
+    def _estimar(self, e, nome, p, restante_cycles):
+        """Segundos da última sample real (t_ref) até o fim da passada, ou None sem base para estimar.
+        Na ordem: o ritmo medido nesta passada; a mesma passada na câmera anterior; para o
+        Freestyle, a proporção da passada principal desta câmera; o 'Remaining' do Cycles corrigido."""
+        falta = 1.0 - p["frac"]
+        if falta <= 0:
+            return 0.0
+        if (p["s_rit"] is not None and p["s"] - p["s_rit"] >= ETA_MIN_SAMPLES
+                and p["t_ref"] - p["t_rit"] >= ETA_MIN_SEGUNDOS and p["frac"] > p["frac_rit"]):
+            return (p["t_ref"] - p["t_rit"]) / (p["frac"] - p["frac_rit"]) * falta
+        hist = self._hist.get(nome)
+        if hist:
+            return max(hist[-1] - (p["t_ref"] - p["t0"]), 0.1 * hist[-1] * falta)
+        principal = e["passadas"].get("principal")
+        if nome == "freestyle" and principal is not None and principal["t_fim"] is not None:
+            return FREESTYLE_SOBRE_PRINCIPAL * (principal["t_fim"] - principal["t0"]) * falta
+        if restante_cycles is not None:
+            return restante_cycles * CORRECAO_RESTANTE_CYCLES.get(nome, 1.0)
+        return None
+
+    def _frac_passada(self, p, agora):
+        """Fração da passada: a real ou, com estimativa, a do tempo (nunca o fim sem a sample real)."""
+        if p["t_fim"] is not None or p["frac"] >= 1.0:
+            return 1.0
+        if not p["est"]:
+            return p["frac"]
+        estimada = p["frac_ref"] + (1.0 - p["frac_ref"]) * _curva_estimada((agora - p["t_ref"]) / p["est"])
+        return max(p["frac"], min(estimada, TETO_ESTIMADO))
+
+    def _frac_camera(self, e, agora):
+        """Fração da câmera (0 a 1) pelas partes: preparo, passadas e gravação."""
+        if e["estado"] in ("concluida", "pulada"):
+            return 1.0
+        principal = e["passadas"].get("principal")
+        if principal is None:
+            return 0.0              # preparando (kernels, BVH): conta quando a 1ª sample chega
+        w = self.sub_pesos()
+        f = w["preparo"] + w["principal"] * self._frac_passada(principal, agora)
+        freestyle = e["passadas"].get("freestyle")
+        if freestyle is not None:
+            f += w["freestyle"] * self._frac_passada(freestyle, agora)
+        return min(f, 1.0 - w["gravar"])     # a gravação só conta no PTM_CAMERA_FIM
+
+    def estimando(self):
+        """True quando a barra anda pela estimativa de tempo (a tela precisa de atualização periódica)."""
+        if self.concluido:
+            return False
+        atual = self._atual()
+        if not atual or atual["grupo"] != "camera":
+            return False
+        p = atual["passadas"].get(atual["passada"] or "principal")
+        return bool(p and p["est"] and p["t_fim"] is None)
 
     def _linha_cycles(self, e, texto):
+        """Reserva: linhas soltas do Cycles ('... | Sample 37/64', Blender ≤ 5.2) e os PTM_STATS do
+        motor anterior (sem PTM_SAMPLES)."""
         mudou = False
+        stats = texto.startswith("PTM_STATS")
+        if stats and self._ptm_samples:
+            return False                # o mesmo texto já veio como PTM_SAMPLES/PTM_PASSADA
+        if stats and _RE_FREESTYLE.search(texto) and e["passada"] != "freestyle":
+            mudou = self._mudar_passada(e, "freestyle") or mudou
         ms = _RE_SAMPLE.search(texto) or _RE_RENDERED.search(texto)
         if ms:
             s, m = int(ms.group(1)), int(ms.group(2))
@@ -817,17 +1017,11 @@ class ProgressoRender:
                         feitos, tn = int(mt.group(3)), int(mt.group(4))
                     if tn > 1 and 0 <= feitos <= tn:
                         frac = min(1.0, (feitos + frac) / tn)
-                agora = self._relogio()
-                if frac >= e["frac"]:
-                    e["frac"] = frac
-                    e["s"], e["m"] = s, m
-                    if e["t_s1"] is None:
-                        e["t_s1"], e["s1"] = agora, s
-                    e["t_su"], e["su"] = agora, s
-                    e["fase"] = "samples"
-                    mudou = True
+                nome = e["passada"] or "principal"
+                mudou = self._amostra(e, nome, s, m, frac, segundos_restante(texto)) or mudou
         # "Denoising" depois das samples (antes delas pode aparecer "Loading denoising kernels")
-        if re.search(r"\bdenois", texto, re.IGNORECASE) and e["fase"] == "samples":
+        if re.search(r"\bdenois", texto, re.IGNORECASE) and e["fase"] in ("samples", "freestyle") \
+                and "Loading denoising" not in texto:
             e["fase"] = "denoise"
             mudou = True
         # "Saved: '...'" (Blender ≤ 4.x) ou "00:36.282  render  | Saved: '...'" (Blender 5.x)
@@ -860,12 +1054,19 @@ class ProgressoRender:
         if self.concluido and self.sucesso:
             return 100.0
         pesos = self._pesos()
+        agora = self._relogio()
         total = 0.0
         for e in self.etapas:
             if e["estado"] in ("concluida", "pulada"):
                 total += pesos[id(e)]
-            elif e["estado"] in ("andamento", "erro") and e["grupo"] == "camera":
-                total += pesos[id(e)] * FRACAO_SAMPLES_CAMERA * e["frac"]
+            elif e["estado"] == "andamento" and e["grupo"] == "camera":
+                total += pesos[id(e)] * self._frac_camera(e, agora)
+            elif e["estado"] == "erro" and e["grupo"] == "camera":
+                # com erro, a barra para no que foi confirmado (sem a parte estimada)
+                w = self.sub_pesos()
+                ps = e["passadas"]
+                f = (w["preparo"] if ps else 0.0) + sum(w[n] * ps[n]["frac"] for n in ps)
+                total += pesos[id(e)] * min(f, 1.0 - w["gravar"])
         pct = min(TETO_ANTES_DO_FIM, 100.0 * total)
         self._pct = max(self._pct, pct)
         return self._pct
@@ -875,7 +1076,16 @@ class ProgressoRender:
         if self.concluido:
             return False
         atual = self._atual()
-        return not (atual and atual["grupo"] == "camera" and atual["fase"] == "samples")
+        return not (atual and atual["grupo"] == "camera" and atual["fase"] in ("samples", "freestyle"))
+
+    def _samples_mostradas(self, e):
+        """(samples, total, estimado) da passada atual, para o texto."""
+        p = e["passadas"].get(e["passada"] or "principal")
+        if p is None or not p["m"]:
+            return e["s"], e["m"], False
+        frac = self._frac_passada(p, self._relogio())
+        s = max(p["s"], min(p["m"] - 1 if p["t_fim"] is None else p["m"], int(frac * p["m"])))
+        return s, p["m"], s > p["s"]
 
     def texto_atual(self):
         if self.concluido:
@@ -893,8 +1103,13 @@ class ProgressoRender:
         i, n = cams.index(atual) + 1, len(cams)
         base = f"Renderizando câmera {i} de {n} ({atual['camera']})"
         fase = atual["fase"]
-        if fase == "samples":
-            return f"{base} — {atual['s']}/{atual['m']} samples"
+        if fase in ("samples", "freestyle"):
+            # "~37/64": estimado pelo tempo (o Cycles só confirma algumas samples)
+            s, m, estimado = self._samples_mostradas(atual)
+            txt = f"{'~' if estimado else ''}{s}/{m} samples"
+            if fase == "freestyle":
+                return f"{base} — contornos (Freestyle), {txt}" if m else f"{base} — contornos (Freestyle)"
+            return f"{base} — {txt}"
         if fase == "denoise":
             return f"{base} — removendo ruído (denoise)"
         if fase == "gravando":
@@ -917,36 +1132,46 @@ class ProgressoRender:
         feitas = [e for e in cams if e["estado"] == "concluida" and e["t_ini"] is not None and e["t_fim"] is not None]
         # duração da última câmera feita (a 1ª costuma ser mais lenta: carrega os kernels do Cycles)
         dur_ultima = (feitas[-1]["t_fim"] - feitas[-1]["t_ini"]) if feitas else None
-        # segundos por sample: da câmera atual (se já tem dados) ou das câmeras já feitas
-        tps = None
-        if (atual["su"] is not None and atual["su"] - atual["s1"] >= ETA_MIN_SAMPLES
-                and atual["t_su"] - atual["t_s1"] >= ETA_MIN_SEGUNDOS):
-            tps = (atual["t_su"] - atual["t_s1"]) / (atual["su"] - atual["s1"])
-        else:
-            com_samples = [e for e in feitas if e["su"] is not None and e["su"] > e["s1"]]
-            if com_samples:
-                tps = (sum(e["t_su"] - e["t_s1"] for e in com_samples)
-                       / sum(e["su"] - e["s1"] for e in com_samples))
         # tempo depois da última sample (denoise + gravação), medido nas câmeras feitas
-        pos = [e["t_fim"] - e["t_su"] for e in feitas if e["t_su"] is not None]
-        pos_media = sum(pos) / len(pos) if pos else 0.0
+        pos = [e["t_fim"] - e["t_ultima"] for e in feitas if e["t_ultima"] is not None]
+        pos_media = sum(pos) / len(pos) if pos else SEG_CAMERA_GRAVAR
 
-        if atual["fase"] == "samples" and tps is not None:
-            resto_atual = max(0, atual["m"] - atual["s"]) * tps + pos_media
-        elif atual["fase"] in ("denoise", "gravando") and feitas and pos:
-            resto_atual = max(0.0, pos_media - (agora - atual["t_su"]))
-        elif dur_ultima is not None:
+        fase = atual["fase"]
+        nome = atual["passada"] or "principal"
+        p = atual["passadas"].get(nome)
+        principal = atual["passadas"].get("principal")
+        freestyle_previsto = bool(self.freestyle) or "freestyle" in atual["passadas"]
+        dur_freestyle = None            # duração prevista da passada do Freestyle inteira
+        if freestyle_previsto:
+            if self._hist["freestyle"]:
+                dur_freestyle = self._hist["freestyle"][-1]
+            elif principal is not None and principal["est"] is not None:
+                # proporção da principal: a estimada ou, se ela já passou disso, a que já durou
+                fim_principal = principal["t_fim"] if principal["t_fim"] is not None else max(
+                    principal["t_ref"] + principal["est"], agora)
+                dur_freestyle = FREESTYLE_SOBRE_PRINCIPAL * (fim_principal - principal["t0"])
+        resto_atual = None
+        if fase in ("samples", "freestyle") and p is not None and p["est"] is not None:
+            # passou do tempo estimado sem a sample final: ainda falta um pouco (10% do atraso)
+            falta = p["t_ref"] + p["est"] - agora
+            resto_atual = (falta if falta >= 0 else -0.1 * falta) + pos_media
+            if nome == "principal" and freestyle_previsto:
+                resto_atual = None if dur_freestyle is None else resto_atual + dur_freestyle
+        elif fase in ("denoise", "gravando") and atual["t_ultima"] is not None and (feitas or pos):
+            resto_atual = max(0.0, pos_media - (agora - atual["t_ultima"]))
+        if resto_atual is None and dur_ultima is not None:
             resto_atual = max(0.0, dur_ultima - (agora - atual["t_ini"]))
-        else:
+        if resto_atual is None:
             return None
 
         pendentes = sum(1 for e in cams if e["estado"] == "pendente")
         if pendentes:
-            # preparo antes da 1ª sample (shaders/BVH), medido na câmera mais recente que já tem samples
-            com_s1 = [e for e in cams if e["t_s1"] is not None and e["t_ini"] is not None]
-            if tps is not None and com_s1:
-                pre = com_s1[-1]["t_s1"] - com_s1[-1]["t_ini"]
-                por_camera = pre + (atual["m"] or self.samples) * tps + pos_media
+            if principal is not None and principal["est"] is not None:
+                # a câmera atual inteira, estimada: preparo (medido; a 1ª câmera ainda carrega os
+                # kernels, as outras não) + principal + Freestyle + gravação
+                fim_principal = (principal["t_fim"] if principal["t_fim"] is not None
+                                 else principal["t_ref"] + principal["est"])
+                por_camera = (fim_principal - atual["t_ini"]) + (dur_freestyle or 0.0) + pos_media
             elif dur_ultima is not None:
                 por_camera = dur_ultima
             else:
@@ -979,7 +1204,14 @@ class ProgressoRender:
             extra = ""
             if e["grupo"] == "camera" and e["t_s1"] is not None:
                 extra = (f" (até a 1ª sample {e['t_s1'] - e['t_ini']:.1f} s; samples {e['s1']}→{e['su']}/{e['m']} "
-                         f"em {e['t_su'] - e['t_s1']:.1f} s; depois da última sample {fim - e['t_su']:.1f} s)")
+                         f"em {e['t_su'] - e['t_s1']:.1f} s")
+                fs = e["passadas"].get("freestyle")
+                if fs is not None:
+                    fim_fs = fs["t_fim"] if fs["t_fim"] is not None else fs["t_ref"]
+                    extra += f"; Freestyle {fs['s']}/{fs['m']} samples em {fim_fs - fs['t0']:.1f} s"
+                if e["t_ultima"] is not None:
+                    extra += f"; depois da última sample {fim - e['t_ultima']:.1f} s"
+                extra += ")"
             linhas.append(f"  {e['titulo']}: {e['estado']}, {fim - e['t_ini']:.1f} s{extra}")
         return linhas
 
@@ -1006,8 +1238,9 @@ def _gravar_log_render(comando, progresso, linhas_log, total_linhas, inicio_data
             f"Código de saída do Blender: {codigo}",
             f"Resultado: {'sucesso' if progresso.sucesso else 'falhou'}",
             f"Render automático: {render_auto}  ·  Samples: {samples}  ·  Câmeras: {', '.join(cams) or '-'}",
-            f"Pesos: preparação {PESO_PREPARACAO}, render {PESO_RENDER}, final {PESO_FINAL}, "
-            f"samples/câmera {FRACAO_SAMPLES_CAMERA}",
+            "Pesos: preparação {:.3f}, render {:.3f}, final {:.3f}".format(*progresso.pesos_globais())
+            + "  ·  câmera: " + ", ".join(f"{k} {v:.3f}" for k, v in progresso.sub_pesos().items())
+            + f"  ·  Freestyle: {progresso.freestyle}",
             "Comando: " + " ".join(f'"{c}"' for c in comando),
             "",
             "Tempo de cada etapa:",
@@ -1027,13 +1260,24 @@ def opcoes_blender(comando, sistema=None, modulo=None):
     return registro_erros.opcoes_sem_janela(esconder="--background" in list(comando), sistema=sistema, modulo=modulo)
 
 
-def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None, relogio=None, pasta_logs=None):
+def ambiente_blender(base=None):
+    """Ambiente do Blender: o do app com PYTHONUNBUFFERED=1 (o print do Python sem buffer; o motor
+    também usa flush=True, que vale mesmo se o Blender ignorar as variáveis PYTHON*)."""
+    env = dict(os.environ if base is None else base)
+    env["PYTHONUNBUFFERED"] = "1"
+    return env
+
+
+def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None, relogio=None, pasta_logs=None,
+                     intervalo_tique=INTERVALO_TIQUE):
     """Roda o Blender e chama ao_evento(evento) para cada mudança da tela (veja
     interpretar_linha_blender) e ao_evento(('progresso', estado)) com o progresso real
     (ProgressoRender.estado), depois ao_evento(('concluido',)) se deu certo ou
     ao_evento(('concluido', False)) se o Blender terminou com erro. Se o Blender terminar com
     erro, grava o log de erro; se nem der para rodar, grava o log e chama ao_evento(('erro', mensagem)).
     Toda execução grava a saída do Blender, com o horário de cada linha, em logs/render-*.log.
+    Enquanto a barra anda pela estimativa de tempo (ProgressoRender.estimando), uma thread manda
+    o progresso a cada intervalo_tique segundos (None: sem essa thread).
     Roda na thread de quem chamou (as interfaces chamam numa thread separada)."""
     import time
     import datetime
@@ -1046,9 +1290,21 @@ def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None, 
     inicio_data = datetime.datetime.now()
     t0 = relogio()
     codigo = None
+    trava = threading.Lock()           # a leitura das linhas e o tique não se misturam
+    parar = threading.Event()
+
+    def tique():
+        while not parar.wait(intervalo_tique):
+            with trava:
+                if parar.is_set() or progresso.concluido:
+                    return
+                if progresso.estimando():
+                    ao_evento(("progresso", progresso.estado()))
     try:
         processo = popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8',
-                         errors='ignore', stdin=subprocess.DEVNULL, **opcoes_blender(comando))
+                         errors='ignore', stdin=subprocess.DEVNULL, env=ambiente_blender(), **opcoes_blender(comando))
+        if intervalo_tique:
+            threading.Thread(target=tique, name="progresso-tique", daemon=True).start()
         ultimas_linhas = collections.deque(maxlen=200)   # para o log de erro
         teve_traceback = False
         for linha in processo.stdout:
@@ -1058,17 +1314,20 @@ def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None, 
             linhas_log.append((relogio() - t0, linha.rstrip("\r\n")))
             if linha_limpa.startswith("Traceback (most recent call last)") or linha_limpa.startswith("Error: Python:"):
                 teve_traceback = True
-            evento = interpretar_linha_blender(linha_limpa)
-            if evento:
-                ao_evento(evento)
-            # a 1ª linha (o Blender respondeu) já manda a lista de etapas para a tela
-            if progresso.linha(linha_limpa) or total_linhas == 1:
-                ao_evento(("progresso", progresso.estado()))
+            with trava:
+                evento = interpretar_linha_blender(linha_limpa)
+                if evento:
+                    ao_evento(evento)
+                # a 1ª linha (o Blender respondeu) já manda a lista de etapas para a tela
+                if progresso.linha(linha_limpa) or total_linhas == 1:
+                    ao_evento(("progresso", progresso.estado()))
 
         processo.wait()
+        parar.set()
         codigo = processo.returncode
         falhou = processo.returncode != 0 or teve_traceback
-        progresso.concluir(not falhou)
+        with trava:
+            progresso.concluir(not falhou)
         _gravar_log_render(comando, progresso, linhas_log, total_linhas, inicio_data, codigo, pasta_logs)
         if falhou:
             registro_erros.gravar_log(
@@ -1078,8 +1337,10 @@ def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None, 
         ao_evento(("progresso", progresso.estado()))
         ao_evento(("concluido", False) if falhou else ("concluido",))
     except Exception as e:
+        parar.set()
         if total_linhas:
-            progresso.concluir(False)
+            with trava:
+                progresso.concluir(False)
             _gravar_log_render(comando, progresso, linhas_log, total_linhas, inicio_data, codigo, pasta_logs)
         registro_erros.gravar_log(origem, f"Não foi possível rodar o Blender: {e}",
                                   "Comando: " + " ".join(f'"{c}"' for c in comando) + "\n\n" + traceback.format_exc())

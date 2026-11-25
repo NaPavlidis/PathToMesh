@@ -61,10 +61,14 @@ COR_PADRAO_MDF_HEX = '#5c4033'
 #   PTM_CAMERA <i>/<n> <nome>               começo do render de uma câmera
 #   PTM_CAMERA_FIM <i>/<n> <nome>           imagem da câmera renderizada e gravada
 #   PTM_FIM                                 o script terminou (o Blender vai fechar)
-#   PTM_STATS <texto do Cycles>             progresso do render (handler render_stats), por exemplo
-#                                           "Fra:1 ... | Sample 37/64"
-# As samples de cada câmera vêm do próprio Cycles: das linhas PTM_STATS ou, em versões do Blender
-# que ainda as imprimem, das linhas "... | Sample 37/64".
+#   PTM_PASSADAS principal[,freestyle]      passadas de cada câmera (o Freestyle renderiza de novo)
+#   PTM_RENDER_INICIO / _POS / _FIM         handlers render_init / render_post / render_complete (log)
+#   PTM_PASSADA freestyle                   o Cycles passou para a passada do Freestyle
+#   PTM_SAMPLES <s> <m> <passada> [<seg>]   samples atuais e totais (handler render_stats) e o
+#                                           "Remaining" do Cycles em segundos, se veio
+#   PTM_STATS <texto do Cycles>             o texto do render_stats como chegou (diagnóstico)
+# Os logs reais (Blender 5.3) mostram que o render_stats só chega com as samples 0, 1 e a última
+# de cada passada; o app estima o meio pelo tempo (nucleo.ProgressoRender).
 ETAPAS_MOTOR = ["estudio", "svg", "materiais", "montagem", "cameras", "render", "final"]
 
 
@@ -1009,42 +1013,104 @@ def renderizar_cena(cameras_nomes, pasta_saida_renders, cycles_samples):
     cameras_validas = [(nome, bpy.data.objects.get(nome)) for nome in cameras_nomes if bpy.data.objects.get(nome)]
     n_cams = len(cameras_validas)
     print(f"PTM_PLANO {total_samples} {n_cams} {','.join(nome for nome, _ in cameras_validas)}", flush=True)
+    print(f"PTM_PASSADAS {'principal,freestyle' if _freestyle_ligado(scene) else 'principal'}", flush=True)
 
     # O Blender 5.3 em --background não imprime mais as linhas "Fra:... | Sample N/M" (e o que ele
-    # imprime pelo C chega atrasado, em bloco). O handler render_stats recebe esse mesmo texto do
-    # Cycles durante o render; ele sai como "PTM_STATS <texto>", com flush, para a barra do app.
-    handlers_stats = getattr(bpy.app.handlers, "render_stats", None)
-    if handlers_stats is not None and _ptm_render_stats not in handlers_stats:
-        handlers_stats.append(_ptm_render_stats)
+    # imprime pelo C chega atrasado, em bloco). Os handlers do render (render_init, render_stats,
+    # render_complete) imprimem os marcadores PTM_* com flush, sem depender da saída do Cycles.
+    registrados = []
+    for nome_handler, funcao in _HANDLERS_RENDER:
+        lista = getattr(bpy.app.handlers, nome_handler, None)
+        if lista is not None and funcao not in lista:
+            lista.append(funcao)
+            registrados.append((lista, funcao))
     try:
         for idx_cam, (nome_cam, cam) in enumerate(cameras_validas):
             scene.camera = cam
             scene.render.filepath = os.path.join(pasta_dest, f"{nome_cam}.png")
+            _estado_render.update(passada="principal", ultimo=None)
             print(f"PTM_CAMERA {idx_cam + 1}/{n_cams} {nome_cam}", flush=True)
             print(f">>> Renderizando câmera: {nome_cam} via Cycles...", flush=True)
-            # O progresso das samples é o que o próprio Cycles informa ("Sample N/M"); nada é simulado.
+            # As samples são as que o próprio Cycles informa ao render_stats; nada é simulado aqui.
             bpy.ops.render.render(write_still=True)
             print(f"PTM_CAMERA_FIM {idx_cam + 1}/{n_cams} {nome_cam}", flush=True)
     finally:
-        if handlers_stats is not None and _ptm_render_stats in handlers_stats:
-            handlers_stats.remove(_ptm_render_stats)
+        for lista, funcao in registrados:
+            if funcao in lista:
+                lista.remove(funcao)
 
     print(f"Renders salvos em: {pasta_dest}", flush=True)
 
 
-_ultimo_stats = [None]
+def _freestyle_ligado(scene):
+    """O Freestyle (contornos) faz o Cycles renderizar cada câmera numa 2ª passada."""
+    try:
+        if not getattr(scene.render, "use_freestyle", False):
+            return False
+        camadas = list(getattr(scene, "view_layers", []) or [])
+        return not camadas or any(getattr(c, "use_freestyle", True) for c in camadas)
+    except Exception:
+        return False
+
+
+# passada atual da câmera ('principal' ou 'freestyle') e o último texto do render_stats
+_estado_render = {"passada": "principal", "ultimo": None}
+_RE_SAMPLE_STATS = re.compile(r"\bSample (\d+)\s*/\s*(\d+)")
+_RE_RESTANTE_STATS = re.compile(r"Remaining:\s*(?:(\d+):)?(\d+):(\d+(?:\.\d+)?)")
+
+
+def _ptm_render_init(*args):
+    """Handler render_init: começo do render de uma câmera."""
+    try:
+        _estado_render.update(passada="principal", ultimo=None)
+        print("PTM_RENDER_INICIO", flush=True)
+    except Exception:
+        pass
+
+
+def _ptm_render_post(*args):
+    """Handler render_post: fim do render do quadro (para o log)."""
+    try:
+        print("PTM_RENDER_POS", flush=True)
+    except Exception:
+        pass
+
+
+def _ptm_render_complete(*args):
+    """Handler render_complete: o render da câmera terminou (a imagem já foi gravada)."""
+    try:
+        print("PTM_RENDER_FIM", flush=True)
+    except Exception:
+        pass
 
 
 def _ptm_render_stats(*args):
-    """Handler render_stats: repassa o texto de progresso do Cycles (sem repetir o mesmo texto)."""
+    """Handler render_stats: as samples do Cycles viram PTM_SAMPLES (atuais, totais, passada e o
+    'Remaining' em segundos); o texto vai também como PTM_STATS (sem repetir o mesmo texto)."""
     try:
         texto = next((a for a in args if isinstance(a, str)), "")
         texto = " ".join(texto.split())
-        if texto and texto != _ultimo_stats[0]:
-            _ultimo_stats[0] = texto
-            print(f"PTM_STATS {texto}", flush=True)
+        if not texto or texto == _estado_render["ultimo"]:
+            return
+        _estado_render["ultimo"] = texto
+        if "Freestyle" in texto and _estado_render["passada"] != "freestyle":
+            _estado_render["passada"] = "freestyle"
+            print("PTM_PASSADA freestyle", flush=True)
+        m = _RE_SAMPLE_STATS.search(texto)
+        if m:
+            linha = f"PTM_SAMPLES {int(m.group(1))} {int(m.group(2))} {_estado_render['passada']}"
+            r = _RE_RESTANTE_STATS.search(texto)
+            if r:
+                seg = int(r.group(1) or 0) * 3600 + int(r.group(2)) * 60 + float(r.group(3))
+                linha += f" {seg:.2f}"
+            print(linha, flush=True)
+        print(f"PTM_STATS {texto}", flush=True)
     except Exception:
         pass
+
+
+_HANDLERS_RENDER = [("render_init", _ptm_render_init), ("render_stats", _ptm_render_stats),
+                    ("render_post", _ptm_render_post), ("render_complete", _ptm_render_complete)]
 
 # ==============================================================================
 # 4. FUNÇÃO PRINCIPAL (ORQUESTRADOR)

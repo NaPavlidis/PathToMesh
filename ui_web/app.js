@@ -275,9 +275,10 @@
   }
 
   // ------------------------------------------------------------------ Processing (eventos do Blender)
-  // A barra mostra o progresso real calculado no Python (nucleo.ProgressoRender): nunca volta,
-  // só chega a 100% quando o Blender termina com sucesso e, enquanto o Blender não manda
-  // informação, fica no modo "trabalhando" (faixa que vai e volta) sem inventar progresso.
+  // A barra mostra o progresso calculado no Python (nucleo.ProgressoRender): nunca volta, só
+  // chega a 100% quando o Blender termina com sucesso; nas samples, entre as que o Cycles
+  // confirma, anda pelo tempo estimado da passada (o Python manda o estado a cada 0,25 s) e,
+  // sem estimativa nem informação do Blender, fica no modo "trabalhando" (faixa que vai e volta).
   // avanco: hora em que a porcentagem subiu pela última vez; ocupado: o Blender trabalha sem
   // progresso medido (preparação, shaders/BVH, denoise, gravação); fim: concluiu ou deu erro
   var prog = { real: false, base: null, recebido: 0, relogio: null, inicio: 0, pct: 0, avanco: 0, ocupado: true, fim: false };
