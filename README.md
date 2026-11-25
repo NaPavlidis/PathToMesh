@@ -16,7 +16,7 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 | `nucleo.py` | A lógica do app, sem interface: análise do SVG e das cores (`MAPA_MATERIAIS`), configuração (`config.local.json`), mapa do catálogo e a chamada do Blender com o progresso. Usada pelas duas interfaces |
 | `app_ui.py` | Interface Tkinter do app (a de reserva): escolhe o catálogo, a cena `.blend` e os modelos, e chama o Blender (pelo `nucleo.py`). Usa o `TEMA`/`ESPACO` do `tema_janela.py` e as fontes de `FONTES`, aplicados por `aplicar_estilo` |
 | `tema_janela.py` | Visual compartilhado pelo app e pelo launcher: a paleta `TEMA` e os espaços `ESPACO` (tirados do `docs/modelo-layout.html`), a escolha das fontes, os ícones das janelas, o logo do cabeçalho (que muda com a largura da janela) e a barra de título do Windows pintada nas cores do tema (DWM; no Windows 10 fica só o modo escuro) |
-| `assets/icones/` | Ícones e logos: `3` é o ícone principal (janelas, atalhos e instalador); `1` é o logo do cabeçalho do app e do launcher, trocado pelo `2` quando a janela fica larga (veja o `README.md` da pasta) |
+| `assets/icones/` | Ícones e logos: `PathToMash-icon` é o ícone principal (janelas, atalhos e instalador); `1` é o logo do cabeçalho do app e do launcher, trocado pelo `2` quando a janela fica larga (veja o `README.md` da pasta) |
 | `docs/modelo-layout.html` | Modelo de layout (HTML) que serviu de referência para o visual |
 | `blender_engine.py` | Roda dentro do Blender (`bpy`): importa o SVG, aplica materiais e extrusão, configura câmeras e renderiza |
 | `mapear_catalogo.py` | Mapeia o catálogo (`CATALOGO/<MODALIDADE>/<MODELO>/SVG/*.svg`) e mostra quais modelos estão prontos |

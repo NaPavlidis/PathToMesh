@@ -6,7 +6,7 @@
 - O Blender roda numa thread; as etapas e o progresso chegam ao JavaScript por evaluate_js, por
   uma fila com thread própria (a leitura da saída do Blender nunca espera a tela).
 - Diálogos de arquivo e pasta: os nativos do Windows (window.create_file_dialog).
-- Ícone 3 e barra de título nas cores do tema pelo HWND da janela (tema_janela.preparar_hwnd).
+- Ícone principal (PathToMash-icon.ico) e barra de título nas cores do tema pelo HWND da janela (tema_janela.preparar_hwnd).
 
 O pywebview só é importado dentro de iniciar() e dos diálogos: a Api pode ser usada (e testada)
 direto do Python, sem janela.

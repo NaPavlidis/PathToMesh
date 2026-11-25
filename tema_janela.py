@@ -17,12 +17,14 @@ NOME_APP = "PathToMesh"
 PASTA_ICONES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "icones")
 
 # Função de cada imagem de assets/icones (veja assets/icones/README.md)
-# Ícone 3 = ícone principal: todas as janelas (app, launcher, configurações, mensagens), os atalhos
-# e o instalador (o instalar.ps1 usa o 3.ico).
+# PathToMash-icon = ícone principal: todas as janelas (app, launcher, configurações, mensagens),
+# os atalhos e o instalador (o instalar.ps1 usa o PathToMash-icon.ico). O PathToMash-icon.png é o
+# mesmo desenho (256 px, tirado do .ico), reserva para o iconphoto quando o .ico não pode ser lido.
+ICONE_PRINCIPAL = "PathToMash-icon"
 ICONES = {
-    "app": "3",
-    "launcher": "3",
-    "atalho": "3",
+    "app": ICONE_PRINCIPAL,
+    "launcher": ICONE_PRINCIPAL,
+    "atalho": ICONE_PRINCIPAL,
 }
 # Logo do canto esquerdo do cabeçalho (no lugar do nome digitado): o 1; com a janela larga, o 2.
 LOGOS = {"normal": "1", "largo": "2"}
