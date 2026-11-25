@@ -718,6 +718,8 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
             return
 
         self.lbl_status_processamento.configure(text=nucleo.STATUS_INICIAL)
+        self.lbl_samples_info.configure(text=nucleo.SAMPLES_INICIAL)
+        self.atualizar_barra_progresso(0)
         for widget in self.frame_historico.winfo_children():
             widget.destroy()
             
@@ -793,8 +795,11 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
             self.after(0, lambda c=evento[1], n=evento[2]: self.adicionar_passo_concluido(c, n))
         elif tipo == "amostras":
             self.after(0, lambda e=evento: self.atualizar_amostras_camera_ui(*e[1:]))
+        elif tipo == "progresso":
+            self.after(0, lambda d=evento[1]: self.atualizar_progresso_real(d))
         elif tipo == "concluido":
-            self.after(0, lambda: self.tag_concluido())
+            sucesso = not (len(evento) > 1 and evento[1] is False)
+            self.after(0, lambda s=sucesso: self.tag_concluido(s))
         elif tipo == "erro":
             messagebox.showerror("Erro Crítico", evento[1])
 
@@ -811,10 +816,20 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
         lbl_hist.pack(fill="x", pady=2)
         self.lbl_status_processamento.configure(text=novo_status)
 
-    def tag_concluido(self):
+    def atualizar_progresso_real(self, estado):
+        # Progresso real (nucleo.ProgressoRender): etapa atual, tempos e a barra composta
+        self.lbl_status_processamento.configure(text=estado["atual"])
+        self.lbl_samples_info.configure(text=nucleo.texto_tempos(estado))
+        self.atualizar_barra_progresso(estado["porcentagem"])
+
+    def tag_concluido(self, sucesso=True):
         self.lbl_status_processamento.configure(text=nucleo.STATUS_CONCLUIDO)
-        self.atualizar_barra_progresso(100)
-        self.lbl_samples_info.configure(text=nucleo.SAMPLES_CONCLUIDO)
+        if sucesso:
+            self.atualizar_barra_progresso(100)
+            self.lbl_samples_info.configure(text=nucleo.SAMPLES_CONCLUIDO)
+        else:
+            # o Blender terminou com erro: a barra fica onde parou (não finge 100%)
+            self.lbl_samples_info.configure(text=nucleo.SAMPLES_COM_ERRO)
         self._show_screen("download")
 
     def _build_processing_screen(self):

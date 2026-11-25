@@ -71,7 +71,17 @@ def evento_para_js(evento):
         atual, total, faltam, porcentagem, nome_cam = evento[1:]
         status, linha = nucleo.textos_amostras(atual, total, faltam, nome_cam)
         return {"tipo": "amostras", "status": status, "samples": linha, "porcentagem": porcentagem}
+    if tipo == "progresso":
+        # progresso real (nucleo.ProgressoRender): barra composta, etapas, etapa atual e tempos
+        dados = dict(evento[1])
+        dados["tipo"] = "progresso"
+        dados["tempos"] = nucleo.texto_tempos(dados)
+        return dados
     if tipo == "concluido":
+        if len(evento) > 1 and evento[1] is False:
+            # o Blender terminou com erro: a tela segue como antes, mas a barra não vai a 100%
+            return {"tipo": "concluido", "status": nucleo.STATUS_CONCLUIDO, "samples": nucleo.SAMPLES_COM_ERRO,
+                    "porcentagem": None, "sucesso": False}
         return {"tipo": "concluido", "status": nucleo.STATUS_CONCLUIDO, "samples": nucleo.SAMPLES_CONCLUIDO,
                 "porcentagem": 100}
     if tipo == "erro":

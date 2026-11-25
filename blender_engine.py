@@ -6,8 +6,6 @@ import mathutils  # type: ignore[reportMissingImports]
 import math 
 import sys
 import shutil
-import threading
-import time
 
 # ==============================================================================
 # 1. CONFIGURAÇÕES E REGRAS GERAIS
@@ -54,6 +52,22 @@ COR_PADRAO_MDF_HEX = '#5c4033'
 # ==============================================================================
 # 2. FUNÇÕES AUXILIARES
 # ==============================================================================
+
+# Marcadores de progresso lidos pelo app (nucleo.ProgressoRender). Uma linha por evento, sempre
+# no começo da linha e com flush, para chegar na hora:
+#   PTM_ETAPA <id> <i>/<n> <descrição>      começo de uma etapa (estudio, svg, materiais, montagem,
+#                                           cameras, render, final)
+#   PTM_PLANO <samples> <n> <câmeras,...>   o que vai ser renderizado
+#   PTM_CAMERA <i>/<n> <nome>               começo do render de uma câmera
+#   PTM_CAMERA_FIM <i>/<n> <nome>           imagem da câmera renderizada e gravada
+#   PTM_FIM                                 o script terminou (o Blender vai fechar)
+# As samples de cada câmera vêm das próprias linhas do Cycles ("... | Sample 37/64").
+ETAPAS_MOTOR = ["estudio", "svg", "materiais", "montagem", "cameras", "render", "final"]
+
+
+def marcar_etapa(id_etapa, descricao):
+    i = ETAPAS_MOTOR.index(id_etapa) + 1
+    print(f"PTM_ETAPA {id_etapa} {i}/{len(ETAPAS_MOTOR)} {descricao}", flush=True)
 
 def hex_para_rgba(hex_color, alpha=1.0):
     if not hex_color or not hex_color.startswith('#'): 
@@ -990,26 +1004,17 @@ def renderizar_cena(cameras_nomes, pasta_saida_renders, cycles_samples):
     scene.cycles.use_denoising = True
 
     cameras_validas = [(nome, bpy.data.objects.get(nome)) for nome in cameras_nomes if bpy.data.objects.get(nome)]
+    n_cams = len(cameras_validas)
+    print(f"PTM_PLANO {total_samples} {n_cams} {','.join(nome for nome, _ in cameras_validas)}", flush=True)
 
     for idx_cam, (nome_cam, cam) in enumerate(cameras_validas):
         scene.camera = cam
         scene.render.filepath = os.path.join(pasta_dest, f"{nome_cam}.png")
+        print(f"PTM_CAMERA {idx_cam + 1}/{n_cams} {nome_cam}", flush=True)
         print(f">>> Renderizando câmera: {nome_cam} via Cycles...", flush=True)
-        
-        parar_thread = threading.Event()
-        def atualizar_progresso_fluido():
-            atual = 0
-            while not parar_thread.is_set() and atual < max(1, total_samples - 2):
-                atual += 1
-                print(f"[SAMPLE_PROGRESS] {atual}/{total_samples}|CAM:{nome_cam}", flush=True)
-                time.sleep(0.08)
-
-        t_prog = threading.Thread(target=atualizar_progresso_fluido, daemon=True)
-        t_prog.start()
+        # O progresso das samples é o que o próprio Cycles imprime ("Sample N/M"); nada é simulado.
         bpy.ops.render.render(write_still=True)
-        parar_thread.set()
-        t_prog.join(timeout=0.5)
-        print(f"[SAMPLE_PROGRESS] {total_samples}/{total_samples}|CAM:{nome_cam}", flush=True)
+        print(f"PTM_CAMERA_FIM {idx_cam + 1}/{n_cams} {nome_cam}", flush=True)
 
     print(f"Renders salvos em: {pasta_dest}", flush=True)
 
@@ -1028,23 +1033,31 @@ def processar_svg_no_blender(
     caminho_modelo_resina="",
     cameras_para_renderizar=None
 ):
+    marcar_etapa("estudio", "Abrindo o estúdio base")
     carregar_estudio_e_hdri(caminho_blend)
+    marcar_etapa("svg", "Lendo e importando o SVG")
     caminho_temp, dados_extraidos, imagens_disponiveis = analisar_e_preparar_svg(caminho_svg)
     if not caminho_temp: return
-    
+
     objetos_importados = importar_e_converter_svg(caminho_temp)
     elementos_mapeados = mapear_e_ordenar_elementos(objetos_importados, dados_extraidos)
+    marcar_etapa("materiais", "Aplicando materiais, texturas e extrusões")
     suporte_dos_objetos = aplicar_materiais_e_empilhar(elementos_mapeados, imagens_disponiveis, usar_verniz,usar_textura)
+    marcar_etapa("montagem", "Montando o troféu (corpo, costas e resina)")
     pecas_corpo = erguer_corpo_principal_do_trofeu(elementos_mapeados, suporte_dos_objetos)
     processar_mdf_costas(elementos_mapeados, pecas_corpo, suporte_dos_objetos)
     processar_resina_3d(elementos_mapeados, suporte_dos_objetos, caminho_modelo_resina, objetos_importados)
 
+    marcar_etapa("cameras", "Posicionando as câmeras")
     cameras_filtradas = configurar_cameras(objetos_importados, cameras_para_renderizar)
 
     if renderizar and pasta_saida_renders and cameras_filtradas:
+        marcar_etapa("render", "Renderizando as câmeras")
         renderizar_cena(cameras_filtradas, pasta_saida_renders, cycles_samples)
     else:
         print(">>> Modo interativo ativo ou nenhuma câmera válida foi selecionada.", flush=True)
+    marcar_etapa("final", "Finalizando")
+    print("PTM_FIM", flush=True)
 
 if __name__ == "__main__":
     if "--" in sys.argv:

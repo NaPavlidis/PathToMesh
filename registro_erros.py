@@ -1,6 +1,8 @@
 """Registro de erros do PathToMesh (usado pelo app_ui.py e pelo launcher.py).
 
 - Grava cada erro em logs/erro-AAAAMMDD-HHMMSS.log, com a versão (commit), o sistema e o traceback.
+- Grava a saída do Blender de cada renderização (com o horário de cada linha) em
+  logs/render-AAAAMMDD-HHMMSS.log, para calibrar a barra de progresso; vai junto com os de erro.
 - Higieniza o texto antes de gravar: o repositório é público, então caminhos do PC viram
   <CAMINHO>/<nome-do-arquivo>, nomes de usuário viram <USUARIO> e valores do config.local.json
   (e do config.json) viram <CONFIG>.
@@ -234,8 +236,8 @@ def descricao_sistema():
             f"Python {platform.python_version()}")
 
 
-def _nome_livre(pasta_logs, agora):
-    base = "erro-" + agora.strftime("%Y%m%d-%H%M%S")
+def _nome_livre(pasta_logs, agora, prefixo="erro-"):
+    base = prefixo + agora.strftime("%Y%m%d-%H%M%S")
     nome = base + ".log"
     n = 2
     while os.path.exists(os.path.join(pasta_logs, nome)):
@@ -266,6 +268,35 @@ def gravar_log(origem, resumo, detalhes="", pasta=PASTA_PROJETO, pasta_logs=None
     try:
         os.makedirs(pasta_logs, exist_ok=True)
         caminho = os.path.join(pasta_logs, _nome_livre(pasta_logs, agora))
+        with open(caminho, "w", encoding="utf-8", newline="\n") as f:
+            f.write(texto)
+        return caminho
+    except OSError:
+        return None
+
+
+def gravar_log_render(detalhes, pasta=PASTA_PROJETO, pasta_logs=None, agora=None):
+    """Grava logs/render-AAAAMMDD-HHMMSS.log: a saída do Blender de uma renderização, com o
+    horário de cada linha, higienizada como os logs de erro. Vai para a branch 'logs' junto
+    com eles (para calibrar a barra de progresso com dados reais). Devolve o caminho ou None."""
+    pasta_logs = pasta_logs or os.path.join(pasta, "logs")
+    agora = agora or datetime.datetime.now()
+    try:
+        versao = texto_versao(versao_atual(pasta))
+    except Exception:
+        versao = "desconhecida"
+    texto = (
+        "PathToMesh - registro de renderização\n"
+        f"Data: {agora.strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"Versão: {versao}\n"
+        f"Sistema: {descricao_sistema()}\n"
+        "\n"
+        f"{detalhes}\n"
+    )
+    texto = higienizar(texto, pasta)
+    try:
+        os.makedirs(pasta_logs, exist_ok=True)
+        caminho = os.path.join(pasta_logs, _nome_livre(pasta_logs, agora, "render-"))
         with open(caminho, "w", encoding="utf-8", newline="\n") as f:
             f.write(texto)
         return caminho
@@ -312,7 +343,8 @@ def gancho_tk(origem, pasta=PASTA_PROJETO):
 
 def logs_locais(pasta_logs=PASTA_LOGS):
     try:
-        return sorted(n for n in os.listdir(pasta_logs) if n.startswith("erro-") and n.endswith(".log"))
+        return sorted(n for n in os.listdir(pasta_logs)
+                      if n.startswith(("erro-", "render-")) and n.endswith(".log"))
     except OSError:
         return []
 

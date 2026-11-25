@@ -77,9 +77,19 @@ A configuração que o app e o launcher usam fica em **`config.local.json`**, na
 - Antes de atualizar pelo git, o launcher (e o instalador) protegem a sua configuração: se o `config.json` antigo tiver mudanças suas, os valores vão para o `config.local.json` (se ele ainda não existir) ou, se o `config.local.json` já existir e o conteúdo for outro, para o `config.json.bak`. Depois a mudança local do `config.json` é descartada (`git checkout`) e só então é feito o `git pull`. Assim o `git pull` funciona também na atualização que tira o `config.json` do GitHub.
 - Na atualização pelo zip, o `config.local.json` (e um `config.json` antigo) nunca são sobrescritos.
 
+## Progresso da renderização
+
+A barra da tela **Processing** mostra o trabalho real do Blender:
+
+- O `blender_engine.py` imprime marcadores (`PTM_ETAPA <id> <i>/<n> <descrição>`, `PTM_PLANO`, `PTM_CAMERA <i>/<n> <nome>`, `PTM_CAMERA_FIM`, `PTM_FIM`). As samples de cada câmera vêm das próprias linhas do Cycles (`... | Sample 37/64`).
+- A barra é composta (pesos no `nucleo.py`): preparação 10%, render das câmeras 85% (dividido entre as câmeras, que usam as mesmas samples) e finalização 5%. Ela nunca volta e só chega a 100% quando o Blender termina com sucesso. Enquanto o Blender trabalha sem mandar informação (carregar os kernels, montar o BVH, denoise, gravar a imagem), a barra fica parada com listras, no modo "trabalhando".
+- A tela mostra a lista de etapas (concluída, em andamento ou pendente), a etapa atual (ex.: "Renderizando câmera 2 de 3 (Camera_Esquerda) — 37/64 samples"), o tempo decorrido e, quando já há dados suficientes, uma estimativa do tempo restante pelo ritmo real das câmeras. Na interface clássica (Tkinter) aparecem a etapa atual, os tempos e a barra.
+
 ## Logs de erro
 
 O app e o launcher gravam os erros (exceções, falhas do Blender e do pip) em `logs/erro-AAAAMMDD-HHMMSS.log`, com a versão (commit), o sistema e o traceback.
+
+A cada renderização, o app grava também `logs/render-AAAAMMDD-HHMMSS.log`: a saída do Blender com o horário de cada linha e o tempo de cada etapa. Ele é higienizado e enviado do mesmo jeito que os logs de erro e serve para ajustar os pesos da barra de progresso com dados reais.
 
 Como o repositório é público, os logs são higienizados antes de serem gravados: os caminhos do PC (`C:\...`, `F:\...`, a pasta do usuário) viram `<CAMINHO>/<nome-do-arquivo>`, o nome do usuário e do PC vira `<USUARIO>`, e os valores do `config.local.json` (e do `config.json` antigo, se ainda existir) viram `<CONFIG>`.
 

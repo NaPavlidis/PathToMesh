@@ -247,35 +247,115 @@
         return;
       }
       $('proc-status').textContent = r.status;
-      $('proc-historico').textContent = '';
+      $('proc-samples').textContent = r.samples;
+      iniciarProgresso();
       mostrarTela('processing');
     });
   }
 
   // ------------------------------------------------------------------ Processing (eventos do Blender)
+  // A barra mostra o progresso real calculado no Python (nucleo.ProgressoRender): nunca volta,
+  // só chega a 100% quando o Blender termina com sucesso e, enquanto o Blender não manda
+  // informação, fica no modo "trabalhando" (listras andando) sem inventar progresso.
+  var prog = { real: false, base: null, recebido: 0, relogio: null, inicio: 0, pct: 0 };
+  var ROTULO_ESTADO = { concluida: 'concluída', andamento: 'em andamento', pendente: 'pendente', pulada: 'pulada', erro: 'erro' };
+  var MARCA_ESTADO = { concluida: '✓', erro: '!' };
+
   function porcentagem(valor) {
-    $('proc-barra').style.width = Math.max(0, Math.min(100, valor)) + '%';
+    valor = Math.max(prog.pct, Math.max(0, Math.min(100, valor)));
+    prog.pct = valor;
+    $('proc-barra').style.width = valor + '%';
     $('proc-porcentagem').textContent = Math.floor(valor) + '%';
+    $('proc-trilho').setAttribute('aria-valuenow', String(Math.floor(valor)));
+  }
+
+  function duracao(segundos) {
+    var s = Math.max(0, Math.round(segundos));
+    function dois(n) { return (n < 10 ? '0' : '') + n; }
+    if (s < 60) return s + ' s';
+    if (s < 3600) return Math.floor(s / 60) + ' min ' + dois(s % 60) + ' s';
+    return Math.floor(s / 3600) + ' h ' + dois(Math.floor((s % 3600) / 60)) + ' min';
+  }
+
+  function mostrarTempos() {
+    var passou = (Date.now() - prog.recebido) / 1000;
+    var decorrido = prog.base ? prog.base.decorrido + passou : (Date.now() - prog.inicio) / 1000;
+    var txt = 'Decorrido: ' + duracao(decorrido);
+    if (prog.base && prog.base.restante !== null && prog.base.restante !== undefined) {
+      var falta = prog.base.restante - passou;
+      txt += '  ·  Restante: ' + (falta >= 1 ? '~' + duracao(falta) : 'quase lá');
+    }
+    $('proc-samples').textContent = txt;
+  }
+
+  function pararRelogio() {
+    if (prog.relogio) clearInterval(prog.relogio);
+    prog.relogio = null;
+  }
+
+  function iniciarProgresso() {
+    pararRelogio();
+    prog = { real: false, base: null, recebido: Date.now(), relogio: null, inicio: Date.now(), pct: 0 };
+    $('proc-barra').style.width = '0%';
+    $('proc-porcentagem').textContent = '0%';
+    $('proc-trilho').setAttribute('aria-valuenow', '0');
+    $('proc-trilho').classList.add('trabalhando');
+    $('proc-etapas').textContent = '';
+    prog.relogio = setInterval(function () { if (prog.real) mostrarTempos(); }, 1000);
+  }
+
+  function mostrarEtapas(etapas) {
+    var lista = $('proc-etapas');
+    lista.textContent = '';
+    etapas.forEach(function (e) {
+      var li = document.createElement('li');
+      li.className = 'body-md';
+      li.setAttribute('data-estado', e.estado);
+      var marca = document.createElement('span');
+      marca.className = 'marca';
+      marca.textContent = MARCA_ESTADO[e.estado] || '';
+      var titulo = document.createElement('span');
+      titulo.textContent = e.titulo;
+      var situacao = document.createElement('span');
+      situacao.className = 'situacao label-md suave';
+      situacao.textContent = ROTULO_ESTADO[e.estado] || e.estado;
+      li.appendChild(marca);
+      li.appendChild(titulo);
+      li.appendChild(situacao);
+      lista.appendChild(li);
+    });
+  }
+
+  function mostrarProgresso(d) {
+    prog.real = true;
+    prog.base = d;
+    prog.recebido = Date.now();
+    porcentagem(d.porcentagem);
+    $('proc-trilho').classList.toggle('trabalhando', !!d.trabalhando);
+    $('proc-status').textContent = d.atual;
+    mostrarEtapas(d.etapas || []);
+    mostrarTempos();
+    if (d.concluido) pararRelogio();
   }
 
   window.ptm = {
     evento: function (d) {
       try {
+        // com o progresso real chegando, os textos antigos (status/passo/amostras) não
+        // sobrescrevem a etapa atual
         if (d.tipo === 'status') {
-          $('proc-status').textContent = d.status;
+          if (!prog.real) $('proc-status').textContent = d.status;
         } else if (d.tipo === 'passo') {
-          var li = document.createElement('li');
-          li.className = 'body-md';
-          li.textContent = d.concluido;
-          $('proc-historico').appendChild(li);
-          $('proc-status').textContent = d.status;
+          if (!prog.real) $('proc-status').textContent = d.status;
         } else if (d.tipo === 'amostras') {
-          $('proc-status').textContent = d.status;
-          $('proc-samples').textContent = d.samples;
-          porcentagem(d.porcentagem);
+          if (!prog.real) $('proc-status').textContent = d.status;
+        } else if (d.tipo === 'progresso') {
+          mostrarProgresso(d);
         } else if (d.tipo === 'concluido') {
+          pararRelogio();
+          $('proc-trilho').classList.remove('trabalhando');
           $('proc-status').textContent = d.status;
-          porcentagem(d.porcentagem);
+          if (d.porcentagem !== null && d.porcentagem !== undefined) porcentagem(d.porcentagem);
           $('proc-samples').textContent = d.samples;
           mostrarTela('download');
         } else if (d.tipo === 'erro') {

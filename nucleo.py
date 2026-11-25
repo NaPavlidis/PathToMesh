@@ -533,12 +533,475 @@ def interpretar_linha_blender(linha_limpa):
     return None
 
 
-def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None):
+# ------------------------------------------------------------------------------
+# Progresso real da renderização (barra composta e etapas)
+# ------------------------------------------------------------------------------
+# Pesos de cada parte na barra (somam 1). A preparação é rápida; o render das câmeras é quase todo
+# o tempo; a finalização (gravar e fechar o Blender) é curta. Calibrar com os logs render-*.log.
+PESO_PREPARACAO = 0.10
+PESO_RENDER = 0.85
+PESO_FINAL = 0.05
+# Dentro de cada câmera: as samples valem esta fração; o resto (denoise e gravação da imagem) só
+# conta quando a câmera termina (PTM_CAMERA_FIM), sem inventar progresso no meio.
+FRACAO_SAMPLES_CAMERA = 0.90
+TETO_ANTES_DO_FIM = 99.0      # a barra só chega a 100% quando o Blender termina com sucesso
+# Estimativa de tempo restante: só depois de dados suficientes
+ETA_MIN_SAMPLES = 3           # samples vistas na câmera atual
+ETA_MIN_SEGUNDOS = 2.0        # tempo entre a 1ª e a última sample vista
+
+ETAPAS_PREPARACAO = [
+    ("estudio", "Abrir o estúdio base"),
+    ("svg", "Ler e importar o SVG"),
+    ("materiais", "Aplicar materiais e extrusões"),
+    ("montagem", "Montar o troféu"),
+    ("cameras", "Posicionar as câmeras"),
+]
+TEXTOS_ETAPA_ATUAL = {
+    "estudio": "Abrindo o estúdio base...",
+    "svg": "Lendo e importando o SVG...",
+    "materiais": "Aplicando materiais, texturas e extrusões...",
+    "montagem": "Montando o troféu (corpo, costas e resina)...",
+    "cameras": "Posicionando as câmeras...",
+}
+
+_RE_PTM = re.compile(r"^PTM_(ETAPA|PLANO|CAMERA_FIM|CAMERA|FIM)\b\s*(.*)$")
+_RE_SAMPLE = re.compile(r"\bSample (\d+)\s*/\s*(\d+)")
+_RE_RENDERED = re.compile(r"\bRendered (\d+)\s*/\s*(\d+) samples", re.IGNORECASE)
+_RE_TILE = re.compile(r"\bTile (\d+)\s*/\s*(\d+)|\b(\d+)\s*/\s*(\d+) Tiles", re.IGNORECASE)
+_RE_FRACAO = re.compile(r"^(\d+)\s*/\s*(\d+)\s*(.*)$")
+
+
+def plano_do_comando(comando):
+    """(render_auto, samples, [câmeras]) a partir do comando de montar_comando_blender."""
+    try:
+        args = list(comando[list(comando).index("--") + 1:])
+    except ValueError:
+        return False, 0, []
+    render_auto = len(args) > 3 and str(args[3]).strip().lower() in ("true", "1", "yes")
+    try:
+        samples = int(args[5]) if len(args) > 5 else 128
+    except ValueError:
+        samples = 128
+    cams = [c.strip() for c in str(args[8]).split(",") if c.strip()] if len(args) > 8 else []
+    if render_auto and not cams:
+        cams = ["Camera_Principal", "Camera_Esquerda", "Camera_Direita"]
+    return render_auto, samples, (cams if render_auto else [])
+
+
+def formatar_duracao(segundos):
+    """'45 s', '3 min 05 s', '1 h 02 min'."""
+    s = int(round(max(0, segundos)))
+    if s < 60:
+        return f"{s} s"
+    if s < 3600:
+        return f"{s // 60} min {s % 60:02d} s"
+    return f"{s // 3600} h {(s % 3600) // 60:02d} min"
+
+
+class ProgressoRender:
+    """Progresso real de uma execução do Blender, a partir das linhas da saída dele.
+
+    Etapas: preparação (estúdio, SVG, materiais, montagem, câmeras), uma etapa por câmera e a
+    finalização. Cada etapa tem estado 'pendente', 'andamento', 'concluida', 'pulada' ou 'erro'.
+    A porcentagem é composta (pesos acima), nunca diminui e fica no máximo em 99% até
+    concluir(True). Sem informação nova do Blender, 'trabalhando' fica True e a barra não anda.
+    """
+
+    def __init__(self, render_auto=True, samples=128, cameras=None, relogio=None):
+        import time
+        self._relogio = relogio or time.monotonic
+        self.inicio = self._relogio()
+        self.render_auto = render_auto
+        self.samples = int(samples or 0)
+        self.etapas = []
+        for id_e, titulo in ETAPAS_PREPARACAO:
+            self.etapas.append(self._nova_etapa(id_e, titulo, "preparacao"))
+        self._definir_cameras(list(cameras or []))
+        titulo_final = "Gravar as imagens e fechar o Blender" if render_auto else "Abrir o Blender (modo interativo)"
+        self.etapas.append(self._nova_etapa("final", titulo_final, "final"))
+        self._pct = 0.0
+        self.concluido = False
+        self.sucesso = None
+        self.fim_script = False
+
+    # ---------------------------------------------------------------- estrutura
+    @staticmethod
+    def _nova_etapa(id_e, titulo, grupo, nome_cam=None):
+        return {"id": id_e, "titulo": titulo, "grupo": grupo, "estado": "pendente", "camera": nome_cam,
+                "fase": None, "s": 0, "m": 0, "frac": 0.0, "t_ini": None, "t_fim": None,
+                "t_s1": None, "s1": None, "t_su": None, "su": None}
+
+    def _definir_cameras(self, nomes):
+        antigas = {e["camera"]: e for e in self.etapas if e["grupo"] == "camera"}
+        novas = []
+        for nome in nomes:
+            e = antigas.get(nome) or self._nova_etapa("camera:" + nome, f"Renderizar {nome}", "camera", nome)
+            novas.append(e)
+        resto = [e for e in self.etapas if e["grupo"] != "camera"]
+        prep = [e for e in resto if e["grupo"] == "preparacao"]
+        final = [e for e in resto if e["grupo"] == "final"]
+        self.etapas = prep + novas + final
+        n = len(novas)
+        for i, e in enumerate(novas, start=1):
+            e["titulo"] = f"Renderizar câmera {i} de {n} ({e['camera']})"
+
+    def _cameras(self):
+        return [e for e in self.etapas if e["grupo"] == "camera"]
+
+    def _pesos(self):
+        cams = self._cameras()
+        prep = [e for e in self.etapas if e["grupo"] == "preparacao"]
+        if cams:
+            p_prep, p_render, p_final = PESO_PREPARACAO, PESO_RENDER, PESO_FINAL
+        else:
+            total = PESO_PREPARACAO + PESO_FINAL
+            p_prep, p_render, p_final = PESO_PREPARACAO / total, 0.0, PESO_FINAL / total
+        pesos = {}
+        for e in prep:
+            pesos[id(e)] = p_prep / len(prep)
+        for e in cams:
+            # todas as câmeras usam as mesmas samples: peso proporcional a câmeras × samples
+            pesos[id(e)] = p_render / len(cams)
+        for e in self.etapas:
+            if e["grupo"] == "final":
+                pesos[id(e)] = p_final
+        return pesos
+
+    def _atual(self):
+        for e in self.etapas:
+            if e["estado"] == "andamento":
+                return e
+        return None
+
+    def _ativar(self, alvo):
+        """Conclui tudo antes de 'alvo' (o que nem começou fica 'pulada') e põe 'alvo' em andamento."""
+        agora = self._relogio()
+        for e in self.etapas:
+            if e is alvo:
+                break
+            if e["estado"] == "andamento":
+                self._fechar(e, agora)
+            elif e["estado"] == "pendente":
+                e["estado"] = "pulada" if e["grupo"] == "camera" else "concluida"
+        if alvo["estado"] == "pendente":
+            alvo["estado"] = "andamento"
+            alvo["t_ini"] = agora
+
+    def _fechar(self, e, agora=None):
+        e["estado"] = "concluida"
+        e["t_fim"] = self._relogio() if agora is None else agora
+        e["frac"] = 1.0
+
+    # ---------------------------------------------------------------- entrada
+    def linha(self, linha):
+        """Lê uma linha da saída do Blender. True se o progresso mudou."""
+        if self.concluido:
+            return False
+        texto = linha.strip()
+        m = _RE_PTM.match(texto)
+        if m:
+            return self._marcador(m.group(1), m.group(2).strip())
+        atual = self._atual()
+        if not atual or atual["grupo"] != "camera":
+            return False
+        return self._linha_cycles(atual, texto)
+
+    def _marcador(self, tipo, resto):
+        if tipo == "ETAPA":
+            partes = resto.split(None, 1)
+            id_e = partes[0] if partes else ""
+            if id_e == "render":
+                for e in self.etapas:          # a preparação acabou; as câmeras vêm em PTM_CAMERA
+                    if e["grupo"] == "preparacao" and e["estado"] in ("pendente", "andamento"):
+                        self._fechar(e) if e["estado"] == "andamento" else e.update(estado="concluida")
+                return True
+            alvo = next((e for e in self.etapas if e["id"] == id_e), None)
+            if alvo is None:
+                return False
+            self._ativar(alvo)
+            return True
+        if tipo == "PLANO":
+            partes = resto.split(None, 2)
+            try:
+                self.samples = int(partes[0])
+            except (IndexError, ValueError):
+                pass
+            nomes = [c for c in (partes[2].split(",") if len(partes) > 2 else []) if c.strip()]
+            if [e["camera"] for e in self._cameras()] != nomes:
+                self._definir_cameras(nomes)
+            return True
+        if tipo in ("CAMERA", "CAMERA_FIM"):
+            m = _RE_FRACAO.match(resto)
+            if not m:
+                return False
+            i, n, nome = int(m.group(1)), int(m.group(2)), m.group(3).strip()
+            cams = self._cameras()
+            if len(cams) != n or not (1 <= i <= n) or cams[i - 1]["camera"] != nome:
+                nomes = [e["camera"] for e in cams]
+                while len(nomes) < n:
+                    nomes.append(f"Câmera {len(nomes) + 1}")
+                nomes = nomes[:n]
+                if 1 <= i <= n:
+                    nomes[i - 1] = nome
+                self._definir_cameras(nomes)
+                cams = self._cameras()
+            if not (1 <= i <= len(cams)):
+                return False
+            e = cams[i - 1]
+            if tipo == "CAMERA":
+                self._ativar(e)
+                e["fase"] = "preparando"
+                e["m"] = e["m"] or self.samples
+            else:
+                if e["estado"] == "pendente":
+                    self._ativar(e)
+                self._fechar(e)
+                e["fase"] = "pronta"
+            return True
+        if tipo == "FIM":
+            self.fim_script = True
+            final = next(e for e in self.etapas if e["grupo"] == "final")
+            self._ativar(final)
+            return True
+        return False
+
+    def _linha_cycles(self, e, texto):
+        mudou = False
+        ms = _RE_SAMPLE.search(texto) or _RE_RENDERED.search(texto)
+        if ms:
+            s, m = int(ms.group(1)), int(ms.group(2))
+            if m > 0:
+                frac = min(1.0, s / m)
+                mt = _RE_TILE.search(texto)
+                if mt:
+                    # "Tile i/n": o tile i está sendo renderizado; "Rendered k/n Tiles": k já prontos
+                    if mt.group(1):
+                        feitos, tn = int(mt.group(1)) - 1, int(mt.group(2))
+                    else:
+                        feitos, tn = int(mt.group(3)), int(mt.group(4))
+                    if tn > 1 and 0 <= feitos <= tn:
+                        frac = min(1.0, (feitos + frac) / tn)
+                agora = self._relogio()
+                if frac >= e["frac"]:
+                    e["frac"] = frac
+                    e["s"], e["m"] = s, m
+                    if e["t_s1"] is None:
+                        e["t_s1"], e["s1"] = agora, s
+                    e["t_su"], e["su"] = agora, s
+                    e["fase"] = "samples"
+                    mudou = True
+        # "Denoising" depois das samples (antes delas pode aparecer "Loading denoising kernels")
+        if re.search(r"\bdenois", texto, re.IGNORECASE) and e["fase"] == "samples":
+            e["fase"] = "denoise"
+            mudou = True
+        if texto.startswith("Saved:") or texto.startswith("Saved "):
+            e["fase"] = "gravando"
+            mudou = True
+        return mudou
+
+    def concluir(self, sucesso):
+        """Fim do processo do Blender. Só com sucesso a barra vai a 100%."""
+        agora = self._relogio()
+        self.concluido = True
+        self.sucesso = bool(sucesso)
+        if sucesso:
+            for e in self.etapas:
+                if e["estado"] == "andamento":
+                    self._fechar(e, agora)
+                elif e["estado"] == "pendente":
+                    e["estado"] = "pulada" if e["grupo"] == "camera" else "concluida"
+            self._pct = 100.0
+        else:
+            atual = self._atual()
+            if atual:
+                atual["estado"] = "erro"
+                atual["t_fim"] = agora
+        self.fim = agora
+
+    # ---------------------------------------------------------------- saída
+    def porcentagem(self):
+        if self.concluido and self.sucesso:
+            return 100.0
+        pesos = self._pesos()
+        total = 0.0
+        for e in self.etapas:
+            if e["estado"] in ("concluida", "pulada"):
+                total += pesos[id(e)]
+            elif e["estado"] in ("andamento", "erro") and e["grupo"] == "camera":
+                total += pesos[id(e)] * FRACAO_SAMPLES_CAMERA * e["frac"]
+        pct = min(TETO_ANTES_DO_FIM, 100.0 * total)
+        self._pct = max(self._pct, pct)
+        return self._pct
+
+    def trabalhando(self):
+        """True quando há trabalho em andamento sem progresso medido (a barra não anda)."""
+        if self.concluido:
+            return False
+        atual = self._atual()
+        return not (atual and atual["grupo"] == "camera" and atual["fase"] == "samples")
+
+    def texto_atual(self):
+        if self.concluido:
+            return STATUS_CONCLUIDO if self.sucesso else "⚠ O Blender terminou com erro."
+        atual = self._atual()
+        if atual is None:
+            return "Iniciando o Blender..."
+        if atual["grupo"] == "preparacao":
+            return TEXTOS_ETAPA_ATUAL.get(atual["id"], atual["titulo"])
+        if atual["grupo"] == "final":
+            if not self.render_auto:
+                return "Blender aberto no modo interativo (feche-o para concluir)."
+            return "Gravando as imagens e fechando o Blender..."
+        cams = self._cameras()
+        i, n = cams.index(atual) + 1, len(cams)
+        base = f"Renderizando câmera {i} de {n} ({atual['camera']})"
+        fase = atual["fase"]
+        if fase == "samples":
+            return f"{base} — {atual['s']}/{atual['m']} samples"
+        if fase == "denoise":
+            return f"{base} — removendo ruído (denoise)"
+        if fase == "gravando":
+            return f"{base} — gravando a imagem"
+        return f"{base} — preparando a cena (shaders e BVH)"
+
+    def decorrido(self):
+        fim = getattr(self, "fim", None) if self.concluido else None
+        return (fim if fim is not None else self._relogio()) - self.inicio
+
+    def restante(self):
+        """Segundos que faltam pelo ritmo real das câmeras, ou None sem dados suficientes."""
+        if self.concluido or self.fim_script:
+            return None
+        cams = self._cameras()
+        atual = self._atual()
+        if not cams or atual is None or atual["grupo"] != "camera":
+            return None
+        agora = self._relogio()
+        feitas = [e for e in cams if e["estado"] == "concluida" and e["t_ini"] is not None and e["t_fim"] is not None]
+        # duração da última câmera feita (a 1ª costuma ser mais lenta: carrega os kernels do Cycles)
+        dur_ultima = (feitas[-1]["t_fim"] - feitas[-1]["t_ini"]) if feitas else None
+        # segundos por sample: da câmera atual (se já tem dados) ou das câmeras já feitas
+        tps = None
+        if (atual["su"] is not None and atual["su"] - atual["s1"] >= ETA_MIN_SAMPLES
+                and atual["t_su"] - atual["t_s1"] >= ETA_MIN_SEGUNDOS):
+            tps = (atual["t_su"] - atual["t_s1"]) / (atual["su"] - atual["s1"])
+        else:
+            com_samples = [e for e in feitas if e["su"] is not None and e["su"] > e["s1"]]
+            if com_samples:
+                tps = (sum(e["t_su"] - e["t_s1"] for e in com_samples)
+                       / sum(e["su"] - e["s1"] for e in com_samples))
+        # tempo depois da última sample (denoise + gravação), medido nas câmeras feitas
+        pos = [e["t_fim"] - e["t_su"] for e in feitas if e["t_su"] is not None]
+        pos_media = sum(pos) / len(pos) if pos else 0.0
+
+        if atual["fase"] == "samples" and tps is not None:
+            resto_atual = max(0, atual["m"] - atual["s"]) * tps + pos_media
+        elif atual["fase"] in ("denoise", "gravando") and feitas and pos:
+            resto_atual = max(0.0, pos_media - (agora - atual["t_su"]))
+        elif dur_ultima is not None:
+            resto_atual = max(0.0, dur_ultima - (agora - atual["t_ini"]))
+        else:
+            return None
+
+        pendentes = sum(1 for e in cams if e["estado"] == "pendente")
+        if pendentes:
+            # preparo antes da 1ª sample (shaders/BVH), medido na câmera mais recente que já tem samples
+            com_s1 = [e for e in cams if e["t_s1"] is not None and e["t_ini"] is not None]
+            if tps is not None and com_s1:
+                pre = com_s1[-1]["t_s1"] - com_s1[-1]["t_ini"]
+                por_camera = pre + (atual["m"] or self.samples) * tps + pos_media
+            elif dur_ultima is not None:
+                por_camera = dur_ultima
+            else:
+                return None
+            resto_atual += pendentes * por_camera
+        return resto_atual
+
+    def estado(self):
+        """Dados simples (JSON) para as interfaces."""
+        restante = self.restante()
+        return {
+            "porcentagem": round(self.porcentagem(), 2),
+            "trabalhando": self.trabalhando(),
+            "atual": self.texto_atual(),
+            "decorrido": round(self.decorrido(), 1),
+            "restante": None if restante is None else round(restante, 1),
+            "concluido": self.concluido,
+            "sucesso": self.sucesso,
+            "etapas": [{"id": e["id"], "titulo": e["titulo"], "estado": e["estado"]} for e in self.etapas],
+        }
+
+    def resumo_tempos(self):
+        """Linhas com o tempo de cada etapa (para o log de render)."""
+        linhas = []
+        for e in self.etapas:
+            if e["t_ini"] is None:
+                linhas.append(f"  {e['titulo']}: {e['estado']}")
+                continue
+            fim = e["t_fim"] if e["t_fim"] is not None else self._relogio()
+            extra = ""
+            if e["grupo"] == "camera" and e["t_s1"] is not None:
+                extra = (f" (até a 1ª sample {e['t_s1'] - e['t_ini']:.1f} s; samples {e['s1']}→{e['su']}/{e['m']} "
+                         f"em {e['t_su'] - e['t_s1']:.1f} s; depois da última sample {fim - e['t_su']:.1f} s)")
+            linhas.append(f"  {e['titulo']}: {e['estado']}, {fim - e['t_ini']:.1f} s{extra}")
+        return linhas
+
+
+def texto_tempos(estado):
+    """'Decorrido: 1 min 05 s  ·  Restante: ~3 min 10 s' (restante só com estimativa)."""
+    txt = f"Decorrido: {formatar_duracao(estado['decorrido'])}"
+    if estado.get("restante") is not None:
+        txt += f"  ·  Restante: ~{formatar_duracao(estado['restante'])}"
+    return txt
+
+
+LIMITE_LINHAS_LOG_RENDER = 20000
+
+
+def _gravar_log_render(comando, progresso, linhas_log, total_linhas, inicio_data, codigo, pasta_logs=None):
+    """Grava logs/render-*.log (higienizado, vai para a branch logs com os logs de erro).
+    Nunca levanta exceção: o log é para diagnóstico e não pode atrapalhar o app."""
+    try:
+        render_auto, samples, cams = plano_do_comando(comando)
+        cab = [
+            f"Início: {inicio_data.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Duração total: {progresso.decorrido():.1f} s",
+            f"Código de saída do Blender: {codigo}",
+            f"Resultado: {'sucesso' if progresso.sucesso else 'falhou'}",
+            f"Render automático: {render_auto}  ·  Samples: {samples}  ·  Câmeras: {', '.join(cams) or '-'}",
+            f"Pesos: preparação {PESO_PREPARACAO}, render {PESO_RENDER}, final {PESO_FINAL}, "
+            f"samples/câmera {FRACAO_SAMPLES_CAMERA}",
+            "Comando: " + " ".join(f'"{c}"' for c in comando),
+            "",
+            "Tempo de cada etapa:",
+        ] + progresso.resumo_tempos() + ["", "Saída do Blender (segundos desde o início | linha):"]
+        if total_linhas > len(linhas_log):
+            cab.append(f"(as primeiras {total_linhas - len(linhas_log)} linhas foram cortadas)")
+        corpo = [f"{t:9.3f} | {l}" for t, l in linhas_log]
+        return registro_erros.gravar_log_render("\n".join(cab + corpo), agora=inicio_data, pasta_logs=pasta_logs)
+    except Exception:
+        return None
+
+
+def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None, relogio=None, pasta_logs=None):
     """Roda o Blender e chama ao_evento(evento) para cada mudança da tela (veja
-    interpretar_linha_blender), depois ao_evento(('concluido',)). Se o Blender terminar com erro,
-    grava o log; se nem der para rodar, grava o log e chama ao_evento(('erro', mensagem)).
+    interpretar_linha_blender) e ao_evento(('progresso', estado)) com o progresso real
+    (ProgressoRender.estado), depois ao_evento(('concluido',)) se deu certo ou
+    ao_evento(('concluido', False)) se o Blender terminou com erro. Se o Blender terminar com
+    erro, grava o log de erro; se nem der para rodar, grava o log e chama ao_evento(('erro', mensagem)).
+    Toda execução grava a saída do Blender, com o horário de cada linha, em logs/render-*.log.
     Roda na thread de quem chamou (as interfaces chamam numa thread separada)."""
+    import time
+    import datetime
     popen = popen or subprocess.Popen
+    relogio = relogio or time.monotonic
+    render_auto, samples, cams = plano_do_comando(comando)
+    progresso = ProgressoRender(render_auto, samples, cams, relogio=relogio)
+    linhas_log = collections.deque(maxlen=LIMITE_LINHAS_LOG_RENDER)
+    total_linhas = 0
+    inicio_data = datetime.datetime.now()
+    t0 = relogio()
+    codigo = None
     try:
         processo = popen(comando, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='ignore')
         ultimas_linhas = collections.deque(maxlen=200)   # para o log de erro
@@ -546,20 +1009,33 @@ def executar_blender(comando, ao_evento, origem="app_ui (Blender)", popen=None):
         for linha in processo.stdout:
             linha_limpa = linha.strip()
             ultimas_linhas.append(linha.rstrip("\r\n"))
+            total_linhas += 1
+            linhas_log.append((relogio() - t0, linha.rstrip("\r\n")))
             if linha_limpa.startswith("Traceback (most recent call last)") or linha_limpa.startswith("Error: Python:"):
                 teve_traceback = True
             evento = interpretar_linha_blender(linha_limpa)
             if evento:
                 ao_evento(evento)
+            # a 1ª linha (o Blender respondeu) já manda a lista de etapas para a tela
+            if progresso.linha(linha_limpa) or total_linhas == 1:
+                ao_evento(("progresso", progresso.estado()))
 
         processo.wait()
-        if processo.returncode != 0 or teve_traceback:
+        codigo = processo.returncode
+        falhou = processo.returncode != 0 or teve_traceback
+        progresso.concluir(not falhou)
+        _gravar_log_render(comando, progresso, linhas_log, total_linhas, inicio_data, codigo, pasta_logs)
+        if falhou:
             registro_erros.gravar_log(
                 origem,
                 f"Blender terminou com código {processo.returncode}" + (" e com erro de Python" if teve_traceback else ""),
                 "Comando: " + " ".join(f'"{c}"' for c in comando) + "\n\nÚltimas linhas do Blender:\n" + "\n".join(ultimas_linhas))
-        ao_evento(("concluido",))
+        ao_evento(("progresso", progresso.estado()))
+        ao_evento(("concluido", False) if falhou else ("concluido",))
     except Exception as e:
+        if total_linhas:
+            progresso.concluir(False)
+            _gravar_log_render(comando, progresso, linhas_log, total_linhas, inicio_data, codigo, pasta_logs)
         registro_erros.gravar_log(origem, f"Não foi possível rodar o Blender: {e}",
                                   "Comando: " + " ".join(f'"{c}"' for c in comando) + "\n\n" + traceback.format_exc())
         ao_evento(("erro", f"Não foi possível rodar o Blender:\n{e}"))
@@ -570,6 +1046,7 @@ STATUS_INICIAL = "🔄 Iniciando importação e montagem de malhas..."
 SAMPLES_INICIAL = "Aguardando início do Cycles..."
 STATUS_CONCLUIDO = "✅ Processamento Concluído!"
 SAMPLES_CONCLUIDO = "Renderização Finalizada (100% Concluído)"
+SAMPLES_COM_ERRO = "O Blender terminou com erro (o log de erro foi gravado)"
 
 
 def textos_amostras(atual, total, faltam, nome_cam):
