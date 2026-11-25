@@ -1,0 +1,287 @@
+PathToMesh - registro de renderização
+Data: 2026-11-25 13:04:13
+Versão: 13f35d9 (2026-11-25)
+Sistema: Windows 11 (10.0.26300), Python 3.14.10
+
+Início: 2026-11-25 13:04:13
+Duração total: 480.1 s
+Código de saída do Blender: 0
+Resultado: sucesso
+Render automático: False  ·  Samples: 64  ·  Câmeras: -
+Pesos: preparação 0.1, render 0.89, final 0.01, samples/câmera 0.9
+Comando: "<CAMINHO>/blender.exe" "--python" "<CAMINHO>/blender_engine.py" "--" "<CAMINHO>/KAR25001.svg" "<CAMINHO>/imagens 3d" "<CAMINHO>/<CONFIG>" "False" "True" "64" "True" "<CAMINHO>/kart resina.obj" "Camera_Direita"
+
+Tempo de cada etapa:
+  Abrir o estúdio base: concluida, 0.2 s
+  Ler e importar o SVG: concluida, 0.1 s
+  Aplicar materiais e extrusões: concluida, 0.1 s
+  Montar o troféu: concluida, 0.0 s
+  Posicionar as câmeras: concluida, 0.0 s
+  Abrir o Blender (modo interativo): concluida, 474.3 s
+
+Saída do Blender (segundos desde o início | linha):
+    5.437 | PTM_ETAPA estudio 1/7 Abrindo o estúdio base
+    5.437 | >>> Carregando estúdio base: <CAMINHO>/<CONFIG>
+    5.443 | 00:04.766  blend            | Read blend: "<CAMINHO>/<CONFIG>"
+    5.593 | <CAMINHO>/blender_engine.py:251: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+    5.593 |   if bpy.context.scene.world and bpy.context.scene.world.use_nodes:
+    5.593 | PTM_ETAPA svg 2/7 Lendo e importando o SVG
+    5.594 | >>> Analisando e importando o arquivo SVG...
+    5.700 | PTM_ETAPA materiais 3/7 Aplicando materiais, texturas e extrusões
+    5.701 | >>> Aplicando materiais, texturas e extrusões...
+    5.705 | <CAMINHO>/blender_engine.py:122: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    5.705 |   mat.use_nodes = True
+    5.707 | <CAMINHO>/blender_engine.py:587: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    5.707 |   if mat and mat.use_nodes:
+    5.750 | <CAMINHO>/blender_engine.py:546: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    5.750 |   mat.use_nodes = True
+    5.818 | PTM_ETAPA montagem 4/7 Montando o troféu (corpo, costas e resina)
+    5.819 | Troféu base montado e alinhado com sucesso!
+    5.819 | PTM_ETAPA cameras 5/7 Posicionando as câmeras
+    5.820 | >>> Modo interativo ativo ou nenhuma câmera válida foi selecionada.
+    5.820 | PTM_ETAPA final 7/7 Finalizando
+    5.820 | PTM_FIM
+  224.749 | 03:44.078  operator         | 1 object(s) hidden
+  259.715 | Warning: degenerated triangle detected, correcting
+  259.715 | Warning: degenerated triangle detected, correcting
+  259.715 | Warning: edge 828 - 883 appears twice, correcting
+  259.715 | Warning: edge 883 - 828 appears twice, correcting
+  259.715 | Warning: degenerated triangle detected, correcting
+  259.715 | Warning: degenerated triangle detected, correcting
+  259.716 | Warning: degenerated triangle detected, correcting
+  259.716 | Warning: degenerated triangle detected, correcting
+  259.716 | Warning: degenerated triangle detected, correcting
+  259.716 | Warning: degenerated triangle detected, correcting
+  259.716 | Warning: degenerated triangle detected, correcting
+  259.716 | Warning: degenerated triangle detected, correcting
+  259.716 | Warning: edge 828 - 893 appears twice, correcting
+  259.716 | Warning: edge 893 - 828 appears twice, correcting
+  259.716 | Warning: degenerated triangle detected, correcting
+  259.716 | Warning: degenerated triangle detected, correcting
+  259.716 | Warning: edge 828 - 885 appears twice, correcting
+  259.716 | Warning: edge 885 - 828 appears twice, correcting
+  259.716 | Warning: edge 828 - 889 appears twice, correcting
+  259.716 | Warning: edge 889 - 828 appears twice, correcting
+  259.716 | Warning: edge 830 - 828 appears twice, correcting
+  259.716 | Warning: edge 828 - 890 appears twice, correcting
+  259.716 | Warning: edge 890 - 828 appears twice, correcting
+  259.716 | Warning: edge 828 - 830 appears twice, correcting
+  259.716 | Warning: edge 888 - 828 appears twice, correcting
+  259.716 | Warning: edge 828 - 891 appears twice, correcting
+  259.716 | Warning: edge 891 - 828 appears twice, correcting
+  259.716 | Warning: edge 828 - 888 appears twice, correcting
+  259.716 | Warning: edge 828 - 888 appears twice, correcting
+  259.716 | Warning: edge 888 - 828 appears twice, correcting
+  259.717 | Warning: degenerated triangle detected, correcting
+  259.717 | Warning: edge 52 - 50 appears twice, correcting
+  259.717 | Warning: degenerated triangle detected, correcting
+  259.717 | Warning: degenerated triangle detected, correcting
+  259.717 | Warning: degenerated triangle detected, correcting
+  259.717 | Warning: degenerated triangle detected, correcting
+  259.717 | Warning: degenerated triangle detected, correcting
+  259.717 | Warning: degenerated triangle detected, correcting
+  259.717 | Warning: edge 95 - 52 appears twice, correcting
+  259.717 | Warning: edge 52 - 95 appears twice, correcting
+  259.717 | Warning: degenerated triangle detected, correcting
+  259.717 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: edge 50 - 52 appears twice, correcting
+  259.718 | Warning: edge 52 - 99 appears twice, correcting
+  259.718 | Warning: edge 99 - 52 appears twice, correcting
+  259.718 | Warning: edge 236 - 52 appears twice, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: degenerated triangle detected, correcting
+  259.718 | Warning: edge 52 - 303 appears twice, correcting
+  259.718 | Warning: edge 303 - 52 appears twice, correcting
+  259.718 | Warning: edge 52 - 236 appears twice, correcting
+  259.718 | Warning: edge 219 - 343 appears twice, correcting
+  259.718 | Warning: edge 343 - 219 appears twice, correcting
+  259.718 | Warning: edge 219 - 699 appears twice, correcting
+  259.718 | Warning: edge 699 - 219 appears twice, correcting
+  259.718 | Warning: edge 219 - 700 appears twice, correcting
+  259.718 | Warning: edge 700 - 219 appears twice, correcting
+  259.718 | Warning: edge 219 - 600 appears twice, correcting
+  259.718 | Warning: edge 600 - 219 appears twice, correcting
+  259.718 | Warning: edge 219 - 602 appears twice, correcting
+  259.718 | Warning: edge 602 - 219 appears twice, correcting
+  259.718 | Warning: edge 219 - 701 appears twice, correcting
+  259.718 | Warning: edge 701 - 219 appears twice, correcting
+  259.718 | Warning: edge 219 - 702 appears twice, correcting
+  259.718 | Warning: edge 702 - 219 appears twice, correcting
+  259.718 | Warning: edge 219 - 703 appears twice, correcting
+  259.718 | Warning: edge 703 - 219 appears twice, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: edge 828 - 883 appears twice, correcting
+  341.607 | Warning: edge 883 - 828 appears twice, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: edge 828 - 893 appears twice, correcting
+  341.607 | Warning: edge 893 - 828 appears twice, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.607 | Warning: degenerated triangle detected, correcting
+  341.608 | Warning: edge 828 - 885 appears twice, correcting
+  341.608 | Warning: edge 885 - 828 appears twice, correcting
+  341.608 | Warning: edge 828 - 889 appears twice, correcting
+  341.608 | Warning: edge 889 - 828 appears twice, correcting
+  341.608 | Warning: edge 830 - 828 appears twice, correcting
+  341.608 | Warning: edge 828 - 890 appears twice, correcting
+  341.608 | Warning: edge 890 - 828 appears twice, correcting
+  341.608 | Warning: edge 828 - 830 appears twice, correcting
+  341.608 | Warning: edge 888 - 828 appears twice, correcting
+  341.608 | Warning: edge 828 - 891 appears twice, correcting
+  341.608 | Warning: edge 891 - 828 appears twice, correcting
+  341.608 | Warning: edge 828 - 888 appears twice, correcting
+  341.608 | Warning: edge 828 - 888 appears twice, correcting
+  341.608 | Warning: edge 888 - 828 appears twice, correcting
+  341.608 | Warning: degenerated triangle detected, correcting
+  341.608 | Warning: edge 52 - 50 appears twice, correcting
+  341.608 | Warning: degenerated triangle detected, correcting
+  341.608 | Warning: degenerated triangle detected, correcting
+  341.608 | Warning: degenerated triangle detected, correcting
+  341.608 | Warning: degenerated triangle detected, correcting
+  341.608 | Warning: degenerated triangle detected, correcting
+  341.608 | Warning: degenerated triangle detected, correcting
+  341.608 | Warning: edge 95 - 52 appears twice, correcting
+  341.609 | Warning: edge 52 - 95 appears twice, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: edge 50 - 52 appears twice, correcting
+  341.609 | Warning: edge 52 - 99 appears twice, correcting
+  341.609 | Warning: edge 99 - 52 appears twice, correcting
+  341.609 | Warning: edge 236 - 52 appears twice, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.609 | Warning: degenerated triangle detected, correcting
+  341.610 | Warning: degenerated triangle detected, correcting
+  341.610 | Warning: degenerated triangle detected, correcting
+  341.610 | Warning: edge 52 - 303 appears twice, correcting
+  341.610 | Warning: edge 303 - 52 appears twice, correcting
+  341.610 | Warning: edge 52 - 236 appears twice, correcting
+  341.610 | Warning: edge 219 - 343 appears twice, correcting
+  341.610 | Warning: edge 343 - 219 appears twice, correcting
+  341.610 | Warning: edge 219 - 699 appears twice, correcting
+  341.610 | Warning: edge 699 - 219 appears twice, correcting
+  341.610 | Warning: edge 219 - 700 appears twice, correcting
+  341.610 | Warning: edge 700 - 219 appears twice, correcting
+  341.610 | Warning: edge 219 - 600 appears twice, correcting
+  341.610 | Warning: edge 600 - 219 appears twice, correcting
+  341.610 | Warning: edge 219 - 602 appears twice, correcting
+  341.610 | Warning: edge 602 - 219 appears twice, correcting
+  341.610 | Warning: edge 219 - 701 appears twice, correcting
+  341.610 | Warning: edge 701 - 219 appears twice, correcting
+  341.610 | Warning: edge 219 - 702 appears twice, correcting
+  341.610 | Warning: edge 702 - 219 appears twice, correcting
+  341.610 | Warning: edge 219 - 703 appears twice, correcting
+  341.610 | Warning: edge 703 - 219 appears twice, correcting
+  441.838 | Warning: degenerated triangle detected, correcting
+  441.838 | Warning: degenerated triangle detected, correcting
+  441.838 | Warning: edge 828 - 883 appears twice, correcting
+  441.838 | Warning: edge 883 - 828 appears twice, correcting
+  441.838 | Warning: degenerated triangle detected, correcting
+  441.838 | Warning: degenerated triangle detected, correcting
+  441.838 | Warning: degenerated triangle detected, correcting
+  441.838 | Warning: degenerated triangle detected, correcting
+  441.838 | Warning: degenerated triangle detected, correcting
+  441.838 | Warning: degenerated triangle detected, correcting
+  441.839 | Warning: degenerated triangle detected, correcting
+  441.839 | Warning: degenerated triangle detected, correcting
+  441.839 | Warning: edge 828 - 893 appears twice, correcting
+  441.839 | Warning: edge 893 - 828 appears twice, correcting
+  441.839 | Warning: degenerated triangle detected, correcting
+  441.839 | Warning: degenerated triangle detected, correcting
+  441.839 | Warning: edge 828 - 885 appears twice, correcting
+  441.839 | Warning: edge 885 - 828 appears twice, correcting
+  441.839 | Warning: edge 828 - 889 appears twice, correcting
+  441.839 | Warning: edge 889 - 828 appears twice, correcting
+  441.839 | Warning: edge 830 - 828 appears twice, correcting
+  441.839 | Warning: edge 828 - 890 appears twice, correcting
+  441.839 | Warning: edge 890 - 828 appears twice, correcting
+  441.839 | Warning: edge 828 - 830 appears twice, correcting
+  441.839 | Warning: edge 888 - 828 appears twice, correcting
+  441.839 | Warning: edge 828 - 891 appears twice, correcting
+  441.839 | Warning: edge 891 - 828 appears twice, correcting
+  441.839 | Warning: edge 828 - 888 appears twice, correcting
+  441.839 | Warning: edge 828 - 888 appears twice, correcting
+  441.839 | Warning: edge 888 - 828 appears twice, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: edge 52 - 50 appears twice, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: edge 95 - 52 appears twice, correcting
+  441.840 | Warning: edge 52 - 95 appears twice, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: degenerated triangle detected, correcting
+  441.840 | Warning: edge 50 - 52 appears twice, correcting
+  441.840 | Warning: edge 52 - 99 appears twice, correcting
+  441.840 | Warning: edge 99 - 52 appears twice, correcting
+  441.840 | Warning: edge 236 - 52 appears twice, correcting
+  441.841 | Warning: degenerated triangle detected, correcting
+  441.841 | Warning: degenerated triangle detected, correcting
+  441.841 | Warning: degenerated triangle detected, correcting
+  441.841 | Warning: degenerated triangle detected, correcting
+  441.841 | Warning: degenerated triangle detected, correcting
+  441.841 | Warning: edge 52 - 303 appears twice, correcting
+  441.841 | Warning: edge 303 - 52 appears twice, correcting
+  441.841 | Warning: edge 52 - 236 appears twice, correcting
+  441.841 | Warning: edge 219 - 343 appears twice, correcting
+  441.841 | Warning: edge 343 - 219 appears twice, correcting
+  441.841 | Warning: edge 219 - 699 appears twice, correcting
+  441.841 | Warning: edge 699 - 219 appears twice, correcting
+  441.841 | Warning: edge 219 - 700 appears twice, correcting
+  441.841 | Warning: edge 700 - 219 appears twice, correcting
+  441.841 | Warning: edge 219 - 600 appears twice, correcting
+  441.841 | Warning: edge 600 - 219 appears twice, correcting
+  441.841 | Warning: edge 219 - 602 appears twice, correcting
+  441.841 | Warning: edge 602 - 219 appears twice, correcting
+  441.841 | Warning: edge 219 - 701 appears twice, correcting
+  441.841 | Warning: edge 701 - 219 appears twice, correcting
+  441.841 | Warning: edge 219 - 702 appears twice, correcting
+  441.841 | Warning: edge 702 - 219 appears twice, correcting
+  441.841 | Warning: edge 219 - 703 appears twice, correcting
+  441.841 | Warning: edge 703 - 219 appears twice, correcting
+  479.722 | 07:59.047  blend            | Saved session recovery to "<CAMINHO>/quit.blend"
+  480.061 | 
+  480.061 | Blender quit
