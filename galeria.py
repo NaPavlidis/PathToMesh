@@ -6,8 +6,10 @@
   tela web. As reduzidas ficam em cache no disco (.cache_miniaturas/, no .gitignore), com a data
   e o tamanho do arquivo no nome: imagem regravada pelo Blender gera uma miniatura nova.
 - imagem_completa(caminho): a original como data URI (para a imagem ampliada).
-- Última pasta de saída (.ultimo_render.json, no .gitignore): a galeria mostra o último render
-  também quando o app abre.
+- Só as imagens do render (RenderAtual): a pasta é fotografada quando o render começa e a
+  galeria mostra só as imagens novas ou regravadas desde então (as que já estavam lá ficam de
+  fora). O último render (.ultimo_render.json, no .gitignore) guarda a pasta, o horário de
+  início e os nomes dessas imagens: ao abrir o app, a galeria mostra só elas (sem registro, nada).
 
 Não importa tkinter nem webview; o Pillow só é importado na primeira miniatura.
 """
@@ -32,34 +34,58 @@ PASTA_CACHE = ".cache_miniaturas"         # na pasta do projeto (no .gitignore)
 MAXIMO_CACHE = 600                        # miniaturas no disco; passando disso, apaga as mais antigas
 
 
-# ------------------------------------------------------------------ última pasta de saída
+# ------------------------------------------------------------------ último render (pasta e imagens)
 PASTA_PROJETO = registro_erros.PASTA_PROJETO    # onde fica o .ultimo_render.json (os testes trocam)
+FOLGA_HORARIO = 2.0                       # s: relógio de arquivo grosso (FAT/rede) não perde imagem do render
 
 
 def caminho_ultimo(pasta_projeto=None):
     return os.path.join(pasta_projeto or PASTA_PROJETO, ARQUIVO_ULTIMO)
 
 
-def gravar_ultima_saida(pasta_saida, pasta_projeto=None):
-    """Guarda a pasta do render que começou (para a galeria mostrar ao abrir o app). Nunca levanta erro."""
+def gravar_ultima_saida(pasta_saida, pasta_projeto=None, arquivos=None, inicio=None):
+    """Guarda o último render: a pasta, o horário de início e os nomes das imagens que ele gerou
+    (para a galeria mostrar só elas, também ao abrir o app). Nunca levanta erro."""
     try:
         caminho = caminho_ultimo(pasta_projeto)
+        dados = {"pasta": pasta_saida}
+        if arquivos is not None:
+            dados["arquivos"] = [str(a) for a in arquivos]
+        if inicio is not None:
+            dados["inicio"] = float(inicio)
         with open(caminho + ".novo", "w", encoding="utf-8") as f:
-            json.dump({"pasta": pasta_saida}, f, ensure_ascii=False)
+            json.dump(dados, f, ensure_ascii=False)
         os.replace(caminho + ".novo", caminho)
         return True
     except (OSError, TypeError, ValueError):
         return False
 
 
-def ler_ultima_saida(pasta_projeto=None):
-    """Pasta do último render, se ela ainda existir; senão ''."""
+def ler_ultimo_render(pasta_projeto=None):
+    """{'pasta', 'arquivos', 'inicio'} do último render (a pasta ainda existe), ou None. Registro
+    antigo (só a pasta, de antes da galeria filtrar pelo render): 'arquivos' = None."""
     try:
         with open(caminho_ultimo(pasta_projeto), "r", encoding="utf-8") as f:
-            pasta = json.load(f).get("pasta", "")
+            dados = json.load(f)
+        pasta = dados.get("pasta", "")
     except (OSError, ValueError, AttributeError):
-        return ""
-    return pasta if isinstance(pasta, str) and pasta and os.path.isdir(pasta) else ""
+        return None
+    if not (isinstance(pasta, str) and pasta and os.path.isdir(pasta)):
+        return None
+    arquivos = dados.get("arquivos")
+    if not isinstance(arquivos, list):
+        arquivos = None
+    else:
+        # só nomes de arquivo (nada de caminho): a galeria nunca sai da pasta do render
+        arquivos = [a for a in arquivos if isinstance(a, str) and a and not any(c in a for c in "/\\:") and a not in (".", "..")]
+    inicio = dados.get("inicio")
+    return {"pasta": pasta, "arquivos": arquivos, "inicio": inicio if isinstance(inicio, (int, float)) else None}
+
+
+def ler_ultima_saida(pasta_projeto=None):
+    """Pasta do último render, se ela ainda existir; senão ''."""
+    registro = ler_ultimo_render(pasta_projeto)
+    return registro["pasta"] if registro else ""
 
 
 def pasta_da_galeria(svg_selecionado, output_path, pasta_projeto=None):
@@ -170,6 +196,82 @@ def listar_imagens(pasta):
             "mtime": st.st_mtime,
         })
     return itens
+
+
+def _fotografar(pasta):
+    """{nome: (mtime_ns, tamanho)} das imagens da pasta (vazio se ela não existir)."""
+    try:
+        nomes = os.listdir(pasta) if pasta else []
+    except OSError:
+        return {}
+    fotos = {}
+    for nome in nomes:
+        if nome.lower().endswith(EXTENSOES) and not nome.startswith("."):
+            try:
+                st = os.stat(os.path.join(pasta, nome))
+            except OSError:
+                continue
+            fotos[nome] = (st.st_mtime_ns, st.st_size)
+    return fotos
+
+
+def gerados_desde(pasta, antes, inicio):
+    """Nomes das imagens que o render gerou: novas ou regravadas (data ou tamanho diferentes da
+    fotografia 'antes') e com data a partir do início do render (menos FOLGA_HORARIO)."""
+    agora = _fotografar(pasta)
+    return sorted((nome for nome, (mtime_ns, tamanho) in agora.items()
+                   if antes.get(nome) != (mtime_ns, tamanho) and mtime_ns / 1e9 >= inicio - FOLGA_HORARIO),
+                  key=_ordem)
+
+
+class RenderAtual:
+    """As imagens de UM render: fotografa a pasta de saída quando o render começa e, no fim (ou
+    enquanto ele roda), mostra só as imagens novas ou regravadas desde então. Grava o registro
+    no .ultimo_render.json no começo (lista vazia) e no fim (lista final)."""
+
+    def __init__(self, pasta, inicio=None, pasta_projeto=None, relogio=None):
+        import time
+        self.pasta = pasta
+        self.inicio = float(inicio if inicio is not None else (relogio or time.time)())
+        self.antes = _fotografar(pasta)
+        self.pasta_projeto = pasta_projeto
+        self.arquivos = None               # lista final (depois de finalizar)
+        gravar_ultima_saida(pasta, pasta_projeto, arquivos=[], inicio=self.inicio)
+
+    def nomes(self):
+        if self.arquivos is not None:
+            return list(self.arquivos)
+        return gerados_desde(self.pasta, self.antes, self.inicio)
+
+    def finalizar(self):
+        """Fim do render (com sucesso ou erro): fixa a lista e grava o registro. Devolve a lista."""
+        if self.arquivos is None:
+            self.arquivos = gerados_desde(self.pasta, self.antes, self.inicio)
+            gravar_ultima_saida(self.pasta, self.pasta_projeto, arquivos=self.arquivos, inicio=self.inicio)
+        return list(self.arquivos)
+
+    def imagens(self):
+        return filtrar_imagens(self.pasta, self.nomes())
+
+
+def filtrar_imagens(pasta, nomes):
+    """listar_imagens(pasta), só com as imagens destes nomes."""
+    if not nomes:
+        return []
+    quais = set(nomes)
+    return [i for i in listar_imagens(pasta) if i["arquivo"] in quais]
+
+
+def imagens_da_galeria(render=None, pasta_projeto=None):
+    """O que a galeria mostra: as imagens do render desta sessão (RenderAtual) ou, sem render
+    nesta sessão, as do último render registrado. Sem registro (ou registro antigo, sem a lista
+    das imagens): nada. Devolve (pasta, itens)."""
+    if render is not None:
+        return render.pasta, render.imagens()
+    registro = ler_ultimo_render(pasta_projeto)
+    if not registro or registro["arquivos"] is None:
+        return (registro["pasta"] if registro else ""), []
+    return registro["pasta"], filtrar_imagens(registro["pasta"], registro["arquivos"])
 
 
 def para_js(item):

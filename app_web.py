@@ -111,6 +111,7 @@ class Api:
         self._threads = []
         # Galeria: a tela só pede imagens pela chave de uma imagem listada (nunca um caminho)
         self._galeria = {}                 # chave -> caminho
+        self._render = None                # galeria.RenderAtual do render desta sessão
         self._cache_miniaturas = galeria.Cache(48)
         self._cache_imagens = galeria.Cache(3)
         threading.Thread(target=self._enviar_fila, name="eventos-js", daemon=True).start()
@@ -232,10 +233,16 @@ class Api:
         comando = nucleo.montar_comando_blender(self._estado, self._resina, render_auto,
                                                 bool(opcoes.get("usar_textura")), bool(opcoes.get("usar_verniz")),
                                                 nucleo.cameras_selecionadas_str(*cams))
-        galeria.gravar_ultima_saida(self._estado.output_path)    # a galeria mostra este render ao abrir o app
+        # a galeria mostra só as imagens deste render (a pasta é fotografada agora; registro no disco)
+        render = self._render = galeria.RenderAtual(self._estado.output_path)
+
+        def ao_evento(ev):
+            if ev and ev[0] in ("concluido", "erro"):
+                render.finalizar()         # antes de a tela pedir a galeria do Download
+            self._enviar(evento_para_js(ev))
+
         thread = threading.Thread(target=self._executar, name="blender", daemon=True,
-                                  args=(comando, lambda ev: self._enviar(evento_para_js(ev))),
-                                  kwargs={"origem": f"{ORIGEM} (Blender)"})
+                                  args=(comando, ao_evento), kwargs={"origem": f"{ORIGEM} (Blender)"})
         self._threads.append(thread)
         thread.start()
         return {"ok": True, "status": nucleo.STATUS_INICIAL, "samples": nucleo.SAMPLES_INICIAL}
@@ -251,10 +258,10 @@ class Api:
 
     # ------------------------------------------------------------ Galeria (imagens geradas)
     def listar_galeria(self):
-        """Imagens da pasta de saída (a do SVG escolhido ou a do último render): câmera, tamanho,
-        dimensões e data. Rápido: não lê as imagens (as miniaturas vêm depois, uma por vez)."""
-        pasta = self._pasta_galeria()
-        itens = galeria.listar_imagens(pasta)
+        """Só as imagens geradas no render (o desta sessão ou, ao abrir o app, o último registrado;
+        as que já estavam na pasta ficam de fora): câmera, tamanho, dimensões e data. Rápido: não
+        lê as imagens (as miniaturas vêm depois, uma por vez)."""
+        pasta, itens = galeria.imagens_da_galeria(self._render)
         if len(self._galeria) > 500:
             self._galeria.clear()
         self._galeria.update({i["chave"]: i["caminho"] for i in itens})

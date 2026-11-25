@@ -729,7 +729,8 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
             widget.destroy()
             
         self._show_screen("processing")
-        galeria.gravar_ultima_saida(self.output_path)    # a galeria mostra este render ao abrir o app
+        # a galeria mostra só as imagens deste render (a pasta é fotografada agora; registro no disco)
+        self._render_galeria = galeria.RenderAtual(self.output_path)
         self._iniciar_processamento_background()
 
     def _analisar_e_exibir_svg(self, caminho_svg):
@@ -815,6 +816,8 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
     def _ao_evento_blender(self, evento):
         # Chamado na thread do Blender: a tela só muda pelo after (na thread do Tk)
         tipo = evento[0]
+        if tipo in ("concluido", "erro") and getattr(self, "_render_galeria", None) is not None:
+            self._render_galeria.finalizar()     # a lista das imagens deste render fica fixa
         if tipo == "status":
             self.after(0, lambda t=evento[1]: self.lbl_status_processamento.configure(text=t))
         elif tipo == "passo":
@@ -932,11 +935,12 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
     LADO_MINIATURA_TK = 160
 
     def _atualizar_galeria(self):
-        """Lista as imagens (e reduz com o Pillow, se houver) numa thread; a tela muda pelo after."""
-        pasta = galeria.pasta_da_galeria(self.svg_selecionado, self.output_path)
+        """Lista as imagens (e reduz com o Pillow, se houver) numa thread; a tela muda pelo after.
+        Só as imagens do render desta sessão ou, sem render, as do último registrado."""
+        render = getattr(self, "_render_galeria", None)
 
         def trabalho():
-            itens = galeria.listar_imagens(pasta)
+            _, itens = galeria.imagens_da_galeria(render)
             dados = [(i, galeria.bytes_miniatura(i["caminho"], self.LADO_MINIATURA_TK, so_png=True)) for i in itens]
             self.after(0, lambda: self._mostrar_galeria(dados))
 
