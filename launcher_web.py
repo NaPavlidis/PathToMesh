@@ -2,7 +2,8 @@
 
 Faz o mesmo que a janela Tkinter do launcher.py, com as mesmas funções de lá:
   1. procura atualização no GitHub (e atualiza, depois de confirmar);
-  2. instala as dependências (pip: requirements-base.txt e depois o requirements.txt, com o pywebview);
+  2. instala as dependências (pip: requirements-base.txt, o requirements.txt, com o pywebview, e o
+     requirements-opcional.txt, com o Pillow, que só grava o log se falhar);
   3. confere o Blender do config.local.json;
   4. envia os logs de erro novos para a branch 'logs';
 e "Abrir o app" abre o app como um processo independente e fecha o launcher sozinho (se o app

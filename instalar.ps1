@@ -9,7 +9,9 @@
 #      público, ou só atualiza se a pasta já existir (o config.local.json nunca é apagado);
 #   3. instala as dependências: primeiro as essenciais (requirements-base.txt: svgpathtools), depois
 #      o requirements.txt (acrescenta o pywebview, a janela do app). Se o pywebview falhar, avisa e
-#      segue; sem ele ou sem o WebView2, o app abre na interface Tkinter de reserva;
+#      segue; sem ele ou sem o WebView2, o app abre na interface Tkinter de reserva. Por fim, o
+#      requirements-opcional.txt (o Pillow, para as miniaturas leves da galeria): se falhar, só
+#      avisa e segue (a galeria usa as imagens originais);
 #   4. cria o config.local.json a partir do config.exemplo.json, se faltar, e procura o Blender;
 #   5. cria os atalhos do launcher na Área de Trabalho e no Menu Iniciar (com o ícone do
 #      PathToMesh; os atalhos com o nome antigo que apontam para a mesma pasta são trocados)
@@ -329,6 +331,18 @@ try {
         $Resumo.Add('Dependências: instaladas')
     } elseif ($baseOk) {
         Certo 'Sem requirements.txt: nada para instalar.'
+    }
+    # Opcional (requirements-opcional.txt: o Pillow, para as miniaturas da galeria). Se falhar,
+    # só avisa e segue: a galeria usa as imagens originais.
+    $requisitosOpcional = Join-Path $pasta 'requirements-opcional.txt'
+    if ($baseOk -and (Test-Path -LiteralPath $requisitosOpcional)) {
+        & $py.Exe @pyArgs -m pip install --disable-pip-version-check -r $requisitosOpcional
+        if ($LASTEXITCODE -ne 0) {
+            Avisar 'O Pillow (opcional) não foi instalado; a galeria usa as imagens originais. O launcher tenta de novo quando abrir.'
+            $Resumo.Add('Pillow (opcional): não instalado (a galeria usa as imagens originais)')
+        } else {
+            Certo 'Pillow (opcional) instalado.'
+        }
     }
 
     # 5. Configuração e Blender

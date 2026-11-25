@@ -3,7 +3,8 @@
 Ao abrir:
   1. procura atualização no GitHub (git, se a pasta for um clone; senão a API pública e o zip da main);
   2. instala as dependências (pip: primeiro o requirements-base.txt, depois o requirements.txt,
-     que acrescenta o pywebview; se só o pywebview falhar, avisa e o app abre na Tkinter);
+     que acrescenta o pywebview; se só o pywebview falhar, avisa e o app abre na Tkinter; por fim
+     o requirements-opcional.txt, o Pillow das miniaturas: se ele falhar, só grava o log e segue);
   3. confere se o blender_path do config.local.json existe (criado, se faltar, a partir do
      config.json antigo ou do config.exemplo.json);
   4. envia os logs de erro novos para a branch 'logs' (se houver git com credencial).
@@ -337,10 +338,31 @@ def _pip(requisitos, pasta, executar):
     return None
 
 
-def instalar_dependencias(pasta=PASTA, executar=subprocess.run):
-    """Instala primeiro as dependências essenciais (requirements-base.txt) e depois o resto do
-    requirements.txt (o pywebview, da interface nova). Se só a segunda parte falhar (ex.: o
-    pythonnet sem pacote para a versão do Python), avisa e segue: o app.py abre a Tkinter."""
+AVISO_OPCIONAL = "O Pillow (opcional) não foi instalado: a galeria usa as imagens originais."
+
+
+def _instalar_opcionais(pasta, executar, registrar):
+    """Instala o requirements-opcional.txt (o Pillow, para as miniaturas leves da galeria). Se
+    falhar, só grava o log e segue. Devolve o aviso para a mensagem, ou '' se deu certo."""
+    opcional = os.path.join(pasta, "requirements-opcional.txt")
+    if not os.path.isfile(opcional):
+        return ""
+    erro = _pip(opcional, pasta, executar)
+    if erro is None:
+        return ""
+    try:
+        (registrar or reg.gravar_log)("launcher", "pip install do opcional (Pillow) falhou", AVISO_OPCIONAL + "\n" + erro)
+    except Exception:
+        pass
+    return AVISO_OPCIONAL
+
+
+def instalar_dependencias(pasta=PASTA, executar=subprocess.run, registrar=None):
+    """Instala primeiro as dependências essenciais (requirements-base.txt), depois o resto do
+    requirements.txt (o pywebview, da interface nova) e por fim o requirements-opcional.txt (o
+    Pillow). Se só o pywebview falhar (ex.: o pythonnet sem pacote para a versão do Python),
+    avisa e segue: o app.py abre a Tkinter. Se só o Pillow falhar, grava o log (registrar, por
+    padrão o registro_erros.gravar_log) e segue sem erro: a galeria usa as imagens originais."""
     base = os.path.join(pasta, "requirements-base.txt")
     completo = os.path.join(pasta, "requirements.txt")
     if os.path.isfile(base):
@@ -349,15 +371,19 @@ def instalar_dependencias(pasta=PASTA, executar=subprocess.run):
             return False, "O pip não instalou as dependências essenciais:\n" + erro
     if not os.path.isfile(completo):
         if os.path.isfile(base):
-            return True, "Dependências instaladas."
+            aviso = _instalar_opcionais(pasta, executar, registrar)
+            return True, "Dependências instaladas." + (f"\n{aviso}" if aviso else "")
         return True, "Sem requirements.txt: nada para instalar."
     erro = _pip(completo, pasta, executar)
     if erro is not None:
         if os.path.isfile(base):
+            aviso = _instalar_opcionais(pasta, executar, registrar)
             return False, (AVISO_INTERFACE + "\nAs dependências essenciais foram instaladas. "
-                           "Erro do pip na interface nova (pywebview):\n" + erro)
+                           + (f"{aviso} " if aviso else "")
+                           + "Erro do pip na interface nova (pywebview):\n" + erro)
         return False, "O pip falhou:\n" + erro
-    return True, "Dependências instaladas."
+    aviso = _instalar_opcionais(pasta, executar, registrar)
+    return True, "Dependências instaladas." + (f"\n{aviso}" if aviso else "")
 
 
 def ler_config(pasta=PASTA):

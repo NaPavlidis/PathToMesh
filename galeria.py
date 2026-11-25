@@ -1,8 +1,10 @@
 """Galeria das imagens geradas pelo Blender (pasta "imagens 3d" ao lado do SVG), sem interface.
 
 - listar_imagens(pasta): as imagens da pasta, com câmera, tamanho, dimensões e data.
-- miniatura(caminho): a imagem reduzida (com o Pillow, se houver no PC) ou, sem o Pillow, a
-  original (a tela limita o tamanho por CSS), como data URI para o <img> da tela web.
+- miniatura(caminho): a imagem reduzida (com o Pillow, opcional, do requirements-opcional.txt)
+  ou, sem o Pillow, a original (a tela limita o tamanho por CSS), como data URI para o <img> da
+  tela web. As reduzidas ficam em cache no disco (.cache_miniaturas/, no .gitignore), com a data
+  e o tamanho do arquivo no nome: imagem regravada pelo Blender gera uma miniatura nova.
 - imagem_completa(caminho): a original como data URI (para a imagem ampliada).
 - Última pasta de saída (.ultimo_render.json, no .gitignore): a galeria mostra o último render
   também quando o app abre.
@@ -11,6 +13,7 @@ Não importa tkinter nem webview; o Pillow só é importado na primeira miniatur
 """
 import base64
 import datetime
+import hashlib
 import json
 import os
 import struct
@@ -22,9 +25,11 @@ EXTENSOES = (".png", ".jpg", ".jpeg", ".webp", ".bmp")
 TIPOS_MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".bmp": "image/bmp"}
 # Ordem das câmeras do blender_engine (as imagens se chamam <câmera>.png)
 ORDEM_CAMERAS = ("Camera_Principal", "Camera_Esquerda", "Camera_Direita")
-LADO_MINIATURA = 360                      # px do lado maior da miniatura
+LADO_MINIATURA = 320                      # px do lado maior da miniatura
 LIMITE_ORIGINAL = 40 * 1024 * 1024        # sem o Pillow, a original só vai à tela até este tamanho
 ARQUIVO_ULTIMO = ".ultimo_render.json"
+PASTA_CACHE = ".cache_miniaturas"         # na pasta do projeto (no .gitignore)
+MAXIMO_CACHE = 600                        # miniaturas no disco; passando disso, apaga as mais antigas
 
 
 # ------------------------------------------------------------------ última pasta de saída
@@ -198,12 +203,66 @@ def _mime(caminho):
     return TIPOS_MIME.get(os.path.splitext(caminho)[1].lower(), "application/octet-stream")
 
 
-def bytes_miniatura(caminho, lado=LADO_MINIATURA, image=None, so_png=False):
-    """(bytes, mime) da imagem reduzida com o Pillow (PNG se tiver transparência ou com so_png,
-    para o PhotoImage do Tk; senão JPEG), ou None sem o Pillow ou se ele não abrir a imagem."""
-    image = image if image is not None else pillow()
-    if image is None:
-        return None
+# ------------------------------------------------------------------ cache das miniaturas no disco
+def pasta_cache(pasta_projeto=None):
+    return os.path.join(pasta_projeto or PASTA_PROJETO, PASTA_CACHE)
+
+
+def _nomes_cache(caminho, lado, so_png):
+    """(prefixo, versão) do arquivo no cache: o prefixo identifica a imagem e o tamanho pedido;
+    a versão é a data e o tamanho do arquivo (muda quando a imagem é regravada)."""
+    st = os.stat(caminho)
+    ident = f"{os.path.normcase(os.path.abspath(caminho))}|{lado}|{'png' if so_png else 'auto'}"
+    prefixo = hashlib.sha1(ident.encode("utf-8", "surrogatepass")).hexdigest()[:20]
+    return prefixo, f"{st.st_mtime_ns}-{st.st_size}"
+
+
+def _ler_cache(pasta, prefixo, versao):
+    for ext, mime in ((".jpg", "image/jpeg"), (".png", "image/png")):
+        try:
+            with open(os.path.join(pasta, f"{prefixo}-{versao}{ext}"), "rb") as f:
+                dados = f.read()
+            if dados:
+                return dados, mime
+        except OSError:
+            continue
+    return None
+
+
+def _gravar_cache(pasta, prefixo, versao, dados, mime):
+    """Grava a miniatura e apaga as versões velhas da mesma imagem (e as mais antigas, se o
+    cache passar do máximo). Erros (disco cheio, pasta sem permissão) são ignorados."""
+    try:
+        os.makedirs(pasta, exist_ok=True)
+        destino = os.path.join(pasta, f"{prefixo}-{versao}{'.png' if mime == 'image/png' else '.jpg'}")
+        with open(destino + ".novo", "wb") as f:
+            f.write(dados)
+        os.replace(destino + ".novo", destino)
+        nomes = os.listdir(pasta)
+        for nome in nomes:
+            if nome.startswith(prefixo + "-") and os.path.join(pasta, nome) != destino:
+                try:
+                    os.remove(os.path.join(pasta, nome))
+                except OSError:
+                    pass
+        if len(nomes) > MAXIMO_CACHE:
+            arquivos = []
+            for nome in os.listdir(pasta):
+                try:
+                    arquivos.append((os.path.getmtime(os.path.join(pasta, nome)), nome))
+                except OSError:
+                    pass
+            arquivos.sort()
+            for _, nome in arquivos[:max(0, len(arquivos) - MAXIMO_CACHE * 5 // 6)]:
+                try:
+                    os.remove(os.path.join(pasta, nome))
+                except OSError:
+                    pass
+    except OSError:
+        pass
+
+
+def _reduzir(caminho, lado, image, so_png):
     try:
         import io
         with image.open(caminho) as img:
@@ -216,6 +275,27 @@ def bytes_miniatura(caminho, lado=LADO_MINIATURA, image=None, so_png=False):
             return saida.getvalue(), "image/jpeg"
     except Exception:
         return None
+
+
+def bytes_miniatura(caminho, lado=LADO_MINIATURA, image=None, so_png=False, cache=None):
+    """(bytes, mime) da imagem reduzida com o Pillow (PNG se tiver transparência ou com so_png,
+    para o PhotoImage do Tk; senão JPEG), ou None sem o Pillow ou se ele não abrir a imagem.
+    Usa o cache do disco (cache: a pasta; padrão .cache_miniaturas na pasta do projeto)."""
+    image = image if image is not None else pillow()
+    if image is None:
+        return None
+    pasta = cache or pasta_cache()
+    try:
+        prefixo, versao = _nomes_cache(caminho, lado, so_png)
+    except OSError:
+        return None
+    guardada = _ler_cache(pasta, prefixo, versao)
+    if guardada is not None:
+        return guardada
+    reduzida = _reduzir(caminho, lado, image, so_png)
+    if reduzida is not None:
+        _gravar_cache(pasta, prefixo, versao, *reduzida)
+    return reduzida
 
 
 class Cache:
@@ -241,9 +321,10 @@ class Cache:
                 self._dados.pop(next(iter(self._dados)))
 
 
-def miniatura(caminho, lado=LADO_MINIATURA, image=None, limite=LIMITE_ORIGINAL):
-    """{'ok', 'src', 'reduzida'}: a miniatura feita no Python (Pillow) ou, sem ele, a original."""
-    reduzida = bytes_miniatura(caminho, lado, image)
+def miniatura(caminho, lado=LADO_MINIATURA, image=None, limite=LIMITE_ORIGINAL, cache=None):
+    """{'ok', 'src', 'reduzida'}: a miniatura feita no Python (Pillow, com cache no disco) ou,
+    sem ele, a original."""
+    reduzida = bytes_miniatura(caminho, lado, image, cache=cache)
     if reduzida is not None:
         return {"ok": True, "src": _data_uri(*reduzida), "reduzida": True}
     resultado = imagem_completa(caminho, limite)
