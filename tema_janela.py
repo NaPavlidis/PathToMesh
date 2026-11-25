@@ -66,6 +66,21 @@ TEMA = {
     'texto_apagado':  '#89929B',  # dark-outline: dicas, legendas, rodapé e itens inativos
 }
 
+
+def cor_media(cor_a, cor_b):
+    """Meio-termo de duas cores '#RRGGBB': a média de cada canal RGB (arredondada para baixo)."""
+    canais = []
+    for cor in (cor_a, cor_b):
+        texto = cor.strip().lstrip("#")
+        canais.append([int(texto[i:i + 2], 16) for i in (0, 2, 4)])
+    return "#" + "".join(f"{(a + b) // 2:02X}" for a, b in zip(*canais))
+
+
+# Áreas opacas (as que não ficam transparentes com o Acrylic: cartões, menu lateral, janelas):
+# o meio-termo entre a 'superficie' e a 'barra' (cabeçalho e barra de título), um pouco mais
+# escuro que a 'superficie'. É o --surface-opaca do ui_web/tema.css (#14181C).
+TEMA['superficie_opaca'] = cor_media(TEMA['superficie'], TEMA['barra'])
+
 # Grade do modelo (px): xs 4, sm 8, md 12, lg 16, xl 24, 2xl 32, 3xl 48
 ESPACO = {'xs': 4, 'p': 8, 'pm': 12, 'm': 16, 'g': 24, 'gg': 32, 'ggg': 48}
 

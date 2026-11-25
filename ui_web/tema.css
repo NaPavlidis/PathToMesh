@@ -4,7 +4,7 @@
    As cores são as mesmas do tema_janela.TEMA (a interface Tkinter e a barra de título usam as mesmas).
 
    Contornos: cartões, campos, botões e divisórias não têm borda colorida. A separação vem do
-   espaçamento e da leve diferença de fundo (surface < container-low < container < high).
+   espaçamento e da leve diferença de fundo (surface < surface-opaca < container < high).
    O anel de foco aparece só no :focus-visible (teclado), para acessibilidade. */
 
 /* Fontes do modelo, locais (licença SIL OFL 1.1, em ui_web/fontes/*-OFL.txt): arquivos .ttf
@@ -62,6 +62,10 @@
   --on-surface-variant: #BFC7D2;
   --outline: #89929B;
   --outline-variant: #3F4850;
+  /* áreas opacas (não ficam transparentes com o Acrylic): cartões, menu lateral, janelas.
+     Meio-termo (média RGB) entre o --surface-container-low (#181C20) e a cor do cabeçalho e da
+     barra de título (--surface, #101418). É o TEMA['superficie_opaca'] do tema_janela.py. */
+  --surface-opaca: #14181C;
 
   /* espaços: xs 4, sm 8, md 12, lg 16, xl 24, 2xl 32, 3xl 48 */
   --xs: 4px; --sm: 8px; --md: 12px; --lg: 16px; --xl: 24px; --x2: 32px; --x3: 48px;

@@ -243,7 +243,7 @@
       $('svg-dica').hidden = false;
       mostrarAnalise(r);
       atualizarGaleria();                            // a galeria passa a ser a da pasta deste SVG
-      if (r.aviso) mostrarAviso(r.aviso.titulo, r.aviso.mensagem, 'aviso');
+      // peças que não serão convertidas: o aviso fica só no painel de análise (sem modal)
     });
   }
 

@@ -66,7 +66,7 @@ IGNORAR_NO_ZIP = {".git", "logs", ".venv", "venv", "__pycache__", reg.ARQUIVO_VE
 # Mesma paleta do app_ui.py (tema_janela.TEMA, tirada do docs/modelo-layout.html)
 COR_FUNDO = TEMA['fundo']
 COR_BARRA = TEMA['barra']
-COR_CARTAO = TEMA['superficie']
+COR_CARTAO = TEMA['superficie_opaca']   # meio-termo entre a superfície e a barra
 COR_CAMPO = TEMA['campo']
 COR_BOTAO = TEMA['elevado']
 COR_BOTAO_HOVER = TEMA['elevado_hover']

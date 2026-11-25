@@ -213,12 +213,9 @@ class Api:
         return resultado
 
     def analisar_svg(self, caminho):
+        # peças que não serão convertidas: só no painel de análise (dados["descartadas"]), sem modal
         info = nucleo.extrair_informacoes_svg(caminho)
-        aviso = None
-        if info and info["pecas_descartadas"]:
-            aviso = {"titulo": nucleo.TITULO_AVISO_DESCARTADAS,
-                     "mensagem": nucleo.montar_aviso_descartadas(info["pecas_descartadas"])}
-        return {"texto": nucleo.montar_resumo_svg(info), "dados": _info_para_js(info), "aviso": aviso}
+        return {"texto": nucleo.montar_resumo_svg(info), "dados": _info_para_js(info)}
 
     def listar_resinas(self, atual=None):
         if atual is not None:

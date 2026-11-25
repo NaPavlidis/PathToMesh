@@ -73,7 +73,7 @@ def aplicar_estilo(janela):
         pass
 
     # Caixas de seleção: quadrado escuro com borda cinza; marcada, fica azul (primary-container)
-    for nome_estilo, fundo in (("Cartao.TCheckbutton", TEMA['superficie']), ("Grupo.TCheckbutton", TEMA['container'])):
+    for nome_estilo, fundo in (("Cartao.TCheckbutton", TEMA['superficie_opaca']), ("Grupo.TCheckbutton", TEMA['container'])):
         estilo.configure(nome_estilo,
                          background=fundo, foreground=TEMA['texto'],
                          font=FONTES['corpo'], focuscolor=fundo,
@@ -133,18 +133,18 @@ def criar_botao(pai, texto, comando, tipo="secundario", **extra):
 def criar_cartao(pai, titulo=None, subtitulo=None, cor_titulo='texto'):
     """Cartão (card do modelo): fundo surface-container-low, borda de 1 px, recuo de 24 px e
     cabeçalho com linha embaixo. Devolve (cartão, corpo). O corpo já tem o recuo interno."""
-    cartao = tk.Frame(pai, bg=TEMA['superficie'], highlightthickness=1,
+    cartao = tk.Frame(pai, bg=TEMA['superficie_opaca'], highlightthickness=1,
                       highlightbackground=TEMA['borda'], highlightcolor=TEMA['borda'])
     if titulo:
-        cab = tk.Frame(cartao, bg=TEMA['superficie'])
+        cab = tk.Frame(cartao, bg=TEMA['superficie_opaca'])
         cab.pack(fill="x", padx=ESPACO['g'], pady=(ESPACO['m'] + ESPACO['xs'], 0))
-        tk.Label(cab, text=titulo, fg=TEMA[cor_titulo], bg=TEMA['superficie'],
+        tk.Label(cab, text=titulo, fg=TEMA[cor_titulo], bg=TEMA['superficie_opaca'],
                  font=FONTES['secao'], anchor="w").pack(fill="x")
         if subtitulo:
-            tk.Label(cab, text=subtitulo, fg=TEMA['texto_suave'], bg=TEMA['superficie'],
+            tk.Label(cab, text=subtitulo, fg=TEMA['texto_suave'], bg=TEMA['superficie_opaca'],
                      font=FONTES['dica'], anchor="w", justify="left").pack(fill="x", pady=(ESPACO['xs'], 0))
         criar_divisor(cartao).pack(fill="x", padx=ESPACO['g'], pady=(ESPACO['m'], 0))
-    corpo = tk.Frame(cartao, bg=TEMA['superficie'])
+    corpo = tk.Frame(cartao, bg=TEMA['superficie_opaca'])
     corpo.pack(fill="both", expand=True, padx=ESPACO['g'], pady=(ESPACO['m'], ESPACO['m'] + ESPACO['xs']))
     return cartao, corpo
 
@@ -153,7 +153,7 @@ def criar_divisor(pai, cor='divisor'):
     return tk.Frame(pai, bg=TEMA[cor], height=1)
 
 
-def criar_legenda(pai, texto, bg='superficie'):
+def criar_legenda(pai, texto, bg='superficie_opaca'):
     """Legenda de seção em caixa alta (ex.: ARQUIVO, ACABAMENTO)."""
     return tk.Label(pai, text=texto.upper(), fg=TEMA['texto_suave'], bg=TEMA[bg],
                     font=FONTES['legenda'], anchor="w")
@@ -296,7 +296,7 @@ class SettingsWindow(tk.Toplevel):
         tema_janela.preparar_janela(self, "app")
 
     def _build_ui(self):
-        sup = TEMA['superficie']
+        sup = TEMA['superficie_opaca']
 
         # Ação principal: o rodapé entra primeiro e fica preso embaixo, para o botão
         # Salvar estar sempre visível (antes ele ficava fora da janela, junto com o
@@ -518,16 +518,16 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
 
     def _build_sidebar(self):
         # Menu lateral de 240 px (surface-container-low), recuo de 16 px e borda direita (outline)
-        sidebar = tk.Frame(self, bg=TEMA['superficie'], width=240)
+        sidebar = tk.Frame(self, bg=TEMA['superficie_opaca'], width=240)
         sidebar.grid(row=1, column=0, sticky="nsew")
         sidebar.pack_propagate(False)
         self._sidebar = sidebar
         tk.Frame(sidebar, bg=TEMA['borda'], width=1).pack(side="right", fill="y")
 
-        header_frame = tk.Frame(sidebar, bg=TEMA['superficie'], padx=ESPACO['p'])
+        header_frame = tk.Frame(sidebar, bg=TEMA['superficie_opaca'], padx=ESPACO['p'])
         header_frame.pack(fill="x", padx=ESPACO['m'], pady=(ESPACO['m'] + ESPACO['xs'], 0))
-        tk.Label(header_frame, text="SVG Converter", fg=TEMA['texto'], bg=TEMA['superficie'], font=FONTES['marca'], anchor="w").pack(fill="x")
-        tk.Label(header_frame, text="HIGH PRECISION TOOL", fg=TEMA['texto_apagado'], bg=TEMA['superficie'], font=FONTES['legenda'], anchor="w").pack(fill="x")
+        tk.Label(header_frame, text="SVG Converter", fg=TEMA['texto'], bg=TEMA['superficie_opaca'], font=FONTES['marca'], anchor="w").pack(fill="x")
+        tk.Label(header_frame, text="HIGH PRECISION TOOL", fg=TEMA['texto_apagado'], bg=TEMA['superficie_opaca'], font=FONTES['legenda'], anchor="w").pack(fill="x")
         criar_divisor(sidebar).pack(fill="x", padx=ESPACO['m'], pady=(ESPACO['m'], 0))
         legenda_nav = criar_legenda(sidebar, "Navegação")
         legenda_nav.configure(fg=TEMA['texto_apagado'])
@@ -541,15 +541,15 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
         }
         for key, text in menu_items.items():
             # Item: 12 px de recuo, 8 px em cima e embaixo; o ativo ganha fundo, borda e texto azul
-            btn = tk.Button(sidebar, text=text, fg=TEMA['texto_suave'], bg=TEMA['superficie'], bd=0, relief="flat",
+            btn = tk.Button(sidebar, text=text, fg=TEMA['texto_suave'], bg=TEMA['superficie_opaca'], bd=0, relief="flat",
                             anchor="w", padx=ESPACO['pm'], pady=ESPACO['p'], font=FONTES['nav'], cursor="hand2",
                             activebackground=TEMA['container'], activeforeground=TEMA['texto'],
-                            highlightthickness=1, highlightbackground=TEMA['superficie'], highlightcolor=TEMA['destaque'],
+                            highlightthickness=1, highlightbackground=TEMA['superficie_opaca'], highlightcolor=TEMA['destaque'],
                             command=lambda k=key: self._show_screen(k))
             btn.pack(fill="x", padx=ESPACO['m'], pady=(0, ESPACO['xs']))
             # Hover só nos itens inativos (o ativo fica com o texto em destaque)
             btn.bind("<Enter>", lambda _e, b=btn: b.cget("fg") != TEMA['destaque'] and b.configure(bg=TEMA['container'], fg=TEMA['texto']))
-            btn.bind("<Leave>", lambda _e, b=btn: b.cget("fg") != TEMA['destaque'] and b.configure(bg=TEMA['superficie'], fg=TEMA['texto_suave']))
+            btn.bind("<Leave>", lambda _e, b=btn: b.cget("fg") != TEMA['destaque'] and b.configure(bg=TEMA['superficie_opaca'], fg=TEMA['texto_suave']))
             self.sidebar_buttons[key] = btn
 
     def _show_screen(self, screen_key):
@@ -558,8 +558,8 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
                 btn.configure(bg=TEMA['elevado'], fg=TEMA['destaque'], font=FONTES['nav_ativo'],
                               highlightbackground=TEMA['borda'])
             else:
-                btn.configure(bg=TEMA['superficie'], fg=TEMA['texto_suave'], font=FONTES['nav'],
-                              highlightbackground=TEMA['superficie'])
+                btn.configure(bg=TEMA['superficie_opaca'], fg=TEMA['texto_suave'], font=FONTES['nav'],
+                              highlightbackground=TEMA['superficie_opaca'])
 
         if screen_key == "catalogo":
             # mapear o catálogo (às vezes numa unidade de rede) numa thread: a troca de tela é imediata
@@ -612,7 +612,7 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
             menu.add_command(label="Nenhum modelo 3D encontrado", command=lambda: None)
 
     def _build_upload_screen(self):
-        sup = TEMA['superficie']
+        sup = TEMA['superficie_opaca']
         screen = tk.Frame(self.main_container, bg=TEMA['fundo'])
         screen.grid(row=0, column=0, sticky="nsew")
         self.screens["upload"] = screen
@@ -741,16 +741,12 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
 
         self.txt_analise_svg.insert("1.0", nucleo.montar_resumo_svg(info))
 
+        # peças que não serão convertidas: o aviso fica só no painel (linha "PEÇAS QUE NÃO SERÃO
+        # CONVERTIDAS: N" do resumo), sem janela de aviso
         self.txt_analise_svg.configure(state="disabled")
 
-        if info and info['pecas_descartadas']:
-            self._avisar_pecas_descartadas(info['pecas_descartadas'])
-
-    def _avisar_pecas_descartadas(self, pecas_descartadas):
-        messagebox.showwarning(nucleo.TITULO_AVISO_DESCARTADAS, nucleo.montar_aviso_descartadas(pecas_descartadas))
-
     def _build_catalogo_screen(self):
-        sup = TEMA['superficie']
+        sup = TEMA['superficie_opaca']
         screen = tk.Frame(self.main_container, bg=TEMA['fundo'])
         screen.grid(row=0, column=0, sticky="nsew")
         self.screens["catalogo"] = screen
@@ -842,7 +838,7 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
         self.lbl_porcentagem.configure(text=f"{int(porcentagem)}%")
 
     def adicionar_passo_concluido(self, texto_concluido, novo_status):
-        lbl_hist = tk.Label(self.frame_historico, text=texto_concluido, fg=TEMA['sucesso'], bg=TEMA['superficie'], font=FONTES['corpo_negrito'], anchor="w")
+        lbl_hist = tk.Label(self.frame_historico, text=texto_concluido, fg=TEMA['sucesso'], bg=TEMA['superficie_opaca'], font=FONTES['corpo_negrito'], anchor="w")
         lbl_hist.pack(fill="x", pady=2)
         self.lbl_status_processamento.configure(text=novo_status)
 
@@ -863,7 +859,7 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
         self._show_screen("download")
 
     def _build_processing_screen(self):
-        sup = TEMA['superficie']
+        sup = TEMA['superficie_opaca']
         screen = tk.Frame(self.main_container, bg=TEMA['fundo'])
         screen.grid(row=0, column=0, sticky="nsew")
         self.screens["processing"] = screen
@@ -906,7 +902,7 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
         self.frame_historico.pack(fill="x")
 
     def _build_download_screen(self):
-        sup = TEMA['superficie']
+        sup = TEMA['superficie_opaca']
         screen = tk.Frame(self.main_container, bg=TEMA['fundo'])
         screen.grid(row=0, column=0, sticky="nsew")
         self.screens["download"] = screen
@@ -919,7 +915,7 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
         centro = tk.Frame(corpo, bg=sup)
         centro.place(relx=0.5, rely=0.45, anchor="center")
 
-        criar_circulo(centro, "✓", 'sucesso', 'sobre_sucesso', tamanho=88, bg='superficie', fonte='grande').pack(pady=(0, ESPACO['g']))
+        criar_circulo(centro, "✓", 'sucesso', 'sobre_sucesso', tamanho=88, bg='superficie_opaca', fonte='grande').pack(pady=(0, ESPACO['g']))
         tk.Label(centro, text="Processamento Concluído!", fg=TEMA['sucesso'], bg=sup, font=FONTES['titulo']).pack()
         tk.Label(centro, text="Abra a pasta para ver as imagens e os arquivos gerados.", fg=TEMA['texto_suave'], bg=sup, font=FONTES['subtitulo']).pack(pady=(ESPACO['xs'], 0))
         criar_botao(centro, "Abrir Pasta de Imagens / Arquivos", lambda: nucleo.abrir_pasta_saida(self.output_path), "sucesso",
@@ -972,7 +968,7 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
         for filho in self.frame_galeria.winfo_children():
             filho.destroy()
         self._fotos_galeria = []
-        sup = TEMA['superficie']
+        sup = TEMA['superficie_opaca']
         self._centro_download.place_configure(rely=0.3 if dados else 0.45)
         if not dados:
             return
@@ -999,10 +995,10 @@ class VectorConvertProApp(EstadoApp, tk.Tk):
 
     def _build_footer(self):
         # Como no modelo: o rodapé fica no pé do menu lateral, com linha em cima (outline)
-        footer = tk.Frame(self._sidebar, bg=TEMA['superficie'])
+        footer = tk.Frame(self._sidebar, bg=TEMA['superficie_opaca'])
         footer.pack(side="bottom", fill="x", padx=ESPACO['m'], pady=(0, ESPACO['m']))
         tk.Frame(footer, bg=TEMA['borda'], height=1).pack(fill="x")
-        tk.Label(footer, text=f"© 2026 {tema_janela.NOME_APP}. All rights reserved.", fg=TEMA['texto_apagado'], bg=TEMA['superficie'],
+        tk.Label(footer, text=f"© 2026 {tema_janela.NOME_APP}. All rights reserved.", fg=TEMA['texto_apagado'], bg=TEMA['superficie_opaca'],
                  font=FONTES['dica'], anchor="w", justify="left", wraplength=190).pack(fill="x", padx=ESPACO['p'], pady=(ESPACO['m'], 0))
 
 
