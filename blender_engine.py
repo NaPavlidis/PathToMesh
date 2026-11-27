@@ -424,16 +424,37 @@ def importar_e_converter_svg(caminho_temp, opcoes_malha=None):
 # malha_logica.py; aqui só o que depende de bpy/bmesh.
 # ------------------------------------------------------------------------------
 def _aplicar_modificador(obj, mod):
+    """Aplica o modificador no objeto, igual com janela e em --background. O bpy.ops.object.modifier_apply
+    depende do contexto (objeto ativo/selecionado): por isso roda dentro de temp_override e o resultado é
+    conferido. Se o operador falhar ou o modificador continuar na pilha, loga o erro e usa a malha
+    avaliada (depsgraph), sem engolir o problema."""
+    nome_obj, nome_mod = obj.name, mod.name
     bpy.ops.object.select_all(action='DESELECT')
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
+    bpy.context.view_layer.update()
+    erro = None
     try:
-        bpy.ops.object.modifier_apply(modifier=mod.name)
-    except RuntimeError:
+        with bpy.context.temp_override(object=obj, active_object=obj, selected_objects=[obj],
+                                       selected_editable_objects=[obj]):
+            bpy.ops.object.modifier_apply(modifier=nome_mod)
+    except Exception as e:
+        erro = e
+    if nome_mod not in [m.name for m in obj.modifiers]:
+        return True
+    print(f">>> Aviso: modifier_apply não aplicou '{nome_mod}' em {nome_obj} ({erro or 'continuou na pilha'}); "
+          f"usando a malha avaliada", flush=True)
+    try:
         depsgraph_eval = bpy.context.evaluated_depsgraph_get()
         mesh_eval = bpy.data.meshes.new_from_object(obj.evaluated_get(depsgraph_eval))
-        obj.modifiers.remove(mod)
+        for m in list(obj.modifiers):
+            obj.modifiers.remove(m)
         obj.data = mesh_eval
+        bpy.context.view_layer.update()
+        return True
+    except Exception as e:
+        print(f">>> ERRO: não foi possível aplicar '{nome_mod}' em {nome_obj}: {e}", flush=True)
+        return False
 
 
 def _limpar_bm(bm, dist_m, orientar):
@@ -690,16 +711,8 @@ def aplicar_materiais_e_empilhar(elementos_mapeados, imagens_disponiveis, usar_v
             mod_solidify.use_even_offset = True    
             mod_solidify.use_quality_normals = True 
             mod_solidify.solidify_mode = 'NON_MANIFOLD' 
-            try:
-                bpy.ops.object.modifier_apply(modifier=mod_solidify.name)
-            except RuntimeError:
-                depsgraph_eval = bpy.context.evaluated_depsgraph_get()
-                object_eval = obj.evaluated_get(depsgraph_eval)
-                mesh_eval = bpy.data.meshes.new_from_object(object_eval)
-                obj.modifiers.remove(mod_solidify)
-                obj.data = mesh_eval
-                bpy.context.view_layer.update()
-            
+            _aplicar_modificador(obj, mod_solidify)
+
             # Garante que as coordenadas procedurais leiam a escala 1:1 real
             bpy.ops.object.select_all(action='DESELECT')
             obj.select_set(True)
