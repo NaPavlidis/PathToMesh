@@ -1,0 +1,295 @@
+PathToMesh - registro de renderização
+Data: 2026-11-27 11:22:52
+Versão: e2fc04b (2026-11-27)
+Sistema: Windows 11 (10.0.26300), Python 3.14.10
+
+Início: 2026-11-27 11:22:52
+Duração total: 24.1 s
+Código de saída do Blender: 0
+Resultado: sucesso
+Render automático: True  ·  Samples: 32  ·  Câmeras: Camera_Direita
+Pesos: preparação 0.098, render 0.890, final 0.012  ·  câmera: preparo 0.050, principal 0.758, freestyle 0.176, gravar 0.017  ·  Freestyle: True
+Comando: "<CAMINHO>/blender.exe" "--background" "--python" "<CAMINHO>/blender_engine.py" "--" "<CAMINHO>/renan m1.svg" "<CAMINHO>/imagens 3d" "<CAMINHO>/<CONFIG>" "True" "True" "32" "False" "<CAMINHO>/kart resina.obj" "Camera_Direita" "tratar=1;merge_mm=0.5;dissolve=1;dissolve_graus=5.0;arredondar=1;bevel_mm=1.0;bevel_segmentos=5;bevel_bordas=topo;bevel_pecas=todas;suavizar=1;suavizar_graus=80.0;resolucao_curva=24"
+
+Tempo de cada etapa:
+  Abrir o estúdio base: concluida, 0.0 s
+  Ler e importar o SVG: concluida, 0.0 s
+  Aplicar materiais e extrusões: concluida, 0.2 s
+  Montar o troféu: concluida, 0.0 s
+  Posicionar as câmeras: concluida, 0.0 s
+  Renderizar câmera 1 de 1 (Camera_Direita): concluida, 22.3 s (até a 1ª sample 0.4 s; samples 0→32/32 em 15.8 s; Freestyle 32/32 samples em 5.5 s; depois da última sample 0.3 s)
+  Gravar as imagens e fechar o Blender: concluida, 0.2 s
+
+Saída do Blender (segundos desde o início | linha):
+    1.437 | PTM_ETAPA estudio 1/7 Abrindo o estúdio base
+    1.438 | >>> Carregando estúdio base: <CAMINHO>/<CONFIG>
+    1.438 | 00:01.391  blend            | Read blend: "<CAMINHO>/<CONFIG>"
+    1.450 | <CAMINHO>/blender_engine.py:259: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+    1.450 |   if bpy.context.scene.world and bpy.context.scene.world.use_nodes:
+    1.451 | PTM_ETAPA svg 2/7 Lendo e importando o SVG
+    1.451 | >>> Analisando e importando o arquivo SVG...
+    1.501 | PTM_ETAPA materiais 3/7 Aplicando materiais, texturas e extrusões
+    1.501 | >>> Aplicando materiais, texturas e extrusões...
+    1.506 | >>> Bevel trofeu_shape_1.001: arredondar=ligado | tipo BASE (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 3.0000 mm, real 3.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0010000 (unid. Blender) = 1.0000 mm | arestas selecionadas 4 | vértices antes 8
+    1.508 | >>> Bevel trofeu_shape_1.001: vértices depois 28 (antes 8) | faces 26 (antes 6) | aplicado: sim
+    1.510 | >>> Malha trofeu_shape_1.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 28/26 (4 arestas, 1.00 mm) | final 28/26
+    1.510 | <CAMINHO>/blender_engine.py:130: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    1.510 |   mat.use_nodes = True
+    1.512 | <CAMINHO>/blender_engine.py:800: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    1.512 |   if mat and mat.use_nodes:
+    1.517 | >>> Bevel trofeu_shape_2.001: arredondar=ligado | tipo BASE (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 25.0000 mm, real 25.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0010000 (unid. Blender) = 1.0000 mm | arestas selecionadas 4 | vértices antes 8
+    1.519 | >>> Bevel trofeu_shape_2.001: vértices depois 28 (antes 8) | faces 26 (antes 6) | aplicado: sim
+    1.521 | >>> Malha trofeu_shape_2.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 28/26 (4 arestas, 1.00 mm) | final 28/26
+    1.527 | >>> Bevel trofeu_shape_3.001: arredondar=ligado | tipo ADESIVO (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 0.5000 mm, real 0.5100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0004080 (unid. Blender) = 0.4080 mm | arestas selecionadas 4 | vértices antes 8
+    1.529 | >>> Bevel trofeu_shape_3.001: vértices depois 28 (antes 8) | faces 26 (antes 6) | aplicado: sim
+    1.531 | >>> Malha trofeu_shape_3.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 28/26 (4 arestas, 0.41 mm) | final 28/26
+    1.531 | <CAMINHO>/blender_engine.py:759: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    1.531 |   mat.use_nodes = True
+    1.587 | >>> Bevel trofeu_shape_4.001: arredondar=ligado | tipo MDF (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 6.0000 mm, real 6.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0010000 (unid. Blender) = 1.0000 mm | arestas selecionadas 50 | vértices antes 249
+    1.592 | >>> Bevel trofeu_shape_4.001: vértices depois 356 (antes 106) | faces 307 (antes 57) | aplicado: sim
+    1.596 | >>> Malha trofeu_shape_4.001: vértices/faces antes 548/822 | limpeza 249/355 | dissolve 106/57 | bevel 356/307 (50 arestas, 1.00 mm) | final 356/421
+    1.619 | >>> Bevel trofeu_shape_5.001: arredondar=ligado | tipo MDF (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 3.0000 mm, real 3.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0010000 (unid. Blender) = 1.0000 mm | arestas selecionadas 60 | vértices antes 420
+    1.625 | >>> Bevel trofeu_shape_5.001: vértices depois 429 (antes 129) | faces 365 (antes 65) | aplicado: sim
+    1.629 | >>> Malha trofeu_shape_5.001: vértices/faces antes 936/1404 | limpeza 420/607 | dissolve 129/65 | bevel 429/365 (60 arestas, 1.00 mm) | final 429/515
+    1.635 | >>> Bevel trofeu_shape_6.001: arredondar=ligado | tipo ACRILICO (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 1.0000 mm, real 1.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0008080 (unid. Blender) = 0.8080 mm | arestas selecionadas 4 | vértices antes 8
+    1.637 | >>> Bevel trofeu_shape_6.001: vértices depois 28 (antes 8) | faces 26 (antes 6) | aplicado: sim
+    1.639 | >>> Malha trofeu_shape_6.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 28/26 (4 arestas, 0.81 mm) | final 28/26
+    1.644 | >>> Bevel trofeu_shape_7.001: arredondar=ligado | tipo ADESIVO (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 0.5000 mm, real 0.5100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0004080 (unid. Blender) = 0.4080 mm | arestas selecionadas 4 | vértices antes 8
+    1.646 | >>> Bevel trofeu_shape_7.001: vértices depois 28 (antes 8) | faces 26 (antes 6) | aplicado: sim
+    1.648 | >>> Malha trofeu_shape_7.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 28/26 (4 arestas, 0.41 mm) | final 28/26
+    1.654 | >>> Bevel trofeu_shape_8.001: arredondar=ligado | tipo ACRILICO (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 1.0000 mm, real 1.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0008080 (unid. Blender) = 0.8080 mm | arestas selecionadas 4 | vértices antes 8
+    1.656 | >>> Bevel trofeu_shape_8.001: vértices depois 28 (antes 8) | faces 26 (antes 6) | aplicado: sim
+    1.658 | >>> Malha trofeu_shape_8.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 28/26 (4 arestas, 0.81 mm) | final 28/26
+    1.663 | >>> Bevel trofeu_shape_9.001: arredondar=ligado | tipo ACRILICO (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 1.0000 mm, real 1.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0008080 (unid. Blender) = 0.8080 mm | arestas selecionadas 4 | vértices antes 8
+    1.665 | >>> Bevel trofeu_shape_9.001: vértices depois 28 (antes 8) | faces 26 (antes 6) | aplicado: sim
+    1.667 | >>> Malha trofeu_shape_9.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 28/26 (4 arestas, 0.81 mm) | final 28/26
+    1.672 | >>> Bevel trofeu_shape_10.001: arredondar=ligado | tipo ACRILICO (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 1.0000 mm, real 1.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0008080 (unid. Blender) = 0.8080 mm | arestas selecionadas 4 | vértices antes 8
+    1.674 | >>> Bevel trofeu_shape_10.001: vértices depois 28 (antes 8) | faces 26 (antes 6) | aplicado: sim
+    1.676 | >>> Malha trofeu_shape_10.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 28/26 (4 arestas, 0.81 mm) | final 28/26
+    1.681 | >>> Bevel trofeu_shape_11.001: arredondar=ligado | tipo ACRILICO (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 1.0000 mm, real 1.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0008080 (unid. Blender) = 0.8080 mm | arestas selecionadas 4 | vértices antes 8
+    1.683 | >>> Bevel trofeu_shape_11.001: vértices depois 28 (antes 8) | faces 26 (antes 6) | aplicado: sim
+    1.685 | >>> Malha trofeu_shape_11.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 28/26 (4 arestas, 0.81 mm) | final 28/26
+    1.689 | >>> Bevel trofeu_shape_12.001: arredondar=ligado | tipo ACRILICO (peça recebe: True) | bordas topo | largura pedida 1.0 mm | espessura nominal 1.0000 mm, real 1.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0008080 (unid. Blender) = 0.8080 mm | arestas selecionadas 4 | vértices antes 8
+    1.691 | >>> Bevel trofeu_shape_12.001: vértices depois 28 (antes 8) | faces 26 (antes 6) | aplicado: sim
+    1.693 | >>> Malha trofeu_shape_12.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 28/26 (4 arestas, 0.81 mm) | final 28/26
+    1.694 | PTM_ETAPA montagem 4/7 Montando o troféu (corpo, costas e resina)
+    1.695 | Troféu base montado e alinhado com sucesso!
+    1.695 | PTM_ETAPA cameras 5/7 Posicionando as câmeras
+    1.695 | PTM_ETAPA render 6/7 Renderizando as câmeras
+    1.695 | PTM_PLANO 32 1 Camera_Direita
+    1.696 | PTM_PASSADAS principal,freestyle
+    1.696 | PTM_CAMERA 1/1 Camera_Direita
+    1.696 | >>> Renderizando câmera: Camera_Direita via Cycles...
+    1.696 | PTM_RENDER_INICIO
+    1.702 | PTM_STATS Mem: 0M | Synchronizing object | Light.002
+    1.702 | PTM_STATS Mem: 0M | Synchronizing object | Circle
+    1.702 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_2.001
+    1.702 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_3.001
+    1.702 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_5.001
+    1.702 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_9.001
+    1.703 | PTM_STATS Mem: 0M | Initializing
+    1.703 | PTM_STATS Mem: 0M | Waiting for render to start
+    1.703 | PTM_STATS Mem: 0M | Updating Scene
+    1.703 | PTM_STATS Mem: 0M | Updating Shaders
+    1.703 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+    1.705 | PTM_STATS Mem: 1M | Updating Procedurals
+    1.705 | PTM_STATS Mem: 1M | Updating Background
+    1.705 | PTM_STATS Mem: 1M | Updating Scene Attribute
+    1.705 | PTM_STATS Mem: 1M | Updating Camera
+    1.705 | PTM_STATS Mem: 1M | Updating Meshes Flags
+    1.705 | PTM_STATS Mem: 1M | Updating Objects
+    1.705 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+    1.705 | PTM_STATS Mem: 1M | Updating Particle Systems
+    1.705 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+    1.705 | PTM_STATS Mem: 1M | Updating Meshes
+    1.706 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+    1.706 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+    1.706 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+    1.706 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+    1.706 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+    1.706 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+    1.706 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+    1.707 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+    1.707 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+    1.707 | PTM_STATS Mem: 1M | Updating Objects Flags
+    1.707 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+    1.707 | PTM_STATS Mem: 1M | Updating Images
+    1.707 | PTM_STATS Mem: 1M | Updating Images | Loading renan m1_ImgID1.png
+    1.707 | PTM_STATS Mem: 1M | Updating Images | Loading brown_photostudio_01_4k.exr
+    1.819 | PTM_STATS Mem: 143M | Updating Volume
+    1.819 | PTM_STATS Mem: 143M | Updating Camera Volume
+    1.819 | PTM_STATS Mem: 143M | Updating Lookup Tables
+    1.819 | PTM_STATS Mem: 143M | Updating Lights
+    1.819 | PTM_STATS Mem: 143M | Updating Lights | Importance map
+    2.115 | PTM_STATS Mem: 207M | Updating Lights | Computing tree
+    2.115 | PTM_STATS Mem: 207M | Updating Integrator
+    2.115 | PTM_STATS Mem: 207M | Updating Film
+    2.115 | PTM_STATS Mem: 207M | Updating Lookup Tables
+    2.115 | PTM_STATS Mem: 207M | Updating Baking
+    2.115 | PTM_STATS Mem: 207M | Updating Device | Writing constant memory
+    2.115 | PTM_STATS Mem: 207M | Loading denoising kernels (may take a few minutes the first time)
+    2.116 | PTM_SAMPLES 0 32 principal
+    2.116 | PTM_STATS Mem: 207M | Sample 0/32
+    2.464 | PTM_SAMPLES 1 32 principal 10.81
+    2.465 | PTM_STATS Remaining: 00:10.81 | Mem: 285M | Sample 1/32
+   17.924 | PTM_SAMPLES 32 32 principal
+   17.925 | PTM_STATS Mem: 285M | Sample 32/32
+   17.925 | PTM_STATS Mem: 285M | Finished
+   18.026 | PTM_PASSADA freestyle
+   18.027 | PTM_STATS Freestyle: Mesh loading
+   18.030 | Blender 5.3.0 (hash 02f0899d78e3 built 2026-11-10 01:33:43)
+   18.030 | Warning: edge 306 - 222 appears twice, correcting
+   18.030 | Warning: edge 222 - 306 appears twice, correcting
+   18.032 | PTM_STATS Freestyle: View map creation
+   18.037 | PTM_STATS Freestyle: Visibility computations 0%
+   18.037 | PTM_STATS Freestyle: Visibility computations 1%
+   18.037 | PTM_STATS Freestyle: Visibility computations 2%
+   18.037 | PTM_STATS Freestyle: Visibility computations 3%
+   18.037 | PTM_STATS Freestyle: Visibility computations 4%
+   18.037 | PTM_STATS Freestyle: Visibility computations 5%
+   18.037 | PTM_STATS Freestyle: Visibility computations 6%
+   18.037 | PTM_STATS Freestyle: Visibility computations 7%
+   18.037 | PTM_STATS Freestyle: Visibility computations 8%
+   18.037 | PTM_STATS Freestyle: Visibility computations 9%
+   18.037 | PTM_STATS Freestyle: Visibility computations 10%
+   18.037 | PTM_STATS Freestyle: Visibility computations 11%
+   18.037 | PTM_STATS Freestyle: Visibility computations 12%
+   18.037 | PTM_STATS Freestyle: Visibility computations 13%
+   18.037 | PTM_STATS Freestyle: Visibility computations 15%
+   18.037 | PTM_STATS Freestyle: Visibility computations 16%
+   18.037 | PTM_STATS Freestyle: Visibility computations 17%
+   18.038 | PTM_STATS Freestyle: Visibility computations 18%
+   18.038 | PTM_STATS Freestyle: Visibility computations 19%
+   18.038 | PTM_STATS Freestyle: Visibility computations 20%
+   18.038 | PTM_STATS Freestyle: Visibility computations 21%
+   18.038 | PTM_STATS Freestyle: Visibility computations 22%
+   18.038 | PTM_STATS Freestyle: Visibility computations 23%
+   18.038 | PTM_STATS Freestyle: Visibility computations 24%
+   18.038 | PTM_STATS Freestyle: Visibility computations 25%
+   18.038 | PTM_STATS Freestyle: Visibility computations 26%
+   18.038 | PTM_STATS Freestyle: Visibility computations 27%
+   18.038 | PTM_STATS Freestyle: Visibility computations 29%
+   18.038 | PTM_STATS Freestyle: Visibility computations 30%
+   18.038 | PTM_STATS Freestyle: Visibility computations 31%
+   18.038 | PTM_STATS Freestyle: Visibility computations 32%
+   18.038 | PTM_STATS Freestyle: Visibility computations 33%
+   18.038 | PTM_STATS Freestyle: Visibility computations 34%
+   18.038 | PTM_STATS Freestyle: Visibility computations 35%
+   18.038 | PTM_STATS Freestyle: Visibility computations 36%
+   18.038 | PTM_STATS Freestyle: Visibility computations 37%
+   18.038 | PTM_STATS Freestyle: Visibility computations 38%
+   18.038 | PTM_STATS Freestyle: Visibility computations 39%
+   18.038 | PTM_STATS Freestyle: Visibility computations 40%
+   18.038 | PTM_STATS Freestyle: Visibility computations 41%
+   18.038 | PTM_STATS Freestyle: Visibility computations 42%
+   18.039 | PTM_STATS Freestyle: Visibility computations 44%
+   18.039 | PTM_STATS Freestyle: Visibility computations 45%
+   18.039 | PTM_STATS Freestyle: Visibility computations 46%
+   18.039 | PTM_STATS Freestyle: Visibility computations 47%
+   18.039 | PTM_STATS Freestyle: Visibility computations 48%
+   18.039 | PTM_STATS Freestyle: Visibility computations 49%
+   18.039 | PTM_STATS Freestyle: Visibility computations 50%
+   18.039 | PTM_STATS Freestyle: Visibility computations 51%
+   18.039 | PTM_STATS Freestyle: Visibility computations 52%
+   18.039 | PTM_STATS Freestyle: Visibility computations 53%
+   18.039 | PTM_STATS Freestyle: Visibility computations 54%
+   18.039 | PTM_STATS Freestyle: Visibility computations 55%
+   18.039 | PTM_STATS Freestyle: Visibility computations 56%
+   18.039 | PTM_STATS Freestyle: Visibility computations 58%
+   18.039 | PTM_STATS Freestyle: Visibility computations 59%
+   18.039 | PTM_STATS Freestyle: Visibility computations 60%
+   18.039 | PTM_STATS Freestyle: Visibility computations 61%
+   18.039 | PTM_STATS Freestyle: Visibility computations 62%
+   18.039 | PTM_STATS Freestyle: Visibility computations 63%
+   18.039 | PTM_STATS Freestyle: Visibility computations 64%
+   18.039 | PTM_STATS Freestyle: Visibility computations 65%
+   18.039 | PTM_STATS Freestyle: Visibility computations 66%
+   18.039 | PTM_STATS Freestyle: Visibility computations 67%
+   18.040 | PTM_STATS Freestyle: Visibility computations 68%
+   18.040 | PTM_STATS Freestyle: Visibility computations 69%
+   18.040 | PTM_STATS Freestyle: Visibility computations 70%
+   18.040 | PTM_STATS Freestyle: Visibility computations 71%
+   18.040 | PTM_STATS Freestyle: Visibility computations 73%
+   18.040 | PTM_STATS Freestyle: Visibility computations 74%
+   18.040 | PTM_STATS Freestyle: Visibility computations 75%
+   18.040 | PTM_STATS Freestyle: Visibility computations 76%
+   18.040 | PTM_STATS Freestyle: Visibility computations 77%
+   18.040 | PTM_STATS Freestyle: Visibility computations 78%
+   18.040 | PTM_STATS Freestyle: Visibility computations 79%
+   18.040 | PTM_STATS Freestyle: Visibility computations 80%
+   18.040 | PTM_STATS Freestyle: Visibility computations 81%
+   18.040 | PTM_STATS Freestyle: Visibility computations 82%
+   18.040 | PTM_STATS Freestyle: Visibility computations 83%
+   18.040 | PTM_STATS Freestyle: Visibility computations 84%
+   18.040 | PTM_STATS Freestyle: Visibility computations 85%
+   18.040 | PTM_STATS Freestyle: Visibility computations 87%
+   18.040 | PTM_STATS Freestyle: Visibility computations 88%
+   18.040 | PTM_STATS Freestyle: Visibility computations 89%
+   18.040 | PTM_STATS Freestyle: Visibility computations 90%
+   18.041 | PTM_STATS Freestyle: Visibility computations 91%
+   18.041 | PTM_STATS Freestyle: Visibility computations 92%
+   18.041 | PTM_STATS Freestyle: Visibility computations 93%
+   18.041 | PTM_STATS Freestyle: Visibility computations 94%
+   18.041 | PTM_STATS Freestyle: Visibility computations 95%
+   18.041 | PTM_STATS Freestyle: Visibility computations 96%
+   18.041 | PTM_STATS Freestyle: Visibility computations 97%
+   18.041 | PTM_STATS Freestyle: Visibility computations 98%
+   18.041 | PTM_STATS Freestyle: Visibility computations 99%
+   18.041 | PTM_STATS Freestyle: Visibility computations 100%
+   18.042 | PTM_STATS Freestyle: Stroke rendering
+   18.107 | PTM_STATS Mem: 0M | Synchronizing object | 0ffffffffOB
+   18.108 | PTM_STATS Mem: 0M | Initializing
+   18.108 | PTM_STATS Mem: 0M | Waiting for render to start
+   18.108 | PTM_STATS Mem: 0M | Updating Scene
+   18.108 | PTM_STATS Mem: 0M | Updating Shaders
+   18.108 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+   18.108 | PTM_STATS Mem: 1M | Updating Procedurals
+   18.108 | PTM_STATS Mem: 1M | Updating Background
+   18.108 | PTM_STATS Mem: 1M | Updating Scene Attribute
+   18.109 | PTM_STATS Mem: 1M | Updating Camera
+   18.109 | PTM_STATS Mem: 1M | Updating Meshes Flags
+   18.109 | PTM_STATS Mem: 1M | Updating Objects
+   18.109 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+   18.109 | PTM_STATS Mem: 1M | Updating Particle Systems
+   18.109 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+   18.109 | PTM_STATS Mem: 1M | Updating Meshes
+   18.109 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+   18.109 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+   18.109 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+   18.109 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+   18.110 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+   18.110 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+   18.110 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+   18.110 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+   18.110 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+   18.110 | PTM_STATS Mem: 1M | Updating Objects Flags
+   18.110 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+   18.110 | PTM_STATS Mem: 1M | Updating Images
+   18.110 | PTM_STATS Mem: 1M | Updating Volume
+   18.110 | PTM_STATS Mem: 1M | Updating Camera Volume
+   18.110 | PTM_STATS Mem: 1M | Updating Lookup Tables
+   18.110 | PTM_STATS Mem: 1M | Updating Lights
+   18.110 | PTM_STATS Mem: 1M | Updating Lights | Computing tree
+   18.120 | PTM_STATS Mem: 2M | Updating Integrator
+   18.120 | PTM_STATS Mem: 2M | Updating Film
+   18.120 | PTM_STATS Mem: 1M | Updating Lookup Tables
+   18.120 | PTM_STATS Mem: 2M | Updating Baking
+   18.120 | PTM_STATS Mem: 2M | Updating Device | Writing constant memory
+   18.120 | PTM_STATS Mem: 2M | Loading denoising kernels (may take a few minutes the first time)
+   18.120 | PTM_SAMPLES 0 32 freestyle
+   18.120 | PTM_STATS Mem: 2M | Sample 0/32
+   18.157 | PTM_SAMPLES 1 32 freestyle 1.14
+   18.158 | PTM_STATS Remaining: 00:01.14 | Mem: 80M | Sample 1/32
+   23.654 | PTM_SAMPLES 32 32 freestyle
+   23.655 | PTM_STATS Mem: 80M | Sample 32/32
+   23.655 | PTM_STATS Mem: 80M | Finished
+   23.955 | 00:23.891  render           | Saved: '<CAMINHO>/Camera_Direita.png'
+   23.956 | PTM_STATS Time: 00:22.25 (Saving: 00:00.21)
+   23.956 | PTM_RENDER_POS
+   23.956 | PTM_RENDER_FIM
+   23.956 | PTM_CAMERA_FIM 1/1 Camera_Direita
+   23.956 | Renders salvos em: <CAMINHO>/imagens 3d
+   23.956 | PTM_ETAPA final 7/7 Finalizando
+   23.956 | PTM_FIM
+   24.098 | 
+   24.098 | Blender quit
