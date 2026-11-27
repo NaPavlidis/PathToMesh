@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 import galeria
+import malha_logica
 import registro_erros
 import tema_janela
 
@@ -291,6 +292,13 @@ class SettingsWindow(tk.Toplevel):
         self.catalogo_dir_var = tk.StringVar(value=parent.catalogo_dir)
         self.selected_blend_var = tk.StringVar(value=parent.selected_blend)
         self.cycles_samples_var = tk.StringVar(value=str(parent.cycles_samples))
+        om = malha_logica.normalizar(getattr(parent, "opcoes_malha", None))
+        self.malha_vars = {}
+        for chave, valor in om.items():
+            if isinstance(valor, bool):
+                self.malha_vars[chave] = tk.BooleanVar(value=valor)
+            else:
+                self.malha_vars[chave] = tk.StringVar(value=str(valor))
         self._build_ui()
         # Ícone e barra de título nas cores do tema (no Windows; fora dele, só o ícone)
         tema_janela.preparar_janela(self, "app")
@@ -390,6 +398,45 @@ class SettingsWindow(tk.Toplevel):
                  fg=TEMA['texto_apagado'], bg=sup, font=FONTES['dica'], anchor="w").pack(fill="x", pady=(0, ESPACO['xs']))
         criar_entrada(f_samp, self.cycles_samples_var, width=15).pack(anchor="w", ipady=ESPACO['xs'] + 2)
 
+        # Cartão: malha 3D (limpeza, dissolve limitado e bordas arredondadas)
+        cartao_malha, corpo_malha = criar_cartao(conteudo, "Malha 3D",
+                                                 "Tratamento depois da conversão do SVG. Medidas em milímetros e graus.")
+        cartao_malha.pack(fill="x", padx=ESPACO['g'], pady=(0, ESPACO['m']))
+        mv = self.malha_vars
+        ttk.Checkbutton(corpo_malha, text="Tratar a malha (limpeza, dissolve, bordas e normais)",
+                        variable=mv["tratar"], style="Cartao.TCheckbutton", cursor="hand2").pack(anchor="w")
+
+        def campo_malha(rotulo, dica, chave):
+            bloco = tk.Frame(corpo_malha, bg=sup)
+            bloco.pack(fill="x", pady=(ESPACO['m'], 0))
+            tk.Label(bloco, text=rotulo, fg=TEMA['texto'], bg=sup, font=FONTES['rotulo'], anchor="w").pack(fill="x")
+            tk.Label(bloco, text=dica, fg=TEMA['texto_apagado'], bg=sup, font=FONTES['dica'], anchor="w").pack(fill="x", pady=(0, ESPACO['xs']))
+            criar_entrada(bloco, mv[chave], width=15).pack(anchor="w", ipady=ESPACO['xs'] + 2)
+
+        def lista_malha(rotulo, dica, chave, opcoes):
+            bloco = tk.Frame(corpo_malha, bg=sup)
+            bloco.pack(fill="x", pady=(ESPACO['m'], 0))
+            tk.Label(bloco, text=rotulo, fg=TEMA['texto'], bg=sup, font=FONTES['rotulo'], anchor="w").pack(fill="x")
+            tk.Label(bloco, text=dica, fg=TEMA['texto_apagado'], bg=sup, font=FONTES['dica'], anchor="w").pack(fill="x", pady=(0, ESPACO['xs']))
+            menu = tk.OptionMenu(bloco, mv[chave], *opcoes)
+            estilizar_optionmenu(menu)
+            menu.pack(fill="x")
+
+        campo_malha("Merge by distance (mm):", "Junta pontos duplicados. Nunca passa de 10% da espessura da peça.", "merge_mm")
+        campo_malha("Resolução das curvas:", "Pontos por trecho de curva do SVG (poucos pontos no SVG = curva facetada).", "resolucao_curva")
+        ttk.Checkbutton(corpo_malha, text="Dissolve limitado (menos faces, sem juntar materiais)",
+                        variable=mv["dissolve"], style="Cartao.TCheckbutton", cursor="hand2").pack(anchor="w", pady=(ESPACO['m'], 0))
+        campo_malha("Ângulo do dissolve (graus):", "Faces quase coplanares abaixo deste ângulo viram uma só.", "dissolve_graus")
+        ttk.Checkbutton(corpo_malha, text="Bordas arredondadas (bevel leve)",
+                        variable=mv["bevel"], style="Cartao.TCheckbutton", cursor="hand2").pack(anchor="w", pady=(ESPACO['m'], 0))
+        campo_malha("Largura do bevel (mm):", "Limitada pela espessura da peça, para não sobrepor.", "bevel_mm")
+        campo_malha("Segmentos do bevel:", "Quantos cortes na curva da borda.", "bevel_segmentos")
+        lista_malha("Bordas com bevel:", "Contorno do topo, da base ou dos dois.", "bevel_bordas", malha_logica.OPCOES_BORDAS)
+        lista_malha("Peças com bevel:", "base = só a peça de base; todas = todas as peças com espessura.", "bevel_pecas", malha_logica.OPCOES_PECAS)
+        ttk.Checkbutton(corpo_malha, text="Sombreamento suave só nas curvas (faces planas ficam retas)",
+                        variable=mv["suavizar"], style="Cartao.TCheckbutton", cursor="hand2").pack(anchor="w", pady=(ESPACO['m'], 0))
+        campo_malha("Ângulo do sombreamento suave (graus):", "Arestas acima deste ângulo continuam vivas.", "suavizar_graus")
+
         self._ajustar_tamanho()
 
     def _ajustar_tamanho(self):
@@ -440,6 +487,7 @@ class SettingsWindow(tk.Toplevel):
         self.parent_app.catalogo_dir = self.catalogo_dir_var.get()
         self.parent_app.selected_blend = self.selected_blend_var.get()
         self.parent_app.cycles_samples = nucleo.ler_samples(self.cycles_samples_var.get())
+        self.parent_app.opcoes_malha = malha_logica.normalizar({k: v.get() for k, v in self.malha_vars.items()})
         self.parent_app.salvar_configuracoes_disco()
         if hasattr(self.parent_app, "_atualizar_hud_resina"):
             self.parent_app._atualizar_hud_resina()

@@ -346,6 +346,7 @@ class Api:
         e = self._estado
         return {"blender_path": e.blender_path, "catalogo_dir": e.catalogo_dir, "resina_dir": e.resina_dir,
                 "blend_dir": e.blend_dir, "cycles_samples": str(e.cycles_samples),
+                "malha": dict(e.opcoes_malha),
                 "blends": self.listar_blends(e.blend_dir, e.selected_blend)}
 
     def listar_blends(self, pasta, atual=""):
@@ -367,6 +368,8 @@ class Api:
         e.catalogo_dir = dados.get("catalogo_dir", e.catalogo_dir)
         e.selected_blend = dados.get("selected_blend", e.selected_blend)
         e.cycles_samples = nucleo.ler_samples(str(dados.get("cycles_samples", "")))
+        if "malha" in dados:
+            e.opcoes_malha = nucleo.malha_logica.normalizar(dados.get("malha"))
         e.salvar_configuracoes_disco()
         return {"ok": True, "titulo": "Sucesso", "mensagem": "Configurações salvas permanentemente!",
                 "resina": self.listar_resinas()}

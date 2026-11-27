@@ -22,6 +22,7 @@ Só vale a cor de contorno **exata** da tabela de materiais (sem diferença entr
 | `assets/icones/` | Ícones e logos: `PathToMash-icon` é o ícone principal (janelas, atalhos e instalador); `1` é o logo do cabeçalho do app e do launcher, trocado pelo `2` quando a janela fica larga (veja o `README.md` da pasta) |
 | `docs/modelo-layout.html` | Modelo de layout (HTML) que serviu de referência para o visual |
 | `blender_engine.py` | Roda dentro do Blender (`bpy`): importa o SVG, aplica materiais e extrusão, configura câmeras e renderiza |
+| `malha_logica.py` | Lógica pura (sem `bpy`) do tratamento de malha: opções, padrões, limites e quais arestas recebem bevel. Testável fora do Blender |
 | `mapear_catalogo.py` | Mapeia o catálogo (`CATALOGO/<MODALIDADE>/<MODELO>/SVG/*.svg`) e mostra quais modelos estão prontos |
 | `infos_svg.py` | Analisa um SVG e lista as peças e os materiais encontrados |
 | `launcher.py` | Launcher: procura atualização, instala as dependências, confere o Blender, envia os logs de erro e abre o app. Abre no visual novo (`launcher_web.py`); se o `pywebview` ainda não estiver instalado (é o próprio launcher que o instala) ou a janela web falhar, abre a janela Tkinter, com as mesmas funções. `python launcher.py --tk` abre direto a Tkinter |
@@ -81,6 +82,19 @@ A configuração que o app e o launcher usam fica em **`config.local.json`**, na
 - **Quem ainda tem o `config.json` antigo** (de antes do `config.local.json`): se o `config.local.json` não existir, ele nasce do `config.json`, com os seus valores. O `config.json` não é mais usado nem versionado (está no `.gitignore`).
 - Antes de atualizar pelo git, o launcher (e o instalador) protegem a sua configuração: se o `config.json` antigo tiver mudanças suas, os valores vão para o `config.local.json` (se ele ainda não existir) ou, se o `config.local.json` já existir e o conteúdo for outro, para o `config.json.bak`. Depois a mudança local do `config.json` é descartada (`git checkout`) e só então é feito o `git pull`. Assim o `git pull` funciona também na atualização que tira o `config.json` do GitHub.
 - Na atualização pelo zip, o `config.local.json` (e um `config.json` antigo) nunca são sobrescritos.
+
+## Malha 3D (limpeza, dissolve e bordas arredondadas)
+
+Depois da conversão do SVG e da extrusão, cada peça passa por um tratamento (⚙ Configurações → cartão **Malha 3D**, salvo no `config.local.json` na chave `malha`). Ordem: **limpeza → dissolve limitado → bevel → tampas → normais**.
+
+- **Resolução das curvas** (padrão 24, nunca abaixo da do importador): com poucos pontos no SVG os trechos Bézier são longos e a curva sai facetada.
+- **Limpeza**: merge by distance (padrão 0,01 mm, nunca mais que 10% da espessura da peça, para não colapsar peças finas como o PLOTTER), remove faces degeneradas, arestas e pontos soltos e recalcula as normais para fora.
+- **Dissolve limitado** (padrão 5°): junta faces quase coplanares sem juntar materiais diferentes nem mexer nas bordas. O log mostra os vértices/faces antes e depois (`>>> Malha <peça>: ...`).
+- **Bevel leve** (padrão 0,5 mm, 5 segmentos, limitado a 40% da espessura por lado; peças finas demais pulam): só nas arestas onde a tampa plana encontra a parede, no topo, na base ou nos dois (padrão ambos), por padrão só na peça de base (opção "todas"). Com clamp overlap.
+- **Tampas**: n-gons viram triângulos pelo método beauty (sem faces finas e longas).
+- **Normais**: sombreamento suave só nas partes curvas (arestas acima de 30° continuam vivas, as faces planas ficam retas), Weighted Normal com keep sharp e harden normals no bevel.
+- Cada etapa que falhar avisa no log e a montagem continua. "Tratar a malha" desligado volta ao comportamento anterior (a resolução da curva também).
+- O motor recebe as opções como o último argumento da linha de comando (`chave=valor;...`).
 
 ## Progresso da renderização
 

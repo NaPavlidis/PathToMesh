@@ -20,6 +20,7 @@ import collections
 import traceback
 import xml.etree.ElementTree as ET
 
+import malha_logica
 import registro_erros
 
 # O svgpathtools (e o numpy/scipy que ele puxa) pesa para importar: só é carregado quando um SVG
@@ -389,6 +390,7 @@ class EstadoApp:
         self.selected_blend = ""
         self.svg_selecionado = ""
         self.cycles_samples = 128
+        self.opcoes_malha = malha_logica.normalizar()
 
         self.carregar_configuracoes_disco()
 
@@ -410,6 +412,7 @@ class EstadoApp:
                     self.catalogo_dir = dados.get("catalogo_dir", self.catalogo_dir)
                     self.selected_blend = dados.get("selected_blend", self.selected_blend)
                     self.cycles_samples = int(dados.get("cycles_samples", self.cycles_samples))
+                    self.opcoes_malha = malha_logica.normalizar(dados.get("malha", self.opcoes_malha))
             except Exception as e:
                 print(f"Erro ao carregar configurações: {e}")
 
@@ -420,7 +423,8 @@ class EstadoApp:
             "blend_dir": self.blend_dir,
             "catalogo_dir": self.catalogo_dir,
             "selected_blend": self.selected_blend,
-            "cycles_samples": self.cycles_samples
+            "cycles_samples": self.cycles_samples,
+            "malha": malha_logica.normalizar(getattr(self, "opcoes_malha", None))
         }
         try:
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
@@ -530,7 +534,8 @@ def montar_comando_blender(estado, resina_escolhida, render_auto, usar_textura, 
         str(estado.cycles_samples),
         str(usar_verniz),
         caminho_resina_completo,
-        cams_str
+        cams_str,
+        malha_logica.para_texto(getattr(estado, "opcoes_malha", None))
     ])
     return comando
 

@@ -7,6 +7,10 @@ import math
 import sys
 import shutil
 
+# O Blender roda este arquivo com --python: a pasta do projeto não entra sozinha no sys.path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import malha_logica  # noqa: E402
+
 # ==============================================================================
 # 1. CONFIGURAÇÕES E REGRAS GERAIS
 # ==============================================================================
@@ -371,7 +375,8 @@ def analisar_e_preparar_svg(caminho_svg):
     
     return caminho_temp, dados_extraidos, imagens_disponiveis
 
-def importar_e_converter_svg(caminho_temp):
+def importar_e_converter_svg(caminho_temp, opcoes_malha=None):
+    opcoes_malha = malha_logica.normalizar(opcoes_malha)
     objetos_antes = set(bpy.context.scene.objects)
     bpy.ops.object.select_all(action='DESELECT')
     bpy.ops.import_curve.svg(filepath=caminho_temp)
@@ -390,6 +395,15 @@ def importar_e_converter_svg(caminho_temp):
     malhas_convertidas = []
     for obj in objetos_importados:
         if obj.type in ['Curve', 'CURVE']:
+            # Poucos pontos no SVG = trechos Bézier longos; com a resolução do importador a curva vira
+            # um polígono facetado. Só aumenta, nunca reduz.
+            if opcoes_malha["tratar"]:
+                try:
+                    obj.data.resolution_u = max(obj.data.resolution_u, opcoes_malha["resolucao_curva"])
+                    for spline in obj.data.splines:
+                        spline.resolution_u = max(spline.resolution_u, opcoes_malha["resolucao_curva"])
+                except Exception as e:
+                    print(f">>> Aviso: resolução da curva não ajustada ({e})", flush=True)
             mesh_data = bpy.data.meshes.new_from_object(obj)
             novo_mesh_obj = bpy.data.objects.new(obj.name.replace(".00", "_mesh"), mesh_data)
             novo_mesh_obj.matrix_world = obj.matrix_world.copy()
@@ -403,6 +417,162 @@ def importar_e_converter_svg(caminho_temp):
     bpy.context.view_layer.update()
     if os.path.exists(caminho_temp): os.remove(caminho_temp)
     return malhas_convertidas
+
+# ------------------------------------------------------------------------------
+# Tratamento da malha (depois da conversão e da extrusão): limpeza -> dissolve limitado ->
+# bevel -> tampas sem triângulos finos -> normais. As decisões (limites, quais arestas) ficam em
+# malha_logica.py; aqui só o que depende de bpy/bmesh.
+# ------------------------------------------------------------------------------
+def _aplicar_modificador(obj, mod):
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    try:
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+    except RuntimeError:
+        depsgraph_eval = bpy.context.evaluated_depsgraph_get()
+        mesh_eval = bpy.data.meshes.new_from_object(obj.evaluated_get(depsgraph_eval))
+        obj.modifiers.remove(mod)
+        obj.data = mesh_eval
+
+
+def _limpar_bm(bm, dist_m, orientar):
+    import bmesh
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=dist_m)
+    bmesh.ops.dissolve_degenerate(bm, dist=dist_m, edges=bm.edges[:])
+    ruins = [f for f in bm.faces if f.calc_area() < 1e-12]
+    if ruins:
+        bmesh.ops.delete(bm, geom=ruins, context='FACES')
+    soltas = [e for e in bm.edges if not e.link_faces]
+    if soltas:
+        bmesh.ops.delete(bm, geom=soltas, context='EDGES')
+    sobras = [v for v in bm.verts if not v.link_edges]
+    if sobras:
+        bmesh.ops.delete(bm, geom=sobras, context='VERTS')
+    if orientar and bm.faces:
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        # malha fechada com volume negativo = normais para dentro
+        if all(e.is_manifold for e in bm.edges) and bm.calc_volume(signed=True) < 0:
+            bmesh.ops.reverse_faces(bm, faces=bm.faces[:])
+
+
+def _marcar_arestas_bevel(bm, bordas, espessura_m):
+    """Peso de bevel 1.0 só nas arestas tampa plana x parede no topo/base. Retorna quantas."""
+    camada = bm.edges.layers.float.get("bevel_weight_edge") or bm.edges.layers.float.new("bevel_weight_edge")
+    for e in bm.edges:
+        e[camada] = 0.0
+    if not bm.verts:
+        return 0
+    bm.normal_update()
+    zs = [v.co.z for v in bm.verts]
+    z_min, z_max = min(zs), max(zs)
+    tol = max(espessura_m * 0.05, 1e-6)
+    marcadas = 0
+    for e in bm.edges:
+        if len(e.link_faces) != 2:
+            continue
+        f1, f2 = e.link_faces
+        classe = malha_logica.classificar_aresta(f1.normal.z, f2.normal.z, e.verts[0].co.z, e.verts[1].co.z,
+                                                 z_min, z_max, tol)
+        if malha_logica.aresta_recebe_bevel(classe, bordas):
+            e[camada] = 1.0
+            marcadas += 1
+    return marcadas
+
+
+def _suavizar_so_curvas(bm, graus):
+    """Faces suaves e arestas acima do ângulo viram 'sharp': as faces planas continuam retas."""
+    limite = math.radians(graus)
+    for f in bm.faces:
+        f.smooth = True
+    for e in bm.edges:
+        if len(e.link_faces) != 2:
+            e.smooth = False
+        else:
+            e.smooth = e.calc_face_angle(0.0) <= limite
+
+
+def tratar_malha_objeto(obj, regra, tipo_material, opcoes_malha):
+    """Limpeza, dissolve limitado, bevel das bordas e normais. Nunca derruba a montagem: se uma etapa
+    falhar, avisa no log e segue com a malha que tem."""
+    op = malha_logica.normalizar(opcoes_malha)
+    if not op["tratar"] or obj.type != 'MESH' or len(obj.data.polygons) == 0:
+        return
+    import bmesh
+    espessura = float(regra.get('extrusao', 0.0))
+    nome = obj.name
+    v0, f0 = len(obj.data.vertices), len(obj.data.polygons)
+    v1, f1 = v0, f0
+    marcadas, largura, largura_mm = 0, 0.0, 0.0
+    try:
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        _limpar_bm(bm, malha_logica.limitar_merge_m(op["merge_mm"], espessura), espessura > 0)
+        v1, f1 = len(bm.verts), len(bm.faces)
+        if op["dissolve"] and op["dissolve_graus"] > 0:
+            bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(op["dissolve_graus"]),
+                                     use_dissolve_boundaries=False, verts=bm.verts[:], edges=bm.edges[:],
+                                     delimit={'MATERIAL'})
+        v2, f2 = len(bm.verts), len(bm.faces)
+        largura = 0.0
+        if op["bevel"] and espessura > 0 and malha_logica.peca_recebe_bevel(tipo_material, op["bevel_pecas"]):
+            largura = malha_logica.largura_bevel_m(op["bevel_mm"], espessura, op["bevel_bordas"])
+            if largura > 0:
+                marcadas = _marcar_arestas_bevel(bm, op["bevel_bordas"], espessura)
+        bm.to_mesh(obj.data)
+        bm.free()
+    except Exception as e:
+        print(f">>> Aviso: tratamento de malha (limpeza/dissolve) falhou em {nome}: {e}", flush=True)
+        return
+    v2, f2 = len(obj.data.vertices), len(obj.data.polygons)
+
+    if largura > 0 and marcadas > 0:
+        try:
+            mod = obj.modifiers.new(name="bordas", type='BEVEL')
+            mod.width = largura
+            mod.segments = op["bevel_segmentos"]
+            mod.limit_method = 'WEIGHT'
+            mod.affect = 'EDGES'
+            mod.profile = 0.5
+            mod.use_clamp_overlap = True
+            mod.loop_slide = True
+            mod.harden_normals = True
+            _aplicar_modificador(obj, mod)
+            largura_mm = largura * 1000.0
+        except Exception as e:
+            print(f">>> Aviso: bevel falhou em {nome}: {e}", flush=True)
+    v3, f3 = len(obj.data.vertices), len(obj.data.polygons)
+
+    try:
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        # tampas: n-gons viram triângulos pelo método beauty (sem faces finas e longas)
+        ngons = [f for f in bm.faces if len(f.verts) > 4]
+        pequenos = [f for f in ngons if len(f.verts) <= malha_logica.LIMITE_NGON_BEAUTY]
+        grandes = [f for f in ngons if len(f.verts) > malha_logica.LIMITE_NGON_BEAUTY]
+        if pequenos:
+            bmesh.ops.triangulate(bm, faces=pequenos, quad_method='BEAUTY', ngon_method='BEAUTY')
+        if grandes:
+            bmesh.ops.triangulate(bm, faces=grandes, quad_method='BEAUTY', ngon_method='EAR_CLIP')
+        if espessura > 0 and bm.faces:
+            bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        if op["suavizar"]:
+            _suavizar_so_curvas(bm, op["suavizar_graus"])
+        bm.to_mesh(obj.data)
+        bm.free()
+        if op["suavizar"] and espessura > 0:
+            mod = obj.modifiers.new(name="normais", type='WEIGHTED_NORMAL')
+            mod.keep_sharp = True
+            mod.weight = 50
+            mod.mode = 'FACE_AREA'
+            mod.thresh = 0.01
+            _aplicar_modificador(obj, mod)
+    except Exception as e:
+        print(f">>> Aviso: triangulação/normais falharam em {nome}: {e}", flush=True)
+    v4, f4 = len(obj.data.vertices), len(obj.data.polygons)
+    print(f">>> Malha {nome}: vértices/faces antes {v0}/{f0} | limpeza {v1}/{f1} | dissolve {v2}/{f2} | "
+          f"bevel {v3}/{f3} ({marcadas} arestas, {largura_mm:.2f} mm) | final {v4}/{f4}", flush=True)
+
 
 def mapear_e_ordenar_elementos(objetos_importados, dados_extraidos):
     def obter_id_numerico(obj):
@@ -437,7 +607,7 @@ def mapear_e_ordenar_elementos(objetos_importados, dados_extraidos):
     elementos_mapeados.sort(key=lambda x: (0 if x['eh_base'] else 1, x['indice_svg']))
     return elementos_mapeados
 
-def aplicar_materiais_e_empilhar(elementos_mapeados, imagens_disponiveis, usar_verniz,usar_textura):
+def aplicar_materiais_e_empilhar(elementos_mapeados, imagens_disponiveis, usar_verniz,usar_textura, opcoes_malha=None):
     print(f">>> Aplicando materiais, texturas e extrusões...", flush=True)
     idx_imagem_global = 0
     suporte_dos_objetos = {}
@@ -512,7 +682,10 @@ def aplicar_materiais_e_empilhar(elementos_mapeados, imagens_disponiveis, usar_v
             obj.select_set(True)
             bpy.context.view_layer.objects.active = obj
             bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-        
+
+        # --- TRATAMENTO DA MALHA (escala já aplicada: as medidas em mm valem) ---
+        tratar_malha_objeto(obj, regra, tipo_material, opcoes_malha)
+
         # --- OBTENÇÃO DA COR DE PREENCHIMENTO ---
         preenchimento_val = dados.get('preenchimento', 'Nenhum')
         if not preenchimento_val or preenchimento_val == 'Nenhum' or preenchimento_val.lower() == '#ffffff':
@@ -1125,18 +1298,20 @@ def processar_svg_no_blender(
     cycles_samples=128, 
     usar_verniz=False, 
     caminho_modelo_resina="",
-    cameras_para_renderizar=None
+    cameras_para_renderizar=None,
+    opcoes_malha=None
 ):
+    opcoes_malha = malha_logica.normalizar(opcoes_malha)
     marcar_etapa("estudio", "Abrindo o estúdio base")
     carregar_estudio_e_hdri(caminho_blend)
     marcar_etapa("svg", "Lendo e importando o SVG")
     caminho_temp, dados_extraidos, imagens_disponiveis = analisar_e_preparar_svg(caminho_svg)
     if not caminho_temp: return
 
-    objetos_importados = importar_e_converter_svg(caminho_temp)
+    objetos_importados = importar_e_converter_svg(caminho_temp, opcoes_malha)
     elementos_mapeados = mapear_e_ordenar_elementos(objetos_importados, dados_extraidos)
     marcar_etapa("materiais", "Aplicando materiais, texturas e extrusões")
-    suporte_dos_objetos = aplicar_materiais_e_empilhar(elementos_mapeados, imagens_disponiveis, usar_verniz,usar_textura)
+    suporte_dos_objetos = aplicar_materiais_e_empilhar(elementos_mapeados, imagens_disponiveis, usar_verniz,usar_textura, opcoes_malha)
     marcar_etapa("montagem", "Montando o troféu (corpo, costas e resina)")
     pecas_corpo = erguer_corpo_principal_do_trofeu(elementos_mapeados, suporte_dos_objetos)
     processar_mdf_costas(elementos_mapeados, pecas_corpo, suporte_dos_objetos)
@@ -1180,7 +1355,9 @@ if __name__ == "__main__":
         cameras_para_renderizar = None
         if len(argv) > 8 and argv[8].strip():
             cameras_para_renderizar = argv[8]
-            
+
+        opcoes_malha = malha_logica.de_texto(argv[9]) if len(argv) > 9 else malha_logica.normalizar()
+
         processar_svg_no_blender(
             caminho_svg, 
             pasta_saida, 
@@ -1190,5 +1367,6 @@ if __name__ == "__main__":
             cycles_samples, 
             usar_verniz, 
             caminho_modelo_resina,
-            cameras_para_renderizar
+            cameras_para_renderizar,
+            opcoes_malha
         )
