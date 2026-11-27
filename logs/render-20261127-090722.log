@@ -1,0 +1,694 @@
+PathToMesh - registro de renderização
+Data: 2026-11-27 09:07:22
+Versão: 53fffde (2026-11-27)
+Sistema: Windows 11 (10.0.26300), Python 3.14.10
+
+Início: 2026-11-27 09:07:22
+Duração total: 71.5 s
+Código de saída do Blender: 0
+Resultado: sucesso
+Render automático: True  ·  Samples: 32  ·  Câmeras: Camera_Principal, Camera_Esquerda, Camera_Direita
+Pesos: preparação 0.035, render 0.960, final 0.004  ·  câmera: preparo 0.050, principal 0.758, freestyle 0.176, gravar 0.017  ·  Freestyle: True
+Comando: "<CAMINHO>/blender.exe" "--background" "--python" "<CAMINHO>/blender_engine.py" "--" "<CAMINHO>/renan m1.svg" "<CAMINHO>/imagens 3d" "<CAMINHO>/<CONFIG>" "True" "True" "32" "False" "<CAMINHO>/kart resina.obj" "Camera_Principal,Camera_Esquerda,Camera_Direita" "tratar=1;merge_mm=0.01;dissolve=1;dissolve_graus=5.0;arredondar=1;bevel_mm=0.5;bevel_segmentos=5;bevel_bordas=ambos;bevel_pecas=base;suavizar=1;suavizar_graus=30.0;resolucao_curva=24"
+
+Tempo de cada etapa:
+  Abrir o estúdio base: concluida, 0.0 s
+  Ler e importar o SVG: concluida, 0.1 s
+  Aplicar materiais e extrusões: concluida, 0.2 s
+  Montar o troféu: concluida, 0.0 s
+  Posicionar as câmeras: concluida, 0.0 s
+  Renderizar câmera 1 de 3 (Camera_Principal): concluida, 24.3 s (até a 1ª sample 0.5 s; samples 0→32/32 em 17.4 s; Freestyle 32/32 samples em 5.9 s; depois da última sample 0.3 s)
+  Renderizar câmera 2 de 3 (Camera_Esquerda): concluida, 22.2 s (até a 1ª sample 0.5 s; samples 0→32/32 em 15.8 s; Freestyle 32/32 samples em 5.6 s; depois da última sample 0.2 s)
+  Renderizar câmera 3 de 3 (Camera_Direita): concluida, 23.0 s (até a 1ª sample 0.4 s; samples 0→32/32 em 16.7 s; Freestyle 32/32 samples em 5.5 s; depois da última sample 0.2 s)
+  Gravar as imagens e fechar o Blender: concluida, 0.2 s
+
+Saída do Blender (segundos desde o início | linha):
+    1.580 | PTM_ETAPA estudio 1/7 Abrindo o estúdio base
+    1.581 | >>> Carregando estúdio base: <CAMINHO>/<CONFIG>
+    1.581 | 00:01.485  blend            | Read blend: "<CAMINHO>/<CONFIG>"
+    1.596 | <CAMINHO>/blender_engine.py:259: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+    1.596 |   if bpy.context.scene.world and bpy.context.scene.world.use_nodes:
+    1.596 | PTM_ETAPA svg 2/7 Lendo e importando o SVG
+    1.596 | >>> Analisando e importando o arquivo SVG...
+    1.650 | PTM_ETAPA materiais 3/7 Aplicando materiais, texturas e extrusões
+    1.651 | >>> Aplicando materiais, texturas e extrusões...
+    1.691 | Info: Applied modifier was not first, result may not be as expected
+    1.691 | >>> Malha trofeu_shape_1.001: vértices/faces antes 4/2 | limpeza 4/2 | dissolve 4/1 | bevel 4/1 (0 arestas, 0.00 mm) | final 4/1
+    1.692 | <CAMINHO>/blender_engine.py:130: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    1.692 |   mat.use_nodes = True
+    1.693 | <CAMINHO>/blender_engine.py:772: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    1.693 |   if mat and mat.use_nodes:
+    1.700 | Info: Applied modifier was not first, result may not be as expected
+    1.700 | >>> Malha trofeu_shape_2.001: vértices/faces antes 4/2 | limpeza 4/2 | dissolve 4/1 | bevel 4/1 (0 arestas, 0.00 mm) | final 4/1
+    1.709 | Info: Applied modifier was not first, result may not be as expected
+    1.709 | >>> Malha trofeu_shape_3.001: vértices/faces antes 4/2 | limpeza 4/2 | dissolve 4/1 | bevel 4/1 (0 arestas, 0.00 mm) | final 4/1
+    1.709 | <CAMINHO>/blender_engine.py:731: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    1.709 |   mat.use_nodes = True
+    1.776 | Info: Applied modifier was not first, result may not be as expected
+    1.776 | >>> Malha trofeu_shape_4.001: vértices/faces antes 274/274 | limpeza 271/267 | dissolve 78/2 | bevel 78/2 (0 arestas, 0.00 mm) | final 78/78
+    1.802 | Info: Applied modifier was not first, result may not be as expected
+    1.802 | >>> Malha trofeu_shape_5.001: vértices/faces antes 468/468 | limpeza 468/460 | dissolve 84/2 | bevel 84/2 (0 arestas, 0.00 mm) | final 84/83
+    1.813 | Info: Applied modifier was not first, result may not be as expected
+    1.813 | >>> Malha trofeu_shape_6.001: vértices/faces antes 4/2 | limpeza 4/2 | dissolve 4/1 | bevel 4/1 (0 arestas, 0.00 mm) | final 4/1
+    1.822 | Info: Applied modifier was not first, result may not be as expected
+    1.822 | >>> Malha trofeu_shape_7.001: vértices/faces antes 4/2 | limpeza 4/2 | dissolve 4/1 | bevel 4/1 (0 arestas, 0.00 mm) | final 4/1
+    1.830 | Info: Applied modifier was not first, result may not be as expected
+    1.830 | >>> Malha trofeu_shape_8.001: vértices/faces antes 4/2 | limpeza 4/2 | dissolve 4/1 | bevel 4/1 (0 arestas, 0.00 mm) | final 4/1
+    1.838 | Info: Applied modifier was not first, result may not be as expected
+    1.838 | >>> Malha trofeu_shape_9.001: vértices/faces antes 4/2 | limpeza 4/2 | dissolve 4/1 | bevel 4/1 (0 arestas, 0.00 mm) | final 4/1
+    1.845 | Info: Applied modifier was not first, result may not be as expected
+    1.845 | >>> Malha trofeu_shape_10.001: vértices/faces antes 4/2 | limpeza 4/2 | dissolve 4/1 | bevel 4/1 (0 arestas, 0.00 mm) | final 4/1
+    1.851 | Info: Applied modifier was not first, result may not be as expected
+    1.851 | >>> Malha trofeu_shape_11.001: vértices/faces antes 4/2 | limpeza 4/2 | dissolve 4/1 | bevel 4/1 (0 arestas, 0.00 mm) | final 4/1
+    1.860 | Info: Applied modifier was not first, result may not be as expected
+    1.860 | >>> Malha trofeu_shape_12.001: vértices/faces antes 4/2 | limpeza 4/2 | dissolve 4/1 | bevel 4/1 (0 arestas, 0.00 mm) | final 4/1
+    1.861 | PTM_ETAPA montagem 4/7 Montando o troféu (corpo, costas e resina)
+    1.861 | Troféu base montado e alinhado com sucesso!
+    1.861 | PTM_ETAPA cameras 5/7 Posicionando as câmeras
+    1.862 | PTM_ETAPA render 6/7 Renderizando as câmeras
+    1.862 | PTM_PLANO 32 3 Camera_Principal,Camera_Esquerda,Camera_Direita
+    1.862 | PTM_PASSADAS principal,freestyle
+    1.862 | PTM_CAMERA 1/3 Camera_Principal
+    1.862 | >>> Renderizando câmera: Camera_Principal via Cycles...
+    1.863 | PTM_RENDER_INICIO
+    1.868 | PTM_STATS Mem: 0M | Synchronizing object | Light.002
+    1.868 | PTM_STATS Mem: 0M | Synchronizing object | Circle
+    1.868 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_6.001
+    1.868 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_3.001
+    1.868 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_12.001
+    1.869 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_11.001
+    1.869 | PTM_STATS Mem: 0M | Initializing
+    1.870 | PTM_STATS Mem: 0M | Waiting for render to start
+    1.870 | PTM_STATS Mem: 0M | Updating Scene
+    1.870 | PTM_STATS Mem: 0M | Updating Shaders
+    1.870 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+    1.873 | PTM_STATS Mem: 1M | Updating Procedurals
+    1.873 | PTM_STATS Mem: 1M | Updating Background
+    1.873 | PTM_STATS Mem: 1M | Updating Scene Attribute
+    1.873 | PTM_STATS Mem: 1M | Updating Camera
+    1.873 | PTM_STATS Mem: 1M | Updating Meshes Flags
+    1.873 | PTM_STATS Mem: 1M | Updating Objects
+    1.873 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+    1.874 | PTM_STATS Mem: 1M | Updating Particle Systems
+    1.874 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+    1.874 | PTM_STATS Mem: 1M | Updating Meshes
+    1.874 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+    1.874 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+    1.874 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+    1.874 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+    1.874 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+    1.874 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+    1.874 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+    1.874 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+    1.874 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+    1.874 | PTM_STATS Mem: 1M | Updating Objects Flags
+    1.874 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+    1.874 | PTM_STATS Mem: 1M | Updating Images
+    1.874 | PTM_STATS Mem: 1M | Updating Images | Loading renan m1_ImgID1.png
+    1.875 | PTM_STATS Mem: 1M | Updating Images | Loading renan m1_ImgID2.png
+    2.010 | PTM_STATS Mem: 143M | Updating Volume
+    2.010 | PTM_STATS Mem: 143M | Updating Camera Volume
+    2.010 | PTM_STATS Mem: 143M | Updating Lookup Tables
+    2.010 | PTM_STATS Mem: 143M | Updating Lights
+    2.010 | PTM_STATS Mem: 143M | Updating Lights | Importance map
+    2.335 | PTM_STATS Mem: 207M | Updating Lights | Computing tree
+    2.335 | PTM_STATS Mem: 207M | Updating Integrator
+    2.335 | PTM_STATS Mem: 207M | Updating Film
+    2.336 | PTM_STATS Mem: 207M | Updating Lookup Tables
+    2.336 | PTM_STATS Mem: 207M | Updating Baking
+    2.336 | PTM_STATS Mem: 207M | Updating Device | Writing constant memory
+    2.336 | PTM_STATS Mem: 207M | Loading denoising kernels (may take a few minutes the first time)
+    2.336 | PTM_SAMPLES 0 32 principal
+    2.336 | PTM_STATS Mem: 207M | Sample 0/32
+    2.731 | PTM_SAMPLES 1 32 principal 12.23
+    2.732 | PTM_STATS Remaining: 00:12.23 | Mem: 285M | Sample 1/32
+   19.706 | PTM_SAMPLES 32 32 principal
+   19.707 | PTM_STATS Mem: 285M | Sample 32/32
+   19.707 | PTM_STATS Mem: 285M | Finished
+   19.832 | PTM_PASSADA freestyle
+   19.833 | PTM_STATS Freestyle: Mesh loading
+   19.837 | PTM_STATS Freestyle: View map creation
+   19.843 | PTM_STATS Freestyle: Visibility computations 0%
+   19.843 | PTM_STATS Freestyle: Visibility computations 1%
+   19.843 | PTM_STATS Freestyle: Visibility computations 2%
+   19.843 | PTM_STATS Freestyle: Visibility computations 3%
+   19.843 | PTM_STATS Freestyle: Visibility computations 4%
+   19.843 | PTM_STATS Freestyle: Visibility computations 5%
+   19.843 | PTM_STATS Freestyle: Visibility computations 6%
+   19.843 | PTM_STATS Freestyle: Visibility computations 7%
+   19.843 | PTM_STATS Freestyle: Visibility computations 9%
+   19.843 | PTM_STATS Freestyle: Visibility computations 10%
+   19.843 | PTM_STATS Freestyle: Visibility computations 11%
+   19.843 | PTM_STATS Freestyle: Visibility computations 12%
+   19.844 | PTM_STATS Freestyle: Visibility computations 13%
+   19.844 | PTM_STATS Freestyle: Visibility computations 14%
+   19.844 | PTM_STATS Freestyle: Visibility computations 15%
+   19.844 | PTM_STATS Freestyle: Visibility computations 17%
+   19.844 | PTM_STATS Freestyle: Visibility computations 18%
+   19.844 | PTM_STATS Freestyle: Visibility computations 19%
+   19.844 | PTM_STATS Freestyle: Visibility computations 20%
+   19.844 | PTM_STATS Freestyle: Visibility computations 21%
+   19.844 | PTM_STATS Freestyle: Visibility computations 22%
+   19.844 | PTM_STATS Freestyle: Visibility computations 23%
+   19.844 | PTM_STATS Freestyle: Visibility computations 25%
+   19.844 | PTM_STATS Freestyle: Visibility computations 26%
+   19.844 | PTM_STATS Freestyle: Visibility computations 27%
+   19.844 | PTM_STATS Freestyle: Visibility computations 28%
+   19.844 | PTM_STATS Freestyle: Visibility computations 29%
+   19.844 | PTM_STATS Freestyle: Visibility computations 30%
+   19.844 | PTM_STATS Freestyle: Visibility computations 31%
+   19.844 | PTM_STATS Freestyle: Visibility computations 33%
+   19.844 | PTM_STATS Freestyle: Visibility computations 34%
+   19.844 | PTM_STATS Freestyle: Visibility computations 35%
+   19.844 | PTM_STATS Freestyle: Visibility computations 36%
+   19.844 | PTM_STATS Freestyle: Visibility computations 37%
+   19.844 | PTM_STATS Freestyle: Visibility computations 38%
+   19.844 | PTM_STATS Freestyle: Visibility computations 39%
+   19.844 | PTM_STATS Freestyle: Visibility computations 40%
+   19.845 | PTM_STATS Freestyle: Visibility computations 42%
+   19.845 | PTM_STATS Freestyle: Visibility computations 43%
+   19.845 | PTM_STATS Freestyle: Visibility computations 44%
+   19.845 | PTM_STATS Freestyle: Visibility computations 45%
+   19.845 | PTM_STATS Freestyle: Visibility computations 46%
+   19.845 | PTM_STATS Freestyle: Visibility computations 47%
+   19.845 | PTM_STATS Freestyle: Visibility computations 48%
+   19.845 | PTM_STATS Freestyle: Visibility computations 50%
+   19.845 | PTM_STATS Freestyle: Visibility computations 51%
+   19.845 | PTM_STATS Freestyle: Visibility computations 52%
+   19.845 | PTM_STATS Freestyle: Visibility computations 53%
+   19.845 | PTM_STATS Freestyle: Visibility computations 54%
+   19.845 | PTM_STATS Freestyle: Visibility computations 55%
+   19.845 | PTM_STATS Freestyle: Visibility computations 56%
+   19.845 | PTM_STATS Freestyle: Visibility computations 58%
+   19.845 | PTM_STATS Freestyle: Visibility computations 59%
+   19.845 | PTM_STATS Freestyle: Visibility computations 60%
+   19.845 | PTM_STATS Freestyle: Visibility computations 61%
+   19.845 | PTM_STATS Freestyle: Visibility computations 62%
+   19.845 | PTM_STATS Freestyle: Visibility computations 63%
+   19.845 | PTM_STATS Freestyle: Visibility computations 64%
+   19.845 | PTM_STATS Freestyle: Visibility computations 66%
+   19.845 | PTM_STATS Freestyle: Visibility computations 67%
+   19.845 | PTM_STATS Freestyle: Visibility computations 68%
+   19.845 | PTM_STATS Freestyle: Visibility computations 69%
+   19.845 | PTM_STATS Freestyle: Visibility computations 70%
+   19.846 | PTM_STATS Freestyle: Visibility computations 71%
+   19.846 | PTM_STATS Freestyle: Visibility computations 72%
+   19.846 | PTM_STATS Freestyle: Visibility computations 73%
+   19.846 | PTM_STATS Freestyle: Visibility computations 75%
+   19.846 | PTM_STATS Freestyle: Visibility computations 76%
+   19.846 | PTM_STATS Freestyle: Visibility computations 77%
+   19.846 | PTM_STATS Freestyle: Visibility computations 78%
+   19.846 | PTM_STATS Freestyle: Visibility computations 79%
+   19.846 | PTM_STATS Freestyle: Visibility computations 80%
+   19.846 | PTM_STATS Freestyle: Visibility computations 81%
+   19.846 | PTM_STATS Freestyle: Visibility computations 83%
+   19.846 | PTM_STATS Freestyle: Visibility computations 84%
+   19.846 | PTM_STATS Freestyle: Visibility computations 85%
+   19.846 | PTM_STATS Freestyle: Visibility computations 86%
+   19.846 | PTM_STATS Freestyle: Visibility computations 87%
+   19.846 | PTM_STATS Freestyle: Visibility computations 88%
+   19.846 | PTM_STATS Freestyle: Visibility computations 89%
+   19.846 | PTM_STATS Freestyle: Visibility computations 91%
+   19.846 | PTM_STATS Freestyle: Visibility computations 92%
+   19.846 | PTM_STATS Freestyle: Visibility computations 93%
+   19.846 | PTM_STATS Freestyle: Visibility computations 94%
+   19.846 | PTM_STATS Freestyle: Visibility computations 95%
+   19.846 | PTM_STATS Freestyle: Visibility computations 96%
+   19.847 | PTM_STATS Freestyle: Visibility computations 97%
+   19.847 | PTM_STATS Freestyle: Visibility computations 99%
+   19.847 | PTM_STATS Freestyle: Visibility computations 100%
+   19.847 | PTM_STATS Freestyle: Stroke rendering
+   19.920 | PTM_STATS Mem: 0M | Synchronizing object | 0ffffffffOB
+   19.920 | PTM_STATS Mem: 0M | Initializing
+   19.920 | PTM_STATS Mem: 0M | Waiting for render to start
+   19.920 | PTM_STATS Mem: 0M | Updating Scene
+   19.920 | PTM_STATS Mem: 0M | Updating Shaders
+   19.921 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+   19.922 | PTM_STATS Mem: 1M | Updating Procedurals
+   19.922 | PTM_STATS Mem: 1M | Updating Background
+   19.922 | PTM_STATS Mem: 1M | Updating Scene Attribute
+   19.922 | PTM_STATS Mem: 1M | Updating Camera
+   19.922 | PTM_STATS Mem: 1M | Updating Meshes Flags
+   19.922 | PTM_STATS Mem: 1M | Updating Objects
+   19.922 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+   19.922 | PTM_STATS Mem: 1M | Updating Particle Systems
+   19.922 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+   19.922 | PTM_STATS Mem: 1M | Updating Meshes
+   19.922 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+   19.922 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+   19.922 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+   19.922 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+   19.923 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+   19.923 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+   19.923 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+   19.923 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+   19.923 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+   19.923 | PTM_STATS Mem: 1M | Updating Objects Flags
+   19.923 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+   19.924 | PTM_STATS Mem: 1M | Updating Images
+   19.924 | PTM_STATS Mem: 1M | Updating Volume
+   19.924 | PTM_STATS Mem: 1M | Updating Camera Volume
+   19.924 | PTM_STATS Mem: 1M | Updating Lookup Tables
+   19.924 | PTM_STATS Mem: 1M | Updating Lights
+   19.924 | PTM_STATS Mem: 1M | Updating Lights | Computing tree
+   19.936 | PTM_STATS Mem: 2M | Updating Integrator
+   19.936 | PTM_STATS Mem: 2M | Updating Film
+   19.936 | PTM_STATS Mem: 1M | Updating Lookup Tables
+   19.936 | PTM_STATS Mem: 2M | Updating Baking
+   19.936 | PTM_STATS Mem: 2M | Updating Device | Writing constant memory
+   19.936 | PTM_STATS Mem: 2M | Loading denoising kernels (may take a few minutes the first time)
+   19.936 | PTM_SAMPLES 0 32 freestyle
+   19.936 | PTM_STATS Mem: 2M | Sample 0/32
+   19.977 | PTM_SAMPLES 1 32 freestyle 1.26
+   19.978 | PTM_STATS Remaining: 00:01.26 | Mem: 80M | Sample 1/32
+   25.843 | PTM_SAMPLES 32 32 freestyle
+   25.844 | PTM_STATS Mem: 80M | Sample 32/32
+   25.844 | PTM_STATS Mem: 80M | Finished
+   26.145 | 00:26.047  render           | Saved: '<CAMINHO>/Camera_Principal.png'
+   26.146 | PTM_STATS Time: 00:24.28 (Saving: 00:00.21)
+   26.146 | PTM_RENDER_POS
+   26.146 | PTM_RENDER_FIM
+   26.146 | PTM_CAMERA_FIM 1/3 Camera_Principal
+   26.146 | PTM_CAMERA 2/3 Camera_Esquerda
+   26.146 | >>> Renderizando câmera: Camera_Esquerda via Cycles...
+   26.147 | PTM_RENDER_INICIO
+   26.150 | PTM_STATS Mem: 0M | Synchronizing object | Light.002
+   26.150 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_12.001
+   26.150 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_4.001
+   26.150 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_11.001
+   26.150 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_8.001
+   26.150 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_10.001
+   26.151 | PTM_STATS Mem: 0M | Initializing
+   26.151 | PTM_STATS Mem: 0M | Waiting for render to start
+   26.151 | PTM_STATS Mem: 0M | Updating Scene
+   26.151 | PTM_STATS Mem: 0M | Updating Shaders
+   26.152 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+   26.154 | PTM_STATS Mem: 1M | Updating Procedurals
+   26.154 | PTM_STATS Mem: 1M | Updating Background
+   26.154 | PTM_STATS Mem: 1M | Updating Scene Attribute
+   26.154 | PTM_STATS Mem: 1M | Updating Camera
+   26.154 | PTM_STATS Mem: 1M | Updating Meshes Flags
+   26.154 | PTM_STATS Mem: 1M | Updating Objects
+   26.154 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+   26.154 | PTM_STATS Mem: 1M | Updating Particle Systems
+   26.154 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+   26.154 | PTM_STATS Mem: 1M | Updating Meshes
+   26.154 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+   26.154 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+   26.154 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+   26.154 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+   26.154 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+   26.154 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+   26.154 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+   26.154 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+   26.154 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+   26.154 | PTM_STATS Mem: 1M | Updating Objects Flags
+   26.155 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+   26.155 | PTM_STATS Mem: 1M | Updating Images
+   26.155 | PTM_STATS Mem: 1M | Updating Images | Loading renan m1_ImgID1.png
+   26.155 | PTM_STATS Mem: 1M | Updating Images | Loading brown_photostudio_01_4k.exr
+   26.278 | PTM_STATS Mem: 143M | Updating Volume
+   26.278 | PTM_STATS Mem: 143M | Updating Camera Volume
+   26.278 | PTM_STATS Mem: 143M | Updating Lookup Tables
+   26.278 | PTM_STATS Mem: 143M | Updating Lights
+   26.278 | PTM_STATS Mem: 143M | Updating Lights | Importance map
+   26.599 | PTM_STATS Mem: 207M | Updating Lights | Computing tree
+   26.599 | PTM_STATS Mem: 207M | Updating Integrator
+   26.599 | PTM_STATS Mem: 207M | Updating Film
+   26.599 | PTM_STATS Mem: 207M | Updating Lookup Tables
+   26.599 | PTM_STATS Mem: 207M | Updating Baking
+   26.599 | PTM_STATS Mem: 207M | Updating Device | Writing constant memory
+   26.599 | PTM_STATS Mem: 207M | Loading denoising kernels (may take a few minutes the first time)
+   26.600 | PTM_SAMPLES 0 32 principal
+   26.600 | PTM_STATS Mem: 207M | Sample 0/32
+   26.976 | PTM_SAMPLES 1 32 principal 11.67
+   26.977 | PTM_STATS Remaining: 00:11.67 | Mem: 285M | Sample 1/32
+   42.389 | PTM_SAMPLES 32 32 principal
+   42.390 | PTM_STATS Mem: 285M | Sample 32/32
+   42.390 | PTM_STATS Mem: 285M | Finished
+   42.500 | PTM_PASSADA freestyle
+   42.500 | PTM_STATS Freestyle: Mesh loading
+   42.502 | PTM_STATS Freestyle: View map creation
+   42.505 | PTM_STATS Freestyle: Visibility computations 0%
+   42.505 | PTM_STATS Freestyle: Visibility computations 1%
+   42.505 | PTM_STATS Freestyle: Visibility computations 2%
+   42.505 | PTM_STATS Freestyle: Visibility computations 3%
+   42.505 | PTM_STATS Freestyle: Visibility computations 4%
+   42.505 | PTM_STATS Freestyle: Visibility computations 5%
+   42.505 | PTM_STATS Freestyle: Visibility computations 6%
+   42.505 | PTM_STATS Freestyle: Visibility computations 7%
+   42.505 | PTM_STATS Freestyle: Visibility computations 8%
+   42.505 | PTM_STATS Freestyle: Visibility computations 9%
+   42.505 | PTM_STATS Freestyle: Visibility computations 10%
+   42.505 | PTM_STATS Freestyle: Visibility computations 11%
+   42.505 | PTM_STATS Freestyle: Visibility computations 12%
+   42.505 | PTM_STATS Freestyle: Visibility computations 13%
+   42.505 | PTM_STATS Freestyle: Visibility computations 15%
+   42.505 | PTM_STATS Freestyle: Visibility computations 16%
+   42.505 | PTM_STATS Freestyle: Visibility computations 17%
+   42.505 | PTM_STATS Freestyle: Visibility computations 18%
+   42.505 | PTM_STATS Freestyle: Visibility computations 19%
+   42.505 | PTM_STATS Freestyle: Visibility computations 20%
+   42.505 | PTM_STATS Freestyle: Visibility computations 21%
+   42.505 | PTM_STATS Freestyle: Visibility computations 22%
+   42.505 | PTM_STATS Freestyle: Visibility computations 23%
+   42.506 | PTM_STATS Freestyle: Visibility computations 24%
+   42.506 | PTM_STATS Freestyle: Visibility computations 25%
+   42.506 | PTM_STATS Freestyle: Visibility computations 26%
+   42.506 | PTM_STATS Freestyle: Visibility computations 27%
+   42.506 | PTM_STATS Freestyle: Visibility computations 28%
+   42.506 | PTM_STATS Freestyle: Visibility computations 30%
+   42.506 | PTM_STATS Freestyle: Visibility computations 31%
+   42.506 | PTM_STATS Freestyle: Visibility computations 32%
+   42.506 | PTM_STATS Freestyle: Visibility computations 33%
+   42.506 | PTM_STATS Freestyle: Visibility computations 34%
+   42.506 | PTM_STATS Freestyle: Visibility computations 35%
+   42.506 | PTM_STATS Freestyle: Visibility computations 36%
+   42.506 | PTM_STATS Freestyle: Visibility computations 37%
+   42.506 | PTM_STATS Freestyle: Visibility computations 38%
+   42.506 | PTM_STATS Freestyle: Visibility computations 39%
+   42.506 | PTM_STATS Freestyle: Visibility computations 40%
+   42.506 | PTM_STATS Freestyle: Visibility computations 41%
+   42.506 | PTM_STATS Freestyle: Visibility computations 42%
+   42.506 | PTM_STATS Freestyle: Visibility computations 43%
+   42.506 | PTM_STATS Freestyle: Visibility computations 45%
+   42.506 | PTM_STATS Freestyle: Visibility computations 46%
+   42.506 | PTM_STATS Freestyle: Visibility computations 47%
+   42.506 | PTM_STATS Freestyle: Visibility computations 48%
+   42.506 | PTM_STATS Freestyle: Visibility computations 49%
+   42.506 | PTM_STATS Freestyle: Visibility computations 50%
+   42.506 | PTM_STATS Freestyle: Visibility computations 51%
+   42.506 | PTM_STATS Freestyle: Visibility computations 52%
+   42.506 | PTM_STATS Freestyle: Visibility computations 53%
+   42.506 | PTM_STATS Freestyle: Visibility computations 54%
+   42.506 | PTM_STATS Freestyle: Visibility computations 55%
+   42.506 | PTM_STATS Freestyle: Visibility computations 56%
+   42.506 | PTM_STATS Freestyle: Visibility computations 57%
+   42.506 | PTM_STATS Freestyle: Visibility computations 58%
+   42.506 | PTM_STATS Freestyle: Visibility computations 60%
+   42.506 | PTM_STATS Freestyle: Visibility computations 61%
+   42.506 | PTM_STATS Freestyle: Visibility computations 62%
+   42.507 | PTM_STATS Freestyle: Visibility computations 63%
+   42.507 | PTM_STATS Freestyle: Visibility computations 64%
+   42.507 | PTM_STATS Freestyle: Visibility computations 65%
+   42.507 | PTM_STATS Freestyle: Visibility computations 66%
+   42.507 | PTM_STATS Freestyle: Visibility computations 67%
+   42.507 | PTM_STATS Freestyle: Visibility computations 68%
+   42.507 | PTM_STATS Freestyle: Visibility computations 69%
+   42.507 | PTM_STATS Freestyle: Visibility computations 70%
+   42.507 | PTM_STATS Freestyle: Visibility computations 71%
+   42.507 | PTM_STATS Freestyle: Visibility computations 72%
+   42.507 | PTM_STATS Freestyle: Visibility computations 73%
+   42.507 | PTM_STATS Freestyle: Visibility computations 75%
+   42.507 | PTM_STATS Freestyle: Visibility computations 76%
+   42.507 | PTM_STATS Freestyle: Visibility computations 77%
+   42.507 | PTM_STATS Freestyle: Visibility computations 78%
+   42.507 | PTM_STATS Freestyle: Visibility computations 79%
+   42.507 | PTM_STATS Freestyle: Visibility computations 80%
+   42.507 | PTM_STATS Freestyle: Visibility computations 81%
+   42.507 | PTM_STATS Freestyle: Visibility computations 82%
+   42.507 | PTM_STATS Freestyle: Visibility computations 83%
+   42.507 | PTM_STATS Freestyle: Visibility computations 84%
+   42.507 | PTM_STATS Freestyle: Visibility computations 85%
+   42.507 | PTM_STATS Freestyle: Visibility computations 86%
+   42.507 | PTM_STATS Freestyle: Visibility computations 87%
+   42.507 | PTM_STATS Freestyle: Visibility computations 89%
+   42.507 | PTM_STATS Freestyle: Visibility computations 90%
+   42.507 | PTM_STATS Freestyle: Visibility computations 91%
+   42.507 | PTM_STATS Freestyle: Visibility computations 92%
+   42.507 | PTM_STATS Freestyle: Visibility computations 93%
+   42.507 | PTM_STATS Freestyle: Visibility computations 94%
+   42.507 | PTM_STATS Freestyle: Visibility computations 95%
+   42.508 | PTM_STATS Freestyle: Visibility computations 96%
+   42.508 | PTM_STATS Freestyle: Visibility computations 97%
+   42.508 | PTM_STATS Freestyle: Visibility computations 98%
+   42.508 | PTM_STATS Freestyle: Visibility computations 99%
+   42.508 | PTM_STATS Freestyle: Visibility computations 100%
+   42.508 | PTM_STATS Freestyle: Stroke rendering
+   42.516 | PTM_STATS Mem: 0M | Synchronizing object | 0ffffffffOB
+   42.516 | PTM_STATS Mem: 0M | Initializing
+   42.516 | PTM_STATS Mem: 0M | Waiting for render to start
+   42.516 | PTM_STATS Mem: 0M | Updating Scene
+   42.516 | PTM_STATS Mem: 0M | Updating Shaders
+   42.516 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+   42.517 | PTM_STATS Mem: 1M | Updating Procedurals
+   42.517 | PTM_STATS Mem: 1M | Updating Background
+   42.517 | PTM_STATS Mem: 1M | Updating Scene Attribute
+   42.517 | PTM_STATS Mem: 1M | Updating Camera
+   42.517 | PTM_STATS Mem: 1M | Updating Meshes Flags
+   42.517 | PTM_STATS Mem: 1M | Updating Objects
+   42.517 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+   42.517 | PTM_STATS Mem: 1M | Updating Particle Systems
+   42.517 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+   42.517 | PTM_STATS Mem: 1M | Updating Meshes
+   42.517 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+   42.517 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+   42.518 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+   42.518 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+   42.518 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+   42.519 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+   42.519 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+   42.519 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+   42.519 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+   42.519 | PTM_STATS Mem: 1M | Updating Objects Flags
+   42.519 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+   42.519 | PTM_STATS Mem: 1M | Updating Images
+   42.519 | PTM_STATS Mem: 1M | Updating Volume
+   42.519 | PTM_STATS Mem: 1M | Updating Camera Volume
+   42.519 | PTM_STATS Mem: 1M | Updating Lookup Tables
+   42.519 | PTM_STATS Mem: 1M | Updating Lights
+   42.519 | PTM_STATS Mem: 1M | Updating Lights | Computing tree
+   42.529 | PTM_STATS Mem: 2M | Updating Integrator
+   42.529 | PTM_STATS Mem: 2M | Updating Film
+   42.530 | PTM_STATS Mem: 1M | Updating Lookup Tables
+   42.530 | PTM_STATS Mem: 2M | Updating Baking
+   42.530 | PTM_STATS Mem: 2M | Updating Device | Writing constant memory
+   42.530 | PTM_STATS Mem: 2M | Loading denoising kernels (may take a few minutes the first time)
+   42.530 | PTM_SAMPLES 0 32 freestyle
+   42.530 | PTM_STATS Mem: 2M | Sample 0/32
+   42.566 | PTM_SAMPLES 1 32 freestyle 1.12
+   42.567 | PTM_STATS Remaining: 00:01.12 | Mem: 80M | Sample 1/32
+   48.100 | PTM_SAMPLES 32 32 freestyle
+   48.100 | PTM_STATS Mem: 80M | Sample 32/32
+   48.100 | PTM_STATS Mem: 80M | Finished
+   48.305 | 00:48.219  render           | Saved: '<CAMINHO>/Camera_Esquerda.png'
+   48.306 | PTM_STATS Time: 00:22.15 (Saving: 00:00.12)
+   48.306 | PTM_RENDER_POS
+   48.306 | PTM_RENDER_FIM
+   48.306 | PTM_CAMERA_FIM 2/3 Camera_Esquerda
+   48.306 | PTM_CAMERA 3/3 Camera_Direita
+   48.306 | >>> Renderizando câmera: Camera_Direita via Cycles...
+   48.307 | PTM_RENDER_INICIO
+   48.310 | PTM_STATS Mem: 0M | Synchronizing object | Light.002
+   48.310 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_12.001
+   48.310 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_4.001
+   48.310 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_8.001
+   48.310 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_10.001
+   48.310 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_11.001
+   48.310 | PTM_STATS Mem: 0M | Initializing
+   48.311 | PTM_STATS Mem: 0M | Waiting for render to start
+   48.311 | PTM_STATS Mem: 0M | Updating Scene
+   48.311 | PTM_STATS Mem: 0M | Updating Shaders
+   48.311 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+   48.313 | PTM_STATS Mem: 1M | Updating Procedurals
+   48.313 | PTM_STATS Mem: 1M | Updating Background
+   48.313 | PTM_STATS Mem: 1M | Updating Scene Attribute
+   48.313 | PTM_STATS Mem: 1M | Updating Camera
+   48.313 | PTM_STATS Mem: 1M | Updating Meshes Flags
+   48.313 | PTM_STATS Mem: 1M | Updating Objects
+   48.313 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+   48.313 | PTM_STATS Mem: 1M | Updating Particle Systems
+   48.313 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+   48.313 | PTM_STATS Mem: 1M | Updating Meshes
+   48.313 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+   48.313 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+   48.313 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+   48.313 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+   48.314 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+   48.314 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+   48.314 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+   48.314 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+   48.314 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+   48.314 | PTM_STATS Mem: 1M | Updating Objects Flags
+   48.314 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+   48.314 | PTM_STATS Mem: 1M | Updating Images
+   48.314 | PTM_STATS Mem: 1M | Updating Images | Loading renan m1_ImgID1.png
+   48.314 | PTM_STATS Mem: 1M | Updating Images | Loading renan m1_ImgID2.png
+   48.430 | PTM_STATS Mem: 143M | Updating Volume
+   48.430 | PTM_STATS Mem: 143M | Updating Camera Volume
+   48.430 | PTM_STATS Mem: 143M | Updating Lookup Tables
+   48.430 | PTM_STATS Mem: 143M | Updating Lights
+   48.430 | PTM_STATS Mem: 143M | Updating Lights | Importance map
+   48.743 | PTM_STATS Mem: 207M | Updating Lights | Computing tree
+   48.743 | PTM_STATS Mem: 207M | Updating Integrator
+   48.743 | PTM_STATS Mem: 207M | Updating Film
+   48.743 | PTM_STATS Mem: 207M | Updating Lookup Tables
+   48.743 | PTM_STATS Mem: 207M | Updating Baking
+   48.743 | PTM_STATS Mem: 207M | Updating Device | Writing constant memory
+   48.743 | PTM_STATS Mem: 207M | Loading denoising kernels (may take a few minutes the first time)
+   48.743 | PTM_SAMPLES 0 32 principal
+   48.744 | PTM_STATS Mem: 207M | Sample 0/32
+   49.109 | PTM_SAMPLES 1 32 principal 11.31
+   49.109 | PTM_STATS Remaining: 00:11.31 | Mem: 285M | Sample 1/32
+   65.400 | PTM_SAMPLES 32 32 principal
+   65.401 | PTM_STATS Mem: 285M | Sample 32/32
+   65.401 | PTM_STATS Mem: 285M | Finished
+   65.509 | PTM_PASSADA freestyle
+   65.510 | PTM_STATS Freestyle: Mesh loading
+   65.512 | PTM_STATS Freestyle: View map creation
+   65.515 | PTM_STATS Freestyle: Visibility computations 0%
+   65.515 | PTM_STATS Freestyle: Visibility computations 1%
+   65.515 | PTM_STATS Freestyle: Visibility computations 2%
+   65.515 | PTM_STATS Freestyle: Visibility computations 3%
+   65.515 | PTM_STATS Freestyle: Visibility computations 4%
+   65.515 | PTM_STATS Freestyle: Visibility computations 5%
+   65.515 | PTM_STATS Freestyle: Visibility computations 6%
+   65.515 | PTM_STATS Freestyle: Visibility computations 7%
+   65.515 | PTM_STATS Freestyle: Visibility computations 8%
+   65.515 | PTM_STATS Freestyle: Visibility computations 9%
+   65.515 | PTM_STATS Freestyle: Visibility computations 10%
+   65.515 | PTM_STATS Freestyle: Visibility computations 11%
+   65.515 | PTM_STATS Freestyle: Visibility computations 12%
+   65.515 | PTM_STATS Freestyle: Visibility computations 13%
+   65.516 | PTM_STATS Freestyle: Visibility computations 14%
+   65.516 | PTM_STATS Freestyle: Visibility computations 15%
+   65.516 | PTM_STATS Freestyle: Visibility computations 16%
+   65.516 | PTM_STATS Freestyle: Visibility computations 17%
+   65.516 | PTM_STATS Freestyle: Visibility computations 18%
+   65.516 | PTM_STATS Freestyle: Visibility computations 19%
+   65.516 | PTM_STATS Freestyle: Visibility computations 20%
+   65.516 | PTM_STATS Freestyle: Visibility computations 21%
+   65.516 | PTM_STATS Freestyle: Visibility computations 22%
+   65.516 | PTM_STATS Freestyle: Visibility computations 23%
+   65.516 | PTM_STATS Freestyle: Visibility computations 24%
+   65.516 | PTM_STATS Freestyle: Visibility computations 25%
+   65.516 | PTM_STATS Freestyle: Visibility computations 26%
+   65.516 | PTM_STATS Freestyle: Visibility computations 27%
+   65.516 | PTM_STATS Freestyle: Visibility computations 28%
+   65.516 | PTM_STATS Freestyle: Visibility computations 30%
+   65.516 | PTM_STATS Freestyle: Visibility computations 31%
+   65.516 | PTM_STATS Freestyle: Visibility computations 32%
+   65.516 | PTM_STATS Freestyle: Visibility computations 33%
+   65.516 | PTM_STATS Freestyle: Visibility computations 34%
+   65.516 | PTM_STATS Freestyle: Visibility computations 35%
+   65.516 | PTM_STATS Freestyle: Visibility computations 36%
+   65.516 | PTM_STATS Freestyle: Visibility computations 37%
+   65.516 | PTM_STATS Freestyle: Visibility computations 38%
+   65.517 | PTM_STATS Freestyle: Visibility computations 39%
+   65.517 | PTM_STATS Freestyle: Visibility computations 40%
+   65.517 | PTM_STATS Freestyle: Visibility computations 41%
+   65.517 | PTM_STATS Freestyle: Visibility computations 42%
+   65.517 | PTM_STATS Freestyle: Visibility computations 43%
+   65.517 | PTM_STATS Freestyle: Visibility computations 44%
+   65.517 | PTM_STATS Freestyle: Visibility computations 45%
+   65.517 | PTM_STATS Freestyle: Visibility computations 46%
+   65.517 | PTM_STATS Freestyle: Visibility computations 47%
+   65.517 | PTM_STATS Freestyle: Visibility computations 48%
+   65.517 | PTM_STATS Freestyle: Visibility computations 49%
+   65.517 | PTM_STATS Freestyle: Visibility computations 50%
+   65.517 | PTM_STATS Freestyle: Visibility computations 51%
+   65.517 | PTM_STATS Freestyle: Visibility computations 52%
+   65.517 | PTM_STATS Freestyle: Visibility computations 53%
+   65.517 | PTM_STATS Freestyle: Visibility computations 54%
+   65.517 | PTM_STATS Freestyle: Visibility computations 55%
+   65.517 | PTM_STATS Freestyle: Visibility computations 56%
+   65.517 | PTM_STATS Freestyle: Visibility computations 57%
+   65.517 | PTM_STATS Freestyle: Visibility computations 58%
+   65.517 | PTM_STATS Freestyle: Visibility computations 60%
+   65.517 | PTM_STATS Freestyle: Visibility computations 61%
+   65.517 | PTM_STATS Freestyle: Visibility computations 62%
+   65.517 | PTM_STATS Freestyle: Visibility computations 63%
+   65.517 | PTM_STATS Freestyle: Visibility computations 64%
+   65.517 | PTM_STATS Freestyle: Visibility computations 65%
+   65.517 | PTM_STATS Freestyle: Visibility computations 66%
+   65.518 | PTM_STATS Freestyle: Visibility computations 67%
+   65.518 | PTM_STATS Freestyle: Visibility computations 68%
+   65.518 | PTM_STATS Freestyle: Visibility computations 69%
+   65.518 | PTM_STATS Freestyle: Visibility computations 70%
+   65.518 | PTM_STATS Freestyle: Visibility computations 71%
+   65.518 | PTM_STATS Freestyle: Visibility computations 72%
+   65.518 | PTM_STATS Freestyle: Visibility computations 73%
+   65.518 | PTM_STATS Freestyle: Visibility computations 74%
+   65.518 | PTM_STATS Freestyle: Visibility computations 75%
+   65.518 | PTM_STATS Freestyle: Visibility computations 76%
+   65.518 | PTM_STATS Freestyle: Visibility computations 77%
+   65.518 | PTM_STATS Freestyle: Visibility computations 78%
+   65.518 | PTM_STATS Freestyle: Visibility computations 79%
+   65.518 | PTM_STATS Freestyle: Visibility computations 80%
+   65.518 | PTM_STATS Freestyle: Visibility computations 81%
+   65.518 | PTM_STATS Freestyle: Visibility computations 82%
+   65.518 | PTM_STATS Freestyle: Visibility computations 83%
+   65.518 | PTM_STATS Freestyle: Visibility computations 84%
+   65.518 | PTM_STATS Freestyle: Visibility computations 85%
+   65.518 | PTM_STATS Freestyle: Visibility computations 86%
+   65.518 | PTM_STATS Freestyle: Visibility computations 87%
+   65.518 | PTM_STATS Freestyle: Visibility computations 89%
+   65.518 | PTM_STATS Freestyle: Visibility computations 90%
+   65.518 | PTM_STATS Freestyle: Visibility computations 91%
+   65.518 | PTM_STATS Freestyle: Visibility computations 92%
+   65.519 | PTM_STATS Freestyle: Visibility computations 93%
+   65.519 | PTM_STATS Freestyle: Visibility computations 94%
+   65.519 | PTM_STATS Freestyle: Visibility computations 95%
+   65.519 | PTM_STATS Freestyle: Visibility computations 96%
+   65.519 | PTM_STATS Freestyle: Visibility computations 97%
+   65.519 | PTM_STATS Freestyle: Visibility computations 98%
+   65.519 | PTM_STATS Freestyle: Visibility computations 99%
+   65.519 | PTM_STATS Freestyle: Visibility computations 100%
+   65.519 | PTM_STATS Freestyle: Stroke rendering
+   65.528 | PTM_STATS Mem: 0M | Synchronizing object | 0ffffffffOB
+   65.528 | PTM_STATS Mem: 0M | Initializing
+   65.528 | PTM_STATS Mem: 0M | Waiting for render to start
+   65.528 | PTM_STATS Mem: 0M | Updating Scene
+   65.528 | PTM_STATS Mem: 0M | Updating Shaders
+   65.528 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+   65.529 | PTM_STATS Mem: 1M | Updating Procedurals
+   65.529 | PTM_STATS Mem: 1M | Updating Background
+   65.529 | PTM_STATS Mem: 1M | Updating Scene Attribute
+   65.529 | PTM_STATS Mem: 1M | Updating Camera
+   65.529 | PTM_STATS Mem: 1M | Updating Meshes Flags
+   65.529 | PTM_STATS Mem: 1M | Updating Objects
+   65.529 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+   65.529 | PTM_STATS Mem: 1M | Updating Particle Systems
+   65.529 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+   65.529 | PTM_STATS Mem: 1M | Updating Meshes
+   65.529 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+   65.529 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+   65.529 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+   65.529 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+   65.530 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+   65.530 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+   65.530 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+   65.530 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+   65.530 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+   65.530 | PTM_STATS Mem: 1M | Updating Objects Flags
+   65.530 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+   65.530 | PTM_STATS Mem: 1M | Updating Images
+   65.530 | PTM_STATS Mem: 1M | Updating Volume
+   65.530 | PTM_STATS Mem: 1M | Updating Camera Volume
+   65.530 | PTM_STATS Mem: 1M | Updating Lookup Tables
+   65.530 | PTM_STATS Mem: 1M | Updating Lights
+   65.530 | PTM_STATS Mem: 1M | Updating Lights | Computing tree
+   65.541 | PTM_STATS Mem: 2M | Updating Integrator
+   65.542 | PTM_STATS Mem: 2M | Updating Film
+   65.542 | PTM_STATS Mem: 1M | Updating Lookup Tables
+   65.542 | PTM_STATS Mem: 2M | Updating Baking
+   65.542 | PTM_STATS Mem: 2M | Updating Device | Writing constant memory
+   65.542 | PTM_STATS Mem: 2M | Loading denoising kernels (may take a few minutes the first time)
+   65.542 | PTM_SAMPLES 0 32 freestyle
+   65.542 | PTM_STATS Mem: 2M | Sample 0/32
+   65.578 | PTM_SAMPLES 1 32 freestyle 1.10
+   65.578 | PTM_STATS Remaining: 00:01.10 | Mem: 80M | Sample 1/32
+   71.071 | PTM_SAMPLES 32 32 freestyle
+   71.072 | PTM_STATS Mem: 80M | Sample 32/32
+   71.072 | PTM_STATS Mem: 80M | Finished
+   71.276 | 01:11.188  render           | Saved: '<CAMINHO>/Camera_Direita.png'
+   71.277 | PTM_STATS Time: 00:22.96 (Saving: 00:00.12)
+   71.277 | PTM_RENDER_POS
+   71.277 | PTM_RENDER_FIM
+   71.277 | PTM_CAMERA_FIM 3/3 Camera_Direita
+   71.277 | Renders salvos em: <CAMINHO>/imagens 3d
+   71.277 | PTM_ETAPA final 7/7 Finalizando
+   71.277 | PTM_FIM
+   71.359 | Blender 5.3.0 (hash 02f0899d78e3 built 2026-11-10 01:33:43)
+   71.420 | 
+   71.420 | Blender quit
