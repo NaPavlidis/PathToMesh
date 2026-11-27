@@ -152,6 +152,9 @@
 select.campo { cursor: pointer; }
 select.campo option { background: var(--surface-container); color: var(--on-surface); }
 .campo-curto { width: 140px; }
+.avancado { margin-top: var(--sm); }
+.avancado > summary { cursor: pointer; padding: var(--xs) 0; }
+.avancado[open] > summary { margin-bottom: var(--sm); }
 
 /* ---------------------------------------------------------------- análise do SVG */
 .painel {

@@ -85,9 +85,14 @@ A configuração que o app e o launcher usam fica em **`config.local.json`**, na
 
 ## Malha 3D (limpeza, dissolve e bordas arredondadas)
 
-**A opção "Tratar a malha" vem DESLIGADA por padrão** (também para configurações salvas que ainda não têm a chave `malha`): ligue e desligue na janela de configurações quando precisar. Desligada, a geração segue o mesmo caminho de antes, sem nenhuma etapa nova.
+As duas opções principais ficam **no cartão "Renderização" de ⚙ Configurações, logo abaixo da Qtd de Samples** (tela web e tela Tk), e vêm **DESLIGADAS por padrão** (também para configurações salvas antigas):
 
-Com a opção ligada, depois da conversão do SVG e da extrusão, cada peça passa por um tratamento (⚙ Configurações → cartão **Malha 3D**, salvo no `config.local.json` na chave `malha`). Ordem: **limpeza → dissolve limitado → bevel → tampas → normais**.
+1. **Tratar a malha** (limpeza, dissolve limitado e normais por ângulo);
+2. **Arredondar bordas da base** (bevel leve), com escolha das bordas (topo / base / ambos) e a largura em mm.
+
+**As duas são independentes**: o arredondamento funciona sozinho (sem limpeza, dissolve nem normais) e o tratamento funciona sem o arredondamento. Os ajustes finos (merge, resolução das curvas, dissolve e ângulo, segmentos e peças do bevel, sombreamento suave) ficam em **Avançado**, recolhido por padrão. Tudo é salvo no `config.local.json` (chave `malha`) junto com as demais configurações. Com as duas desligadas, a geração segue o mesmo caminho de antes, sem nenhuma etapa nova. (A chave antiga `bevel` virou `arredondar`; um `bevel: true` salvo antes é ignorado, para não ligar o arredondamento sem o usuário pedir.)
+
+Com o tratamento ligado, depois da conversão do SVG e da extrusão, cada peça passa por ele. Ordem: **limpeza → dissolve limitado → bevel → tampas → normais**.
 
 - **Resolução das curvas** (padrão 24, nunca abaixo da do importador): com poucos pontos no SVG os trechos Bézier são longos e a curva sai facetada.
 - **Limpeza**: merge by distance (padrão 0,01 mm, nunca mais que 10% da espessura da peça, para não colapsar peças finas como o PLOTTER), remove faces degeneradas, arestas e pontos soltos e recalcula as normais para fora.

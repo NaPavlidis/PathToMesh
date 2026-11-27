@@ -496,7 +496,10 @@ def tratar_malha_objeto(obj, regra, tipo_material, opcoes_malha):
     """Limpeza, dissolve limitado, bevel das bordas e normais. Nunca derruba a montagem: se uma etapa
     falhar, avisa no log e segue com a malha que tem."""
     op = malha_logica.normalizar(opcoes_malha)
-    if not op["tratar"] or obj.type != 'MESH' or len(obj.data.polygons) == 0:
+    # "Tratar a malha" e "Arredondar bordas da base" são independentes: com só o bevel ligado, a malha
+    # não passa por limpeza, dissolve nem normais (fica igual à de hoje, só com as bordas arredondadas).
+    tratar = op["tratar"]
+    if not (tratar or op["arredondar"]) or obj.type != 'MESH' or len(obj.data.polygons) == 0:
         return
     import bmesh
     espessura = float(regra.get('extrusao', 0.0))
@@ -507,15 +510,16 @@ def tratar_malha_objeto(obj, regra, tipo_material, opcoes_malha):
     try:
         bm = bmesh.new()
         bm.from_mesh(obj.data)
-        _limpar_bm(bm, malha_logica.limitar_merge_m(op["merge_mm"], espessura), espessura > 0)
+        if tratar:
+            _limpar_bm(bm, malha_logica.limitar_merge_m(op["merge_mm"], espessura), espessura > 0)
         v1, f1 = len(bm.verts), len(bm.faces)
-        if op["dissolve"] and op["dissolve_graus"] > 0:
+        if tratar and op["dissolve"] and op["dissolve_graus"] > 0:
             bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(op["dissolve_graus"]),
                                      use_dissolve_boundaries=False, verts=bm.verts[:], edges=bm.edges[:],
                                      delimit={'MATERIAL'})
         v2, f2 = len(bm.verts), len(bm.faces)
         largura = 0.0
-        if op["bevel"] and espessura > 0 and malha_logica.peca_recebe_bevel(tipo_material, op["bevel_pecas"]):
+        if op["arredondar"] and espessura > 0 and malha_logica.peca_recebe_bevel(tipo_material, op["bevel_pecas"]):
             largura = malha_logica.largura_bevel_m(op["bevel_mm"], espessura, op["bevel_bordas"])
             if largura > 0:
                 marcadas = _marcar_arestas_bevel(bm, op["bevel_bordas"], espessura)
@@ -543,6 +547,10 @@ def tratar_malha_objeto(obj, regra, tipo_material, opcoes_malha):
             print(f">>> Aviso: bevel falhou em {nome}: {e}", flush=True)
     v3, f3 = len(obj.data.vertices), len(obj.data.polygons)
 
+    if not tratar:
+        print(f">>> Malha {nome}: só bevel | vértices/faces antes {v0}/{f0} | depois {v3}/{f3} "
+              f"({marcadas} arestas, {largura_mm:.2f} mm)", flush=True)
+        return
     try:
         bm = bmesh.new()
         bm.from_mesh(obj.data)

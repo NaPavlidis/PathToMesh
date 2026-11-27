@@ -12,7 +12,7 @@ PADROES = {
     "merge_mm": 0.01,          # merge by distance
     "dissolve": True,          # dissolve limitado
     "dissolve_graus": 5.0,
-    "bevel": True,
+    "arredondar": False,       # "Arredondar bordas da base" (bevel leve): DESLIGADO por padrão e INDEPENDENTE de "tratar"
     "bevel_mm": 0.5,
     "bevel_segmentos": 5,
     "bevel_bordas": "ambos",   # topo | base | ambos
@@ -36,7 +36,7 @@ FRACAO_ESPESSURA_MERGE = 0.1   # o merge nunca passa de 10% da espessura da peç
 FRACAO_ESPESSURA_BEVEL = 0.4   # bevel de um lado: <= 40% da parede (ambos os lados: 2 x 40% < 100%)
 LIMITE_NGON_BEAUTY = 64        # n-gons maiores usam ear clip (beauty é lento)
 
-_BOOLS = ("tratar", "dissolve", "bevel", "suavizar")
+_BOOLS = ("tratar", "dissolve", "arredondar", "suavizar")
 
 
 def _num(valor, padrao, minimo, maximo, tipo=float):

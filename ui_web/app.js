@@ -729,11 +729,38 @@
       $('cfg-resina').value = c.resina_dir;
       $('cfg-blend-dir').value = c.blend_dir;
       $('cfg-samples').value = c.cycles_samples;
+      preencherMalha(c.malha || {});
       configBlendAtual = c.blends.selecionado;
       preencherSelect($('cfg-blend'), c.blends.opcoes, c.blends.selecionado);
       $('janela-config').hidden = false;
       $('cfg-blender').focus();
     });
+  }
+
+  // Opções de malha: campo da tela -> chave salva em config.local.json ("malha"); o Python normaliza e limita os valores
+  var CAMPOS_MALHA = {
+    tratar: ['cfg-malha-tratar', 'bool'], arredondar: ['cfg-malha-arredondar', 'bool'],
+    dissolve: ['cfg-malha-dissolve', 'bool'], suavizar: ['cfg-malha-suavizar', 'bool'],
+    bevel_bordas: ['cfg-malha-bordas', 'txt'], bevel_pecas: ['cfg-malha-pecas', 'txt'],
+    bevel_mm: ['cfg-malha-bevel-mm', 'txt'], merge_mm: ['cfg-malha-merge', 'txt'],
+    resolucao_curva: ['cfg-malha-resolucao', 'txt'], dissolve_graus: ['cfg-malha-dissolve-graus', 'txt'],
+    bevel_segmentos: ['cfg-malha-segmentos', 'txt'], suavizar_graus: ['cfg-malha-suavizar-graus', 'txt']
+  };
+
+  function preencherMalha(m) {
+    Object.keys(CAMPOS_MALHA).forEach(function (k) {
+      var el = $(CAMPOS_MALHA[k][0]);
+      if (CAMPOS_MALHA[k][1] === 'bool') el.checked = !!m[k]; else el.value = m[k] === undefined ? '' : m[k];
+    });
+  }
+
+  function lerMalha() {
+    var m = {};
+    Object.keys(CAMPOS_MALHA).forEach(function (k) {
+      var el = $(CAMPOS_MALHA[k][0]);
+      m[k] = CAMPOS_MALHA[k][1] === 'bool' ? el.checked : el.value;
+    });
+    return m;
   }
 
   function fecharConfiguracoes() {
@@ -761,7 +788,8 @@
       resina_dir: $('cfg-resina').value,
       blend_dir: $('cfg-blend-dir').value,
       selected_blend: $('cfg-blend').value,
-      cycles_samples: $('cfg-samples').value
+      cycles_samples: $('cfg-samples').value,
+      malha: lerMalha()
     }).then(function (r) {
       mostrarResinas(r.resina);
       fecharConfiguracoes();

@@ -398,13 +398,49 @@ class SettingsWindow(tk.Toplevel):
                  fg=TEMA['texto_apagado'], bg=sup, font=FONTES['dica'], anchor="w").pack(fill="x", pady=(0, ESPACO['xs']))
         criar_entrada(f_samp, self.cycles_samples_var, width=15).pack(anchor="w", ipady=ESPACO['xs'] + 2)
 
-        # Cartão: malha 3D (limpeza, dissolve limitado e bordas arredondadas)
-        cartao_malha, corpo_malha = criar_cartao(conteudo, "Malha 3D",
-                                                 "Tratamento depois da conversão do SVG. Medidas em milímetros e graus.")
-        cartao_malha.pack(fill="x", padx=ESPACO['g'], pady=(0, ESPACO['m']))
+        # Malha 3D, logo abaixo das samples (mesmo cartão): duas opções principais, ambas DESLIGADAS
+        # por padrão e independentes entre si; os ajustes finos ficam no "Avançado" recolhível.
         mv = self.malha_vars
-        ttk.Checkbutton(corpo_malha, text="Tratar a malha (limpeza, dissolve, bordas e normais)",
-                        variable=mv["tratar"], style="Cartao.TCheckbutton", cursor="hand2").pack(anchor="w")
+        tk.Frame(corpo_render, bg=TEMA['borda'], height=1).pack(fill="x", pady=(ESPACO['m'], 0))
+        tk.Label(corpo_render, text="Malha 3D (depois da conversão do SVG):", fg=TEMA['texto'], bg=sup,
+                 font=FONTES['rotulo'], anchor="w").pack(fill="x", pady=(ESPACO['m'], 0))
+        ttk.Checkbutton(corpo_render, text="Tratar a malha (limpeza, dissolve limitado e normais por ângulo)",
+                        variable=mv["tratar"], style="Cartao.TCheckbutton", cursor="hand2").pack(anchor="w", pady=(ESPACO['xs'], 0))
+        ttk.Checkbutton(corpo_render, text="Arredondar bordas da base (bevel leve)",
+                        variable=mv["arredondar"], style="Cartao.TCheckbutton", cursor="hand2").pack(anchor="w", pady=(ESPACO['xs'], 0))
+        tk.Label(corpo_render, text="Cada opção funciona sozinha: o arredondamento não depende do tratamento.",
+                 fg=TEMA['texto_apagado'], bg=sup, font=FONTES['dica'], anchor="w").pack(fill="x", pady=(0, ESPACO['xs']))
+        linha_bevel = tk.Frame(corpo_render, bg=sup)
+        linha_bevel.pack(fill="x", pady=(ESPACO['xs'], 0))
+        col_bordas = tk.Frame(linha_bevel, bg=sup)
+        col_bordas.pack(side="left", fill="x", expand=True, padx=(0, ESPACO['m']))
+        tk.Label(col_bordas, text="Bordas arredondadas:", fg=TEMA['texto'], bg=sup, font=FONTES['rotulo'], anchor="w").pack(fill="x")
+        menu_bordas = tk.OptionMenu(col_bordas, mv["bevel_bordas"], *malha_logica.OPCOES_BORDAS)
+        estilizar_optionmenu(menu_bordas)
+        menu_bordas.pack(fill="x")
+        col_larg = tk.Frame(linha_bevel, bg=sup)
+        col_larg.pack(side="left")
+        tk.Label(col_larg, text="Largura (mm):", fg=TEMA['texto'], bg=sup, font=FONTES['rotulo'], anchor="w").pack(fill="x")
+        criar_entrada(col_larg, mv["bevel_mm"], width=10).pack(anchor="w", ipady=ESPACO['xs'] + 2)
+
+        # Avançado (recolhível)
+        corpo_malha = tk.Frame(corpo_render, bg=sup)
+        aberto = tk.BooleanVar(value=False)
+
+        def alternar_avancado():
+            if aberto.get():
+                corpo_malha.pack_forget()
+                aberto.set(False)
+                botao_av.configure(text="▸ Avançado (merge, dissolve, bevel, normais)")
+            else:
+                corpo_malha.pack(fill="x", after=botao_av)
+                aberto.set(True)
+                botao_av.configure(text="▾ Avançado (merge, dissolve, bevel, normais)")
+            self._ajustar_tamanho()
+        botao_av = criar_botao(corpo_render, "▸ Avançado (merge, dissolve, bevel, normais)", alternar_avancado,
+                               "secundario", font=FONTES['corpo'], pady=ESPACO['xs'])
+        botao_av.pack(anchor="w", pady=(ESPACO['m'], 0))
+        self._malha_avancado = (corpo_malha, aberto)
 
         def campo_malha(rotulo, dica, chave):
             bloco = tk.Frame(corpo_malha, bg=sup)
@@ -422,16 +458,14 @@ class SettingsWindow(tk.Toplevel):
             estilizar_optionmenu(menu)
             menu.pack(fill="x")
 
+        tk.Label(corpo_malha, text="Merge, dissolve e normais só agem com \"Tratar a malha\" ligado; o bevel age sozinho.",
+                 fg=TEMA['texto_apagado'], bg=sup, font=FONTES['dica'], anchor="w").pack(fill="x", pady=(ESPACO['m'], 0))
         campo_malha("Merge by distance (mm):", "Junta pontos duplicados. Nunca passa de 10% da espessura da peça.", "merge_mm")
         campo_malha("Resolução das curvas:", "Pontos por trecho de curva do SVG (poucos pontos no SVG = curva facetada).", "resolucao_curva")
         ttk.Checkbutton(corpo_malha, text="Dissolve limitado (menos faces, sem juntar materiais)",
                         variable=mv["dissolve"], style="Cartao.TCheckbutton", cursor="hand2").pack(anchor="w", pady=(ESPACO['m'], 0))
         campo_malha("Ângulo do dissolve (graus):", "Faces quase coplanares abaixo deste ângulo viram uma só.", "dissolve_graus")
-        ttk.Checkbutton(corpo_malha, text="Bordas arredondadas (bevel leve)",
-                        variable=mv["bevel"], style="Cartao.TCheckbutton", cursor="hand2").pack(anchor="w", pady=(ESPACO['m'], 0))
-        campo_malha("Largura do bevel (mm):", "Limitada pela espessura da peça, para não sobrepor.", "bevel_mm")
-        campo_malha("Segmentos do bevel:", "Quantos cortes na curva da borda.", "bevel_segmentos")
-        lista_malha("Bordas com bevel:", "Contorno do topo, da base ou dos dois.", "bevel_bordas", malha_logica.OPCOES_BORDAS)
+        campo_malha("Segmentos do bevel:", "Quantos cortes na curva da borda (a largura e o lado ficam lá em cima; a largura é limitada pela espessura da peça).", "bevel_segmentos")
         lista_malha("Peças com bevel:", "base = só a peça de base; todas = todas as peças com espessura.", "bevel_pecas", malha_logica.OPCOES_PECAS)
         ttk.Checkbutton(corpo_malha, text="Sombreamento suave só nas curvas (faces planas ficam retas)",
                         variable=mv["suavizar"], style="Cartao.TCheckbutton", cursor="hand2").pack(anchor="w", pady=(ESPACO['m'], 0))

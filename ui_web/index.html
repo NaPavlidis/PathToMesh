@@ -354,6 +354,45 @@
               <span class="body-sm apagado">Mais samples deixam a imagem mais limpa, mas o render demora mais.</span>
               <input id="cfg-samples" class="campo campo-curto" type="text" inputmode="numeric">
             </div>
+            <div class="campo-busca" id="cfg-malha">
+              <span class="label-md">Malha 3D (depois da conversão do SVG):</span>
+              <label class="marcador"><input id="cfg-malha-tratar" type="checkbox"><span class="body-md">Tratar a malha (limpeza, dissolve limitado e normais por ângulo)</span></label>
+              <label class="marcador"><input id="cfg-malha-arredondar" type="checkbox"><span class="body-md">Arredondar bordas da base (bevel leve)</span></label>
+              <span class="body-sm apagado">Cada opção funciona sozinha: o arredondamento não depende do tratamento.</span>
+              <div class="linha-campo">
+                <div class="campo-busca">
+                  <label for="cfg-malha-bordas" class="label-md">Bordas arredondadas:</label>
+                  <select id="cfg-malha-bordas" class="campo"><option value="topo">topo</option><option value="base">base</option><option value="ambos">ambos</option></select>
+                </div>
+                <div class="campo-busca">
+                  <label for="cfg-malha-bevel-mm" class="label-md">Largura (mm):</label>
+                  <input id="cfg-malha-bevel-mm" class="campo campo-curto" type="text" inputmode="decimal">
+                </div>
+              </div>
+              <details class="avancado">
+                <summary class="label-md">Avançado (merge, dissolve, bevel, normais)</summary>
+                <div class="pilha-lg">
+                  <span class="body-sm apagado">Merge, dissolve e normais só agem com "Tratar a malha" ligado; o bevel age sozinho.</span>
+                  <div class="campo-busca"><label for="cfg-malha-merge" class="label-md">Merge by distance (mm):</label>
+                    <span class="body-sm apagado">Junta pontos duplicados. Nunca passa de 10% da espessura da peça.</span>
+                    <input id="cfg-malha-merge" class="campo campo-curto" type="text" inputmode="decimal"></div>
+                  <div class="campo-busca"><label for="cfg-malha-resolucao" class="label-md">Resolução das curvas:</label>
+                    <span class="body-sm apagado">Pontos por trecho de curva do SVG (poucos pontos no SVG = curva facetada).</span>
+                    <input id="cfg-malha-resolucao" class="campo campo-curto" type="text" inputmode="numeric"></div>
+                  <label class="marcador"><input id="cfg-malha-dissolve" type="checkbox"><span class="body-md">Dissolve limitado (menos faces, sem juntar materiais)</span></label>
+                  <div class="campo-busca"><label for="cfg-malha-dissolve-graus" class="label-md">Ângulo do dissolve (graus):</label>
+                    <input id="cfg-malha-dissolve-graus" class="campo campo-curto" type="text" inputmode="decimal"></div>
+                  <div class="campo-busca"><label for="cfg-malha-segmentos" class="label-md">Segmentos do bevel:</label>
+                    <input id="cfg-malha-segmentos" class="campo campo-curto" type="text" inputmode="numeric"></div>
+                  <div class="campo-busca"><label for="cfg-malha-pecas" class="label-md">Peças com bevel:</label>
+                    <span class="body-sm apagado">base = só a peça de base; todas = todas as peças com espessura.</span>
+                    <select id="cfg-malha-pecas" class="campo"><option value="base">base</option><option value="todas">todas</option></select></div>
+                  <label class="marcador"><input id="cfg-malha-suavizar" type="checkbox"><span class="body-md">Sombreamento suave só nas curvas (faces planas ficam retas)</span></label>
+                  <div class="campo-busca"><label for="cfg-malha-suavizar-graus" class="label-md">Ângulo do sombreamento suave (graus):</label>
+                    <input id="cfg-malha-suavizar-graus" class="campo campo-curto" type="text" inputmode="decimal"></div>
+                </div>
+              </details>
+            </div>
           </div>
         </article>
       </div>
