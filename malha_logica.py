@@ -149,6 +149,26 @@ def aresta_recebe_bevel(classe, bordas):
     return (classe == "topo" and topo) or (classe == "base" and base)
 
 
+def espessura_efetiva(z_min, z_max, nominal_m):
+    """Espessura real da malha (extensão em Z). A nominal (regra do material) só vale se a malha for plana:
+    se o objeto tinha escala diferente de 1 na extrusão, a real difere da nominal."""
+    real = z_max - z_min
+    return real if real > 1e-9 else nominal_m
+
+
+def selecionar_arestas_bevel(arestas, bordas, z_min, z_max, tol_z):
+    """arestas = lista de (nz1, nz2, z1, z2) de arestas com 2 faces. Retorna lista de bool (recebe bevel).
+    1ª passada: critério estrito (tampa plana x parede). Se nenhuma servir, 2ª passada mais frouxa
+    (inclinação até ~45°), para não deixar a peça sem bevel por causa de normais imprecisas."""
+    def passada(cos_tampa, max_nz_parede):
+        return [aresta_recebe_bevel(classificar_aresta(a, b, z1, z2, z_min, z_max, tol_z, cos_tampa, max_nz_parede),
+                                    bordas) for (a, b, z1, z2) in arestas]
+    res = passada(0.98, 0.2)
+    if not any(res):
+        res = passada(0.7, 0.7)
+    return res
+
+
 def angulo_minimo_triangulo(p1, p2, p3):
     """Menor ângulo interno (graus) de um triângulo 2D/3D; perto de 0 = triângulo fino e longo."""
     def d(a, b):

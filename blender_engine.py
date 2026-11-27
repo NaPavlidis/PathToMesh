@@ -466,15 +466,13 @@ def _marcar_arestas_bevel(bm, bordas, espessura_m):
     bm.normal_update()
     zs = [v.co.z for v in bm.verts]
     z_min, z_max = min(zs), max(zs)
-    tol = max(espessura_m * 0.05, 1e-6)
+    tol = max(espessura_m * 0.05, 1e-9)
+    candidatas = [e for e in bm.edges if len(e.link_faces) == 2]
+    dados = [(e.link_faces[0].normal.z, e.link_faces[1].normal.z, e.verts[0].co.z, e.verts[1].co.z)
+             for e in candidatas]
     marcadas = 0
-    for e in bm.edges:
-        if len(e.link_faces) != 2:
-            continue
-        f1, f2 = e.link_faces
-        classe = malha_logica.classificar_aresta(f1.normal.z, f2.normal.z, e.verts[0].co.z, e.verts[1].co.z,
-                                                 z_min, z_max, tol)
-        if malha_logica.aresta_recebe_bevel(classe, bordas):
+    for e, vale in zip(candidatas, malha_logica.selecionar_arestas_bevel(dados, bordas, z_min, z_max, tol)):
+        if vale:
             e[camada] = 1.0
             marcadas += 1
     return marcadas
@@ -519,10 +517,21 @@ def tratar_malha_objeto(obj, regra, tipo_material, opcoes_malha):
                                      delimit={'MATERIAL'})
         v2, f2 = len(bm.verts), len(bm.faces)
         largura = 0.0
-        if op["arredondar"] and espessura > 0 and malha_logica.peca_recebe_bevel(tipo_material, op["bevel_pecas"]):
-            largura = malha_logica.largura_bevel_m(op["bevel_mm"], espessura, op["bevel_bordas"])
+        recebe = malha_logica.peca_recebe_bevel(tipo_material, op["bevel_pecas"])
+        espessura_real = espessura
+        if bm.verts:
+            zs = [v.co.z for v in bm.verts]
+            espessura_real = malha_logica.espessura_efetiva(min(zs), max(zs), espessura)
+        if op["arredondar"] and espessura > 0 and recebe:
+            largura = malha_logica.largura_bevel_m(op["bevel_mm"], espessura_real, op["bevel_bordas"])
             if largura > 0:
-                marcadas = _marcar_arestas_bevel(bm, op["bevel_bordas"], espessura)
+                marcadas = _marcar_arestas_bevel(bm, op["bevel_bordas"], espessura_real)
+        print(f">>> Bevel {nome}: arredondar={'ligado' if op['arredondar'] else 'desligado'} | tipo {tipo_material} "
+              f"(peça recebe: {recebe}) | bordas {op['bevel_bordas']} | largura pedida {op['bevel_mm']} mm | "
+              f"espessura nominal {espessura*1000:.4f} mm, real {espessura_real*1000:.4f} mm, "
+              f"escala do objeto {tuple(round(s, 6) for s in obj.scale)} | "
+              f"largura efetiva {largura:.7f} (unid. Blender) = {largura*1000:.4f} mm | "
+              f"arestas selecionadas {marcadas} | vértices antes {v1}", flush=True)
         bm.to_mesh(obj.data)
         bm.free()
     except Exception as e:
@@ -545,7 +554,13 @@ def tratar_malha_objeto(obj, regra, tipo_material, opcoes_malha):
             largura_mm = largura * 1000.0
         except Exception as e:
             print(f">>> Aviso: bevel falhou em {nome}: {e}", flush=True)
+    elif op["arredondar"] and recebe:
+        print(f">>> Bevel {nome}: nada a fazer (largura {largura:.7f}, arestas {marcadas}): "
+              f"peça sem espessura, fina demais ou sem arestas de topo/base", flush=True)
     v3, f3 = len(obj.data.vertices), len(obj.data.polygons)
+    if op["arredondar"] and recebe:
+        print(f">>> Bevel {nome}: vértices depois {v3} (antes {v2}) | faces {f3} (antes {f2}) | "
+              f"aplicado: {'sim' if largura_mm > 0 else 'NÃO'}", flush=True)
 
     if not tratar:
         print(f">>> Malha {nome}: só bevel | vértices/faces antes {v0}/{f0} | depois {v3}/{f3} "
