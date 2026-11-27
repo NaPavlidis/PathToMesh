@@ -8,7 +8,7 @@ import math
 
 # Valores padrão e limites (mínimo, máximo). Larguras e distâncias em milímetros, ângulos em graus.
 PADROES = {
-    "tratar": True,            # liga o tratamento inteiro (limpeza, dissolve, bevel, normais)
+    "tratar": False,           # DESLIGADO por padrão; liga o tratamento inteiro (limpeza, dissolve, bevel, normais)
     "merge_mm": 0.01,          # merge by distance
     "dissolve": True,          # dissolve limitado
     "dissolve_graus": 5.0,

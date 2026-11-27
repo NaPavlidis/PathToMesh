@@ -85,7 +85,9 @@ A configuração que o app e o launcher usam fica em **`config.local.json`**, na
 
 ## Malha 3D (limpeza, dissolve e bordas arredondadas)
 
-Depois da conversão do SVG e da extrusão, cada peça passa por um tratamento (⚙ Configurações → cartão **Malha 3D**, salvo no `config.local.json` na chave `malha`). Ordem: **limpeza → dissolve limitado → bevel → tampas → normais**.
+**A opção "Tratar a malha" vem DESLIGADA por padrão** (também para configurações salvas que ainda não têm a chave `malha`): ligue e desligue na janela de configurações quando precisar. Desligada, a geração segue o mesmo caminho de antes, sem nenhuma etapa nova.
+
+Com a opção ligada, depois da conversão do SVG e da extrusão, cada peça passa por um tratamento (⚙ Configurações → cartão **Malha 3D**, salvo no `config.local.json` na chave `malha`). Ordem: **limpeza → dissolve limitado → bevel → tampas → normais**.
 
 - **Resolução das curvas** (padrão 24, nunca abaixo da do importador): com poucos pontos no SVG os trechos Bézier são longos e a curva sai facetada.
 - **Limpeza**: merge by distance (padrão 0,01 mm, nunca mais que 10% da espessura da peça, para não colapsar peças finas como o PLOTTER), remove faces degeneradas, arestas e pontos soltos e recalcula as normais para fora.
