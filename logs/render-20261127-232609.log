@@ -1,0 +1,102 @@
+PathToMesh - registro de renderização
+Data: 2026-11-27 23:26:09
+Versão: e2fc04b (2026-11-27)
+Sistema: Windows 11 (10.0.26200), Python 3.14.7
+
+Início: 2026-11-27 23:26:09
+Duração total: 224.1 s
+Código de saída do Blender: 0
+Resultado: sucesso
+Render automático: False  ·  Samples: 64  ·  Câmeras: -
+Pesos: preparação 0.889, render 0.000, final 0.111  ·  câmera: preparo 0.031, principal 0.958, freestyle 0.000, gravar 0.010  ·  Freestyle: None
+Comando: "<CAMINHO>/blender.exe" "--python" "<CAMINHO>/blender_engine.py" "--" "<CAMINHO>/KAR25001.svg" "<CAMINHO>/imagens 3d" "<CAMINHO>/<CONFIG>" "False" "True" "64" "False" "" "Camera_Principal,Camera_Esquerda,Camera_Direita" "tratar=1;merge_mm=0.01;dissolve=1;dissolve_graus=5.0;arredondar=1;bevel_mm=1.0;bevel_segmentos=5;bevel_bordas=ambos;bevel_pecas=base;suavizar=1;suavizar_graus=30.0;resolucao_curva=24"
+
+Tempo de cada etapa:
+  Abrir o estúdio base: concluida, 0.0 s
+  Ler e importar o SVG: concluida, 0.1 s
+  Aplicar materiais e extrusões: concluida, 0.6 s
+  Montar o troféu: concluida, 0.0 s
+  Posicionar as câmeras: concluida, 0.0 s
+  Abrir o Blender (modo interativo): concluida, 219.6 s
+
+Saída do Blender (segundos desde o início | linha):
+    3.756 | ℹ️  blendkit: Verbose is enabled [23:26:12.938, addon_updater.py:158]
+    3.758 | ℹ️  blendkit: Read in JSON settings from file [23:26:12.940, addon_updater.py:158]
+    3.759 | ℹ️  blendkit: Ports reordered so first port is now 62485 (previous index was 0) [23:26:12.942, client_lib.py:163]
+    3.768 | Created history step f024e92a-3a3a-453a-8aaf-7711317940d0
+    3.768 | ℹ️  blendkit: Created new search history step [23:26:12.950, search.py:2799]
+    3.768 | ℹ️  blendkit: No temporarily enabled addons to clean up [23:26:12.951, download.py:465]
+    3.812 | PTM_ETAPA estudio 1/7 Abrindo o estúdio base
+    3.813 | >>> Carregando estúdio base: <CAMINHO>/<CONFIG>
+    3.813 | 00:03.375  blend            | Read blend: "<CAMINHO>/<CONFIG>"
+    3.830 | ℹ️  blendkit: No temporarily enabled addons to clean up [23:26:13.012, download.py:465]
+    3.844 | <CAMINHO>/blender_engine.py:259: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+    3.844 |   if bpy.context.scene.world and bpy.context.scene.world.use_nodes:
+    3.845 | PTM_ETAPA svg 2/7 Lendo e importando o SVG
+    3.846 | >>> Analisando e importando o arquivo SVG...
+    3.921 | PTM_ETAPA materiais 3/7 Aplicando materiais, texturas e extrusões
+    3.922 | >>> Aplicando materiais, texturas e extrusões...
+    3.960 | >>> Bevel trofeu_shape_1.001: arredondar=ligado | tipo BASE (peça recebe: True) | bordas ambos | largura pedida 1.0 mm | espessura nominal 3.0000 mm, real 3.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0010000 (unid. Blender) = 1.0000 mm | arestas selecionadas 8 | vértices antes 8
+    3.975 | >>> Bevel trofeu_shape_1.001: vértices depois 48 (antes 8) | faces 46 (antes 6) | aplicado: sim
+    3.987 | >>> Malha trofeu_shape_1.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 48/46 (8 arestas, 1.00 mm) | final 48/46
+    3.987 | <CAMINHO>/blender_engine.py:130: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    3.987 |   mat.use_nodes = True
+    3.989 | <CAMINHO>/blender_engine.py:800: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    3.989 |   if mat and mat.use_nodes:
+    4.016 | >>> Bevel trofeu_shape_2.001: arredondar=ligado | tipo BASE (peça recebe: True) | bordas ambos | largura pedida 1.0 mm | espessura nominal 9.0000 mm, real 9.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0010000 (unid. Blender) = 1.0000 mm | arestas selecionadas 8 | vértices antes 8
+    4.026 | >>> Bevel trofeu_shape_2.001: vértices depois 48 (antes 8) | faces 46 (antes 6) | aplicado: sim
+    4.036 | >>> Malha trofeu_shape_2.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 48/46 (8 arestas, 1.00 mm) | final 48/46
+    4.179 | >>> Bevel trofeu_shape_3.001: arredondar=ligado | tipo MDF (peça recebe: False) | bordas ambos | largura pedida 1.0 mm | espessura nominal 6.0000 mm, real 6.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0000000 (unid. Blender) = 0.0000 mm | arestas selecionadas 0 | vértices antes 2958
+    4.199 | >>> Malha trofeu_shape_3.001: vértices/faces antes 2976/4472 | limpeza 2958/4415 | dissolve 1176/323 | bevel 1176/323 (0 arestas, 0.00 mm) | final 1176/2115
+    4.328 | >>> Bevel trofeu_shape_4.001: arredondar=ligado | tipo MDF (peça recebe: False) | bordas ambos | largura pedida 1.0 mm | espessura nominal 3.0000 mm, real 3.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0000000 (unid. Blender) = 0.0000 mm | arestas selecionadas 0 | vértices antes 2720
+    4.346 | >>> Malha trofeu_shape_4.001: vértices/faces antes 2736/4112 | limpeza 2720/4068 | dissolve 1075/316 | bevel 1075/316 (0 arestas, 0.00 mm) | final 1075/1901
+    4.375 | >>> Bevel trofeu_shape_5.001: arredondar=ligado | tipo MDF (peça recebe: False) | bordas ambos | largura pedida 1.0 mm | espessura nominal 3.0000 mm, real 3.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0000000 (unid. Blender) = 0.0000 mm | arestas selecionadas 0 | vértices antes 192
+    4.385 | >>> Malha trofeu_shape_5.001: vértices/faces antes 192/284 | limpeza 192/284 | dissolve 96/50 | bevel 96/50 (0 arestas, 0.00 mm) | final 96/140
+    4.415 | >>> Bevel trofeu_shape_6.001: arredondar=ligado | tipo ADESIVO (peça recebe: False) | bordas ambos | largura pedida 1.0 mm | espessura nominal 0.5000 mm, real 0.5100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0000000 (unid. Blender) = 0.0000 mm | arestas selecionadas 0 | vértices antes 192
+    4.425 | >>> Malha trofeu_shape_6.001: vértices/faces antes 192/284 | limpeza 192/284 | dissolve 96/50 | bevel 96/50 (0 arestas, 0.00 mm) | final 96/140
+    4.461 | >>> Bevel trofeu_shape_7.001: arredondar=ligado | tipo ACRILICO (peça recebe: False) | bordas ambos | largura pedida 1.0 mm | espessura nominal 1.0000 mm, real 1.0100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0000000 (unid. Blender) = 0.0000 mm | arestas selecionadas 0 | vértices antes 576
+    4.474 | >>> Malha trofeu_shape_7.001: vértices/faces antes 576/860 | limpeza 576/850 | dissolve 280/80 | bevel 280/80 (0 arestas, 0.00 mm) | final 280/500
+    4.499 | >>> Bevel trofeu_shape_8.001: arredondar=ligado | tipo ADESIVO (peça recebe: False) | bordas ambos | largura pedida 1.0 mm | espessura nominal 0.5000 mm, real 0.5100 mm, escala do objeto (1.0, 1.0, 1.0) | largura efetiva 0.0000000 (unid. Blender) = 0.0000 mm | arestas selecionadas 0 | vértices antes 8
+    4.509 | >>> Malha trofeu_shape_8.001: vértices/faces antes 8/8 | limpeza 8/8 | dissolve 8/6 | bevel 8/6 (0 arestas, 0.00 mm) | final 8/6
+    4.512 | PTM_ETAPA montagem 4/7 Montando o troféu (corpo, costas e resina)
+    4.512 | Troféu base montado e alinhado com sucesso!
+    4.512 | PTM_ETAPA cameras 5/7 Posicionando as câmeras
+    4.513 | >>> Modo interativo ativo ou nenhuma câmera válida foi selecionada.
+    4.513 | PTM_ETAPA final 7/7 Finalizando
+    4.513 | PTM_FIM
+    8.150 | ℹ️  blendkit: Expectedly, first request for BKClient reports failed: HTTPConnectionPool(host='127.0.0.1', port=62485): Max retries exceeded with url: /v1.13/report (Caused by ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x00000261A1DE30E0>, 'Connection to 127.0.0.1 timed out. (connect timeout=0.05)')) <class 'requests.exceptions.ConnectTimeout'> [23:26:17.332, timer.py:130]
+    8.166 | ℹ️  blendkit: Blendkit-Client v1.13.13 starting on http://127.0.0.1:62485 [23:26:17.348, client_lib.py:939]
+    8.515 | ℹ️  blendkit: Blendkit-Client is running on port 62485! [23:26:17.697, timer.py:285]
+    8.956 | ℹ️  blendkit: Bookmarks loaded [23:26:18.139, ratings_utils.py:95]
+    9.146 | ℹ️  blendkit: Best cars – 33% off! [23:26:18.327, disclaimer_op.py:103]
+    9.146 | ℹ️  blendkit: Best cars – 33% off! [23:26:18.329, disclaimer_op.py:103]
+   47.110 | Warning: edge 764 - 129 appears twice, correcting
+   47.110 | Warning: edge 129 - 773 appears twice, correcting
+   47.110 | Warning: edge 129 - 776 appears twice, correcting
+   47.112 | Warning: edge 764 - 745 appears twice, correcting
+   47.112 | Warning: edge 776 - 764 appears twice, correcting
+   47.112 | Warning: edge 745 - 764 appears twice, correcting
+   47.117 | Warning: edge 295 - 294 appears twice, correcting
+  121.450 | Warning: edge 764 - 129 appears twice, correcting
+  121.450 | Warning: edge 129 - 773 appears twice, correcting
+  121.450 | Warning: edge 129 - 776 appears twice, correcting
+  121.450 | Warning: edge 764 - 745 appears twice, correcting
+  121.450 | Warning: edge 776 - 764 appears twice, correcting
+  121.450 | Warning: edge 745 - 764 appears twice, correcting
+  121.452 | Warning: edge 295 - 294 appears twice, correcting
+  180.552 | Warning: edge 764 - 129 appears twice, correcting
+  180.553 | Warning: edge 129 - 773 appears twice, correcting
+  180.553 | Warning: edge 129 - 776 appears twice, correcting
+  180.553 | Warning: edge 764 - 745 appears twice, correcting
+  180.553 | Warning: edge 776 - 764 appears twice, correcting
+  180.553 | Warning: edge 745 - 764 appears twice, correcting
+  180.558 | Warning: edge 295 - 294 appears twice, correcting
+  219.480 | 03:39.047  operator         | Saved "<CONFIG>"
+  223.250 | 03:42.813  blend            | Saved session recovery to "<CAMINHO>/quit.blend"
+  223.253 | 03:42.813  blend            | Writing user preferences: "<CAMINHO>/userpref.blend" 
+  223.256 | 03:42.813  reports          | Preferences saved
+  223.261 | ℹ️  blendkit: Unregistering Blendkit add-on [23:29:52.443, __init__.py:3089]
+  223.261 | ℹ️  blendkit: No temporarily enabled addons to clean up [23:29:52.444, download.py:465]
+  223.264 | ℹ️  blendkit: Reported Blender quit to Client. [23:29:52.446, __init__.py:3118]
+  224.020 | 
+  224.020 | Blender quit
