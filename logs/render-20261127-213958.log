@@ -1,0 +1,232 @@
+PathToMesh - registro de renderização
+Data: 2026-11-27 21:39:58
+Versão: e2fc04b (2026-11-27)
+Sistema: Windows 11 (10.0.26200), Python 3.14.7
+
+Início: 2026-11-27 21:39:58
+Duração total: 20.9 s
+Código de saída do Blender: 0
+Resultado: sucesso
+Render automático: True  ·  Samples: 64  ·  Câmeras: Camera_Principal, Camera_Esquerda, Camera_Direita
+Pesos: preparação 0.023, render 0.975, final 0.003  ·  câmera: preparo 0.031, principal 0.958, freestyle 0.000, gravar 0.010  ·  Freestyle: False
+Comando: "<CAMINHO>/blender.exe" "--background" "--python" "<CAMINHO>/blender_engine.py" "--" "<CAMINHO>/KAR25001.svg" "<CAMINHO>/imagens 3d" "<CAMINHO>/<CONFIG>" "True" "True" "64" "False" "" "Camera_Principal,Camera_Esquerda,Camera_Direita" "tratar=0;merge_mm=0.01;dissolve=1;dissolve_graus=5.0;arredondar=0;bevel_mm=0.5;bevel_segmentos=5;bevel_bordas=ambos;bevel_pecas=base;suavizar=1;suavizar_graus=30.0;resolucao_curva=24"
+
+Tempo de cada etapa:
+  Abrir o estúdio base: concluida, 0.0 s
+  Ler e importar o SVG: concluida, 0.2 s
+  Aplicar materiais e extrusões: concluida, 0.2 s
+  Montar o troféu: concluida, 0.0 s
+  Posicionar as câmeras: concluida, 0.0 s
+  Renderizar câmera 1 de 3 (Camera_Principal): concluida, 5.8 s (até a 1ª sample 0.0 s; samples 0→64/64 em 5.7 s; depois da última sample 0.1 s)
+  Renderizar câmera 2 de 3 (Camera_Esquerda): concluida, 6.2 s (até a 1ª sample 0.0 s; samples 0→64/64 em 6.0 s; depois da última sample 0.1 s)
+  Renderizar câmera 3 de 3 (Camera_Direita): concluida, 6.1 s (até a 1ª sample 0.0 s; samples 0→64/64 em 5.9 s; depois da última sample 0.1 s)
+  Gravar as imagens e fechar o Blender: concluida, 0.2 s
+
+Saída do Blender (segundos desde o início | linha):
+    2.094 | ℹ️  blendkit: Verbose is enabled [21:40:00.901, addon_updater.py:158]
+    2.095 | ℹ️  blendkit: Read in JSON settings from file [21:40:00.902, addon_updater.py:158]
+    2.097 | ℹ️  blendkit: Ports reordered so first port is now 62485 (previous index was 0) [21:40:00.904, client_lib.py:163]
+    2.102 | Created history step 513c7d29-e796-4cd0-a087-bdba724bac2c
+    2.102 | ℹ️  blendkit: Created new search history step [21:40:00.908, search.py:2799]
+    2.102 | ℹ️  blendkit: No temporarily enabled addons to clean up [21:40:00.909, download.py:465]
+    2.236 | PTM_ETAPA estudio 1/7 Abrindo o estúdio base
+    2.237 | >>> Carregando estúdio base: <CAMINHO>/<CONFIG>
+    2.237 | 00:02.062  blend            | Read blend: "<CAMINHO>/<CONFIG>"
+    2.245 | ℹ️  blendkit: No temporarily enabled addons to clean up [21:40:01.051, download.py:465]
+    2.247 | <CAMINHO>/blender_engine.py:259: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+    2.247 |   if bpy.context.scene.world and bpy.context.scene.world.use_nodes:
+    2.247 | PTM_ETAPA svg 2/7 Lendo e importando o SVG
+    2.248 | >>> Analisando e importando o arquivo SVG...
+    2.417 | PTM_ETAPA materiais 3/7 Aplicando materiais, texturas e extrusões
+    2.417 | >>> Aplicando materiais, texturas e extrusões...
+    2.425 | <CAMINHO>/blender_engine.py:130: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    2.425 |   mat.use_nodes = True
+    2.427 | <CAMINHO>/blender_engine.py:800: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    2.427 |   if mat and mat.use_nodes:
+    2.494 | <CAMINHO>/blender_engine.py:759: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+    2.494 |   mat.use_nodes = True
+    2.569 | PTM_ETAPA montagem 4/7 Montando o troféu (corpo, costas e resina)
+    2.569 | Troféu base montado e alinhado com sucesso!
+    2.569 | PTM_ETAPA cameras 5/7 Posicionando as câmeras
+    2.571 | PTM_ETAPA render 6/7 Renderizando as câmeras
+    2.571 | PTM_PLANO 64 3 Camera_Principal,Camera_Esquerda,Camera_Direita
+    2.571 | PTM_PASSADAS principal
+    2.571 | PTM_CAMERA 1/3 Camera_Principal
+    2.571 | >>> Renderizando câmera: Camera_Principal via Cycles...
+    2.571 | PTM_RENDER_INICIO
+    2.577 | PTM_STATS Mem: 0M | Synchronizing object | Softbox_Box
+    2.577 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_7.001
+    2.578 | PTM_STATS Mem: 0M | Initializing
+    2.578 | PTM_STATS Mem: 0M | Waiting for render to start
+    2.578 | PTM_STATS Mem: 0M | Updating Scene
+    2.578 | PTM_STATS Mem: 0M | Updating Shaders
+    2.579 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+    2.581 | PTM_STATS Mem: 1M | Updating Procedurals
+    2.581 | PTM_STATS Mem: 1M | Updating Background
+    2.581 | PTM_STATS Mem: 1M | Updating Scene Attribute
+    2.581 | PTM_STATS Mem: 1M | Updating Camera
+    2.581 | PTM_STATS Mem: 1M | Updating Meshes Flags
+    2.581 | PTM_STATS Mem: 1M | Updating Objects
+    2.581 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+    2.581 | PTM_STATS Mem: 1M | Updating Particle Systems
+    2.581 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+    2.581 | PTM_STATS Mem: 1M | Updating Meshes
+    2.581 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+    2.582 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+    2.582 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+    2.582 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+    2.584 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+    2.584 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+    2.584 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+    2.584 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+    2.584 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+    2.584 | PTM_STATS Mem: 1M | Updating Objects Flags
+    2.584 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+    2.584 | PTM_STATS Mem: 1M | Updating Images
+    2.584 | PTM_STATS Mem: 1M | Updating Images | Loading KAR25001_ImgID1.png
+    2.585 | PTM_STATS Mem: 1M | Updating Images | Loading KAR25001_ImgID2.png
+    2.610 | PTM_STATS Mem: 7M | Updating Volume
+    2.610 | PTM_STATS Mem: 7M | Updating Camera Volume
+    2.610 | PTM_STATS Mem: 7M | Updating Lookup Tables
+    2.610 | PTM_STATS Mem: 8M | Updating Lights
+    2.610 | PTM_STATS Mem: 8M | Updating Lights | Computing distribution
+    2.610 | PTM_STATS Mem: 8M | Updating Integrator
+    2.610 | PTM_STATS Mem: 9M | Updating Film
+    2.611 | PTM_STATS Mem: 8M | Updating Lookup Tables
+    2.611 | PTM_STATS Mem: 9M | Updating Baking
+    2.611 | PTM_STATS Mem: 9M | Updating Device | Writing constant memory
+    2.611 | PTM_STATS Mem: 9M | Loading denoising kernels (may take a few minutes the first time)
+    2.611 | PTM_SAMPLES 0 64 principal
+    2.611 | PTM_STATS Mem: 9M | Sample 0/64
+    2.694 | PTM_SAMPLES 1 64 principal 5.24
+    2.695 | PTM_STATS Remaining: 00:05.24 | Mem: 36M | Sample 1/64
+    8.277 | PTM_SAMPLES 64 64 principal
+    8.277 | PTM_STATS Mem: 36M | Sample 64/64
+    8.277 | PTM_STATS Mem: 36M | Finished
+    8.408 | 00:08.234  render           | Saved: '<CAMINHO>/Camera_Principal.png'
+    8.408 | PTM_STATS Time: 00:05.83 (Saving: 00:00.11)
+    8.408 | PTM_RENDER_POS
+    8.408 | PTM_RENDER_FIM
+    8.408 | PTM_CAMERA_FIM 1/3 Camera_Principal
+    8.408 | PTM_CAMERA 2/3 Camera_Esquerda
+    8.408 | >>> Renderizando câmera: Camera_Esquerda via Cycles...
+    8.409 | PTM_RENDER_INICIO
+    8.413 | PTM_STATS Mem: 0M | Synchronizing object | Softbox_Box
+    8.413 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_7.001
+    8.413 | PTM_STATS Mem: 0M | Initializing
+    8.414 | PTM_STATS Mem: 0M | Waiting for render to start
+    8.414 | PTM_STATS Mem: 0M | Updating Scene
+    8.414 | PTM_STATS Mem: 0M | Updating Shaders
+    8.414 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+    8.415 | PTM_STATS Mem: 1M | Updating Procedurals
+    8.415 | PTM_STATS Mem: 1M | Updating Background
+    8.415 | PTM_STATS Mem: 1M | Updating Scene Attribute
+    8.415 | PTM_STATS Mem: 1M | Updating Camera
+    8.416 | PTM_STATS Mem: 1M | Updating Meshes Flags
+    8.416 | PTM_STATS Mem: 1M | Updating Objects
+    8.416 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+    8.416 | PTM_STATS Mem: 1M | Updating Particle Systems
+    8.416 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+    8.416 | PTM_STATS Mem: 1M | Updating Meshes
+    8.416 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+    8.416 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+    8.416 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+    8.416 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+    8.418 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+    8.418 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+    8.418 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+    8.418 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+    8.418 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+    8.418 | PTM_STATS Mem: 1M | Updating Objects Flags
+    8.418 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+    8.418 | PTM_STATS Mem: 1M | Updating Images
+    8.418 | PTM_STATS Mem: 1M | Updating Images | Loading KAR25001_ImgID1.png
+    8.419 | PTM_STATS Mem: 1M | Updating Images | Loading KAR25001_ImgID2.png
+    8.444 | PTM_STATS Mem: 7M | Updating Volume
+    8.444 | PTM_STATS Mem: 7M | Updating Camera Volume
+    8.444 | PTM_STATS Mem: 7M | Updating Lookup Tables
+    8.444 | PTM_STATS Mem: 8M | Updating Lights
+    8.444 | PTM_STATS Mem: 8M | Updating Lights | Computing distribution
+    8.444 | PTM_STATS Mem: 8M | Updating Integrator
+    8.444 | PTM_STATS Mem: 9M | Updating Film
+    8.444 | PTM_STATS Mem: 8M | Updating Lookup Tables
+    8.444 | PTM_STATS Mem: 9M | Updating Baking
+    8.444 | PTM_STATS Mem: 9M | Updating Device | Writing constant memory
+    8.445 | PTM_STATS Mem: 9M | Loading denoising kernels (may take a few minutes the first time)
+    8.445 | PTM_SAMPLES 0 64 principal
+    8.445 | PTM_STATS Mem: 9M | Sample 0/64
+    8.525 | PTM_SAMPLES 1 64 principal 5.04
+    8.525 | PTM_STATS Remaining: 00:05.04 | Mem: 36M | Sample 1/64
+   14.487 | PTM_SAMPLES 64 64 principal
+   14.487 | PTM_STATS Mem: 36M | Sample 64/64
+   14.487 | PTM_STATS Mem: 36M | Finished
+   14.619 | 00:14.453  render           | Saved: '<CAMINHO>/Camera_Esquerda.png'
+   14.620 | PTM_STATS Time: 00:06.20 (Saving: 00:00.11)
+   14.620 | PTM_RENDER_POS
+   14.620 | PTM_RENDER_FIM
+   14.620 | PTM_CAMERA_FIM 2/3 Camera_Esquerda
+   14.620 | PTM_CAMERA 3/3 Camera_Direita
+   14.620 | >>> Renderizando câmera: Camera_Direita via Cycles...
+   14.621 | PTM_RENDER_INICIO
+   14.625 | PTM_STATS Mem: 0M | Synchronizing object | Softbox_Box
+   14.625 | PTM_STATS Mem: 0M | Synchronizing object | trofeu_shape_7.001
+   14.625 | PTM_STATS Mem: 0M | Initializing
+   14.626 | PTM_STATS Mem: 0M | Waiting for render to start
+   14.626 | PTM_STATS Mem: 0M | Updating Scene
+   14.626 | PTM_STATS Mem: 0M | Updating Shaders
+   14.626 | PTM_STATS Mem: 0M | Loading render kernels (may take a few minutes the first time)
+   14.628 | PTM_STATS Mem: 1M | Updating Procedurals
+   14.628 | PTM_STATS Mem: 1M | Updating Background
+   14.628 | PTM_STATS Mem: 1M | Updating Scene Attribute
+   14.628 | PTM_STATS Mem: 1M | Updating Camera
+   14.628 | PTM_STATS Mem: 1M | Updating Meshes Flags
+   14.628 | PTM_STATS Mem: 1M | Updating Objects
+   14.628 | PTM_STATS Mem: 1M | Updating Objects | Copying Transformations to device
+   14.628 | PTM_STATS Mem: 1M | Updating Particle Systems
+   14.628 | PTM_STATS Mem: 1M | Updating Particle Systems | Copying Particles to device
+   14.628 | PTM_STATS Mem: 1M | Updating Meshes
+   14.628 | PTM_STATS Mem: 1M | Updating Objects | Applying Static Transformations
+   14.629 | PTM_STATS Mem: 1M | Updating Scene BVH | Building
+   14.629 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH
+   14.629 | PTM_STATS Mem: 1M | Updating Scene BVH | Building BVH 0%
+   14.631 | PTM_STATS Mem: 1M | Updating Scene BVH | Copying BVH to device
+   14.631 | PTM_STATS Mem: 1M | Updating Mesh | Computing attributes
+   14.631 | PTM_STATS Mem: 1M | Updating Mesh | Copying Attributes to device
+   14.631 | PTM_STATS Mem: 1M | Updating Mesh | Computing normals
+   14.632 | PTM_STATS Mem: 1M | Updating Mesh | Copying Mesh to device
+   14.632 | PTM_STATS Mem: 1M | Updating Objects Flags
+   14.632 | PTM_STATS Mem: 1M | Updating Primitive Offsets
+   14.632 | PTM_STATS Mem: 1M | Updating Images
+   14.632 | PTM_STATS Mem: 1M | Updating Images | Loading KAR25001_ImgID2.png
+   14.632 | PTM_STATS Mem: 1M | Updating Images | Loading KAR25001_ImgID1.png
+   14.666 | PTM_STATS Mem: 7M | Updating Volume
+   14.666 | PTM_STATS Mem: 7M | Updating Camera Volume
+   14.666 | PTM_STATS Mem: 7M | Updating Lookup Tables
+   14.666 | PTM_STATS Mem: 8M | Updating Lights
+   14.666 | PTM_STATS Mem: 8M | Updating Lights | Computing distribution
+   14.666 | PTM_STATS Mem: 8M | Updating Integrator
+   14.667 | PTM_STATS Mem: 9M | Updating Film
+   14.667 | PTM_STATS Mem: 8M | Updating Lookup Tables
+   14.667 | PTM_STATS Mem: 9M | Updating Baking
+   14.667 | PTM_STATS Mem: 9M | Updating Device | Writing constant memory
+   14.667 | PTM_STATS Mem: 9M | Loading denoising kernels (may take a few minutes the first time)
+   14.667 | PTM_SAMPLES 0 64 principal
+   14.667 | PTM_STATS Mem: 9M | Sample 0/64
+   14.745 | PTM_SAMPLES 1 64 principal 4.91
+   14.746 | PTM_STATS Remaining: 00:04.91 | Mem: 36M | Sample 1/64
+   20.559 | PTM_SAMPLES 64 64 principal
+   20.559 | PTM_STATS Mem: 36M | Sample 64/64
+   20.559 | PTM_STATS Mem: 36M | Finished
+   20.674 | 00:20.500  render           | Saved: '<CAMINHO>/Camera_Direita.png'
+   20.675 | PTM_STATS Time: 00:06.05 (Saving: 00:00.09)
+   20.675 | PTM_RENDER_POS
+   20.675 | PTM_RENDER_FIM
+   20.675 | PTM_CAMERA_FIM 3/3 Camera_Direita
+   20.675 | Renders salvos em: <CAMINHO>/imagens 3d
+   20.675 | PTM_ETAPA final 7/7 Finalizando
+   20.675 | PTM_FIM
+   20.679 | ℹ️  blendkit: Unregistering Blendkit add-on [21:40:19.485, __init__.py:3089]
+   20.679 | ℹ️  blendkit: No temporarily enabled addons to clean up [21:40:19.486, download.py:465]
+   20.764 | Blender 5.3.0 (hash 02f0899d78e3 built 2026-11-10 01:33:43)
+   20.823 | 
+   20.823 | Blender quit
